@@ -1,0 +1,81 @@
+evaluators:
+- word_count
+- coherence
+- equivalence
+expected_answer: "[\n  \"Mathematics\",\n  \"Problem Solving\",\n  \"Creative Lesson\
+  \ Planning\",\n  \"Grading\",\n  \"Presentation\",\n  \"Training\",\n  \"SQL\",\n\
+  \  \"Data Analysis\",\n  \"Forecasting\",\n  \"Inventory Management\",\n  \"Quantitative\
+  \ Analysis\",\n  \"Leadership\",\n  \"Operations Management\",\n  \"Procurement\"\
+  ,\n  \"Project Management\",\n  \"Optimization\",\n  \"C\",\n  \"C++\",\n  \"Microsoft\
+  \ Office Suite\",\n  \"Google Docs\",\n  \"Master of Business Administration: Decision\
+  \ Sciences\",\n  \"Bachelor of Science: Mathematical Engineering\"\n]"
+model: gpt-4o-mini
+prompt: "# SENIOR ENGINEERING MANAGER\n\nPersonable, patient and adaptable Math tutor\
+  \ with 3 years of experience tutoring K-12 and college students in Mathematics.\
+  \ Highly reliable and approachable person with 8 years of professional experience\
+  \ in people management, leadership, documentation, multi-tasking, innovation and\
+  \ creativity, gained through the corporate world of Silicon Valley.\n\n## Accomplishments\n\
+  \n### Problem Solving\n- Assisted students from K-12 through college on a variety\
+  \ of class assignments\n- Helped students understand how to solve quantitative problems\
+  \ and achieve higher grades\n\n### Creative Lesson Planning\n- Motivated students\
+  \ to engage with course materials\n- Organized colorful, fun flashcard games as\
+  \ a recall technique to enhance learning\n\n### Grading\n- Evaluated college level\
+  \ exam papers\n- Ensured grades accurately and fairly reflected the quality of students'\
+  \ work\n\n### Presentation\n- Designed and created course presentations for SFSU\
+  \ management classes\n- Created and delivered presentations for colleagues using\
+  \ Microsoft PowerPoint and Google Docs\n\n### Training\n- Provided SQL programming\
+  \ training to corporate team members\n- Enhanced team's data analysis capabilities\
+  \ through classroom instruction\n\n## Education\n\n### Master of Business Administration:\
+  \ Decision Sciences, 2007\n**San Francisco State University**, City, State  \n*Courses:*\n\
+  - Operations Management\n- Total Quality Systems\n- Project Management\n- Business\
+  \ Forecasting\n- Supply Chain Management\n\n### Bachelor of Science: Mathematical\
+  \ Engineering, 2004\n**Yildiz Technical University**, City, Turkey  \n*Courses:*\n\
+  - Mathematical Analysis 1, 2, 3 & 4\n- Linear Algebra\n- Fundamentals of Mathematical\
+  \ Logic\n- Analytic Geometry\n- Ordinary Differential Equations 1 & 2\n- Theory\
+  \ of Probability\n- Numerical Analysis 1 & 2\n- Statistics\n- Matrix Analysis\n\
+  - Optimization Techniques\n- Insurance Mathematics\n\n## Teaching Experience\n\n\
+  ### Volunteer Math Tutor\n**09/2015 to Current**  \n*Company Name, City, State*\n\
+  - Tutored students in Algebra, Geometry, and Statistics\n- Provided special assistance\
+  \ to English language learners (ELLs)\n- Helped students understand mathematical\
+  \ concepts both orally and in writing\n\n### Volunteer Math Tutor\n**04/2015 to\
+  \ 05/2015**  \n*Company Name, City, State*\n- Assisted students in Algebra I and\
+  \ II\n- Provided volunteer teaching during flex time hours\n- Helped students overcome\
+  \ learning challenges and expand their interests\n\n### Teaching Assistant\n**09/2005\
+  \ to 05/2007**  \n*Company Name, City, State*\n- Edited business forecasting and\
+  \ operations management thesis papers\n- Graded exam papers and evaluated class\
+  \ assignments\n- Assisted in operations analysis and mathematics-related work\n\n\
+  ### Mathematics and Statistics Tutor\n**09/2005 to 09/2006**  \n*Company Name, City,\
+  \ State*\n- Tutored students in mathematics, statistics, and probability\n- Covered\
+  \ estimation, hypothesis testing, regression analysis, and correlation\n- Taught\
+  \ quantitative analysis of production management and control\n- Covered optimization\
+  \ techniques, inventory control, and demand forecasting\n\n## Corporate Experience\n\
+  \n### Operational Excellence Lead, Google Express\n**11/2004 to 04/2005**  \n*Company\
+  \ Name, City, State*\n- Analyzed data using statistical analysis tools (correlation,\
+  \ multiple regression)\n- Provided recommendations on system improvements and courier\
+  \ performance\n- Conducted capacity planning using optimization and data analysis\
+  \ techniques\n- Identified areas for process and speed improvement\n\n### Consultant\n\
+  **01/2013 to 02/2014**  \n*Company Name, City, State*\n- Supported 77Looks application\
+  \ from pre-launch to production\n- Managed marketing, content, and quality testing\
+  \ areas\n- Contributed to winning SF Fashion Tech Pitch Competition (June 2013)\n\
+  - Helped grow user base to approximately 1M active users\n\n### Operations Manager\n\
+  **10/2011 to 01/2013**  \n*Company Name, City, State*\n- Supervised team of logistics\
+  \ analysts and warehouse staff globally\n- Defined KPI reports and analytical tools,\
+  \ reducing operational errors by 80%\n- Transformed large data sets into actionable\
+  \ insights\n- Created order forecast reports and optimization tools\n- Developed\
+  \ inventory reconciliation reports\n\n### Senior Analyst\n**10/2010 to 10/2011**\
+  \  \n*Company Name, City, State*\n- Ensured warehouse productivity and inventory\
+  \ accuracy\n- Managed timely order fulfillment and global shipments\n- Documented\
+  \ standard operating procedures (SOPs)\n- Developed workflow processes for operations\
+  \ and customer support teams7 to 10/2010 Company Name City, State Managed customer\
+  \ accounts in different industries to ensure on time delivery of shipments for import\
+  \ and export operations. Supervised and trained new users for procurement and warehouse\
+  \ management system. Skills Tutoring, teaching, mathematics, algebra, geometry,\
+  \ English, content management, documentation, middle school & high school math,\
+  \ college math, presentation, analysis, grading and evaluation, problem solving,\
+  \ ESL students, technology integration, classroom monitoring, student assistance\
+  \ Account management, customer care and satisfaction, data analysis, forecasting,\
+  \ inventory, quantitative analysis, leadership, operations management, procurement,\
+  \ project management, optimization C, C++, MS Office Suite, Google Docs, SQL"
+repeat: '1'
+service: openai
+system_prompt_ref: candidate-skills

@@ -1,0 +1,469 @@
+<head>
+  <!-- avoid text rendering issues on various platforms -->
+  <meta charset="utf-8" />
+
+  <!-- prevent auto-zooming on mobile browsers -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap for default styles and utility CSS classes -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Font Awesome icons -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Lodash utility library as _ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"></script>
+
+  <!-- Vue 2 framework -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+  <!-- Pug template compiler -->
+  <script src="https://pugjs.org/js/pug.js"></script>
+  <script>
+    window.pug = require("pug");
+
+    function renderPug(str) {
+      let indents = str.replace(/^\n/, "").match(/^\s+/);
+      let indentRegex = new RegExp(`^${indents[0]}`, "gm");
+      return pug.render(indents ? str.replace(indentRegex, "") : str);
+    }
+  </script>
+
+  <!-- Ky HTTP client -->
+  <script type="module">
+    import ky from "https://cdn.skypack.dev/ky";
+    window.ky = ky;
+  </script>
+
+  <!-- Custom styles for full height and scrollable columns -->
+  <style>
+    .scrollable-column {
+      height: 100vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="overflow-hidden">
+  <div id="app" class="scrollable-column"></div>
+</body>
+
+<script>
+  function init() {
+    new Vue({
+      // Attach template to div with this ID
+      el: "#app",
+
+      // Main HTML template but in PUG
+      // language=pug
+      template: renderPug(`
+        .container-fluid.h-100
+          .row.h-100
+            .col-12
+
+              // Tab navigation
+              ul.nav.nav-tabs.mt-3
+                li.nav-item
+                  a.nav-link.active(data-bs-toggle="tab" href="#evals-tab") 
+                    | Evals
+                li.nav-item
+                  a.nav-link(data-bs-toggle="tab" href="#system-prompts-tab") 
+                    | System Prompts
+
+              // Tab content
+              .tab-content.h-100
+
+                ///// Eval cases tab
+                #evals-tab.tab-pane.fade.show.active.h-100
+                  .d-flex.flex-row.scrollable-column.h-100
+
+                    // left column
+                    .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 250px;")
+                    
+                      h3.mt-3 Eval Cases
+                      button.btn.btn-success.btn-sm.w-100(@click="showCreateEvalModal") 
+                        | + Create 
+
+                      .mt-3
+                      ul.list-group
+                        li.list-group-item(
+                          v-for="f in evalNames" :key="f" @click="chooseEval(f)"
+                          :class="{ 'list-group-item-info': selectedEvalName == f }"
+                          role="button"
+                        )
+                          | {{f}}
+                    
+                    // middle column
+                    .d-flex.flex-column.px-5.scrollable-column.border-end(style="flex: 1;")
+
+                      h3.mt-3 {{selectedEvalName}}
+
+                      h5.mt-3 System Prompt
+                      .form-group
+                        select.form-select(v-model="testConfig.system_prompt_ref" @change="loadSystemPrompt")
+                          option(value="" disabled) 
+                            | Select a system prompt
+                          option(v-for="prompt in systemPrompts" :key="prompt" :value="prompt") 
+                            | {{ prompt }}
+                      .form-group
+                        textarea.form-control(
+                          rows="20" 
+                          v-model="systemPrompt" 
+                          placeholder="Please summarize the skills of this candidate." 
+                          readonly
+                        )
+              
+                      form(@submit.prevent="runEval")
+
+                        h5.mt-3 Prompt
+                        .form-group
+                          textarea#input.form-control(
+                            rows="20" 
+                            v-model="testConfig.prompt" 
+                            placeholder="A humble query"
+                          )
+
+                        h5.mt-4 Expected
+                        .form-group
+                          textarea#expected.form-control(
+                            rows="20" 
+                            v-model="testConfig.expected_answer" 
+                            placeholder="expected"
+                          )
+
+                        h5.mt-4 Repeat
+                        .form-group
+                          input#repeat.form-control(
+                            type="number" 
+                            v-model="testConfig.repeat" 
+                            placeholder="1" 
+                            min="1"
+                          )
+          
+                        h5.mt-3 Model
+                        .form-group
+                          input#name.form-control(type="text" v-model="testConfig.model" placeholder="query")
+
+                        h5.mt-4 Evaluators
+                        .form-group
+                          div(v-for="evaluator in allEvaluators" :key="evaluator")
+                            .form-check
+                              input.form-check-input(
+                                type="checkbox"
+                                :id="'evaluator-' + evaluator"
+                                :value="evaluator"
+                                v-model="testConfig.evaluators"
+                              )
+                              label.form-check-label(:for="'evaluator-' + evaluator")
+                                | {{ evaluator }}
+
+                      .pb-5
+                      .pb-5
+
+                    // right column
+                    .d-flex.flex-column.px-3.scrollable-column.border(style="flex: 0 0 500px;")
+
+                      .mt-4
+                      button.btn.btn-success(@click="runEval" :disabled="isEvaluating")
+                        span.spinner-border.spinner-border-sm(
+                          v-if="isEvaluating" 
+                          role="status" 
+                          aria-hidden="true"
+                        )
+                        | {{ isEvaluating ? ' Evaluating...' : 'Evaluate' }}
+
+                      .mt-4
+                      template(v-if="evalResult")
+                        .table-responsive(v-if="evalResult.length")
+                          table.table.table-striped
+                            thead
+                              tr
+                                th Metric
+                                th Value
+                            tbody
+                              tr(v-for="(row, index) in evalResult" :key="index")
+                                td {{ row.name }}
+                                td 
+                                  | {{ parseFloat(row.average).toFixed(1) }} 
+                                  | ± {{ parseFloat(row.standard_deviation).toFixed(1) }}
+
+                      .form-group(v-if="sampleModelResponse")
+                        h5.mt-3 Sample Model Response
+                        textarea.form-control(rows="20" v-model="sampleModelResponse" readonly)
+                
+                ///// System prompts tab
+                #system-prompts-tab.tab-pane.fade.h-100
+                  .d-flex.flex-row.scrollable-column.h-100
+
+                    // left column - system prompt list
+                    .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 300px;")
+                    
+                      h3.mt-3 System Prompts
+
+                      .mb-3
+                        button.btn.btn-success.btn-sm.w-100(@click="showCreateSystemPromptModal") + Create
+                      
+                      .mt-3
+                      ul.list-group
+                        li.list-group-item(
+                          v-for="prompt in systemPrompts" :key="prompt" @click="chooseSystemPrompt(prompt)"
+                          :class="{ 'list-group-item-info': selectedSystemPromptName == prompt }"
+                          role="button"
+                        )
+                          | {{prompt}}
+                    
+                    // right column - system prompt content
+                    .d-flex.flex-column.px-5.scrollable-column(style="flex: 1;")
+
+                      h3.mt-3 {{selectedSystemPromptName}}
+                      
+                      .form-group(v-if="systemPrompt")
+                        textarea.form-control(rows="25" v-model="systemPrompt")
+                      
+                      .form-group(v-if="systemPrompt")
+                        button.btn.btn-success(@click="saveSystemPrompt" :disabled="isSavingPrompt")
+                          span.spinner-border.spinner-border-sm(v-if="isSavingPrompt" role="status" aria-hidden="true")
+                          | {{ isSavingPrompt ? ' Saving...' : 'Save System Prompt' }}
+
+          //// Modals
+
+          // Create Eval Modal
+          .modal.fade(id="createEvalModal" tabindex="-1")
+            .modal-dialog
+              .modal-content
+                .modal-header
+                  h5.modal-title Create New Eval
+                  button.btn-close(data-bs-dismiss="modal")
+                .modal-body
+                  .form-group.mb-3
+                    label.form-label Eval Name
+                    input.form-control(
+                      type="text" 
+                      v-model="newEvalName" 
+                      placeholder="eval-name" 
+                      id="evalNameInput"
+                    )
+                .modal-footer
+                  button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
+                  button.btn.btn-primary(@click="createEval" :disabled="!newEvalName") Create
+
+          // Create System Prompt Modal
+          .modal.fade(id="createSystemPromptModal" tabindex="-1")
+            .modal-dialog
+              .modal-content
+                .modal-header
+                  h5.modal-title Create New System Prompt
+                  button.btn-close(data-bs-dismiss="modal")
+                .modal-body
+                  .form-group.mb-3
+                    label.form-label System Prompt Name
+                    input.form-control(
+                      type="text" 
+                      v-model="newSystemPromptName" 
+                      placeholder="prompt-name" 
+                      id="systemPromptNameInput"
+                    )
+                .modal-footer
+                  button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
+                  button.btn.btn-primary(@click="createSystemPrompt" :disabled="!newSystemPromptName") 
+                    | Create
+
+      `),
+
+      // Variables available in the template
+      data: {
+        evalNames: [],
+        allEvaluators: [],
+        selectedEvalName: "",
+        newEvalName: "",
+        testConfig: {},
+        evalResult: {},
+        isEvaluating: false,
+        sampleModelResponse: "",
+        systemPrompts: [],
+        selectedSystemPromptName: "",
+        newSystemPromptName: "",
+        systemPrompt: "",
+        isSavingPrompt: false,
+      },
+
+      // Constructor called upon template instantiation
+      async mounted() {
+        await this.loadEvalNames();
+        if (this.evalNames.length > 0) {
+          this.chooseEval(this.evalNames[0]);
+        }
+        await this.loadSystemPrompts();
+        let response = await ky.get("/evaluators").json();
+        this.allEvaluators = response.evaluators;
+      },
+
+      // Methods available in the template
+      methods: {
+        async loadEvalNames() {
+          let result = await ky.get("/evals").json();
+          this.evalNames = result.files;
+          console.log("loadEvalNames: evalNames", _.cloneDeep(this.evalNames));
+        },
+        async loadSystemPrompts() {
+          let response = await ky.get("/system-prompts").json();
+          this.systemPrompts = response.system_prompts;
+          console.log(
+            "loadSystemPrompts: systemPrompts",
+            _.cloneDeep(this.systemPrompts),
+          );
+        },
+        async chooseEval(evalName) {
+          this.selectedEvalName = evalName;
+          this.loadTestConfig(evalName);
+          this.loadEvalResult(evalName);
+        },
+        async loadTestConfig(evalName) {
+          let response = await ky.post(`/eval`, { json: { basename: evalName } }).json();
+          this.testConfig = response.content;
+          console.log(
+            "loadTestConfig: TestConfig:",
+            _.cloneDeep(this.testConfig),
+          );
+
+          if (this.testConfig.system_prompt_ref) {
+            let systemPromptResponse = await ky
+              .post("/system-prompt", {
+                json: { basename: this.testConfig.system_prompt_ref },
+              })
+              .json();
+            console.log(
+              "loadTestConfig: Loaded system prompt from file:",
+              systemPromptResponse,
+            );
+            this.systemPrompt = systemPromptResponse.content;
+            this.selectedSystemPromptName = this.testConfig.system_prompt_ref;
+          }
+        },
+        async loadEvalResult(evalName) {
+          this.evalResult = [];
+          this.sampleModelResponse = "";
+          try {
+            let response = await ky.post(`/summary`, { json: { basename: evalName } }).json();
+            console.log("loadEvalResult: Summary:", _.cloneDeep(response));
+            this.evalResult = response.content.evaluations;
+            let responseTexts = response.content.texts;
+            if (responseTexts.length > 0) {
+              this.sampleModelResponse = responseTexts[0];
+            }
+          } catch (error) {
+            console.log(
+              "loadEvalResult: Summary file does not exist for",
+              evalName,
+              "- continuing without summary",
+            );
+            this.evalResult = {};
+            this.sampleModelResponse = "";
+          }
+        },
+        async loadSystemPrompt() {
+          if (this.testConfig.system_prompt_ref) {
+            let response = await ky
+              .post("/system-prompt", {
+                json: { basename: this.testConfig.system_prompt_ref },
+              })
+              .json();
+            this.systemPrompt = response.content;
+          }
+        },
+        async runEval() {
+          this.isEvaluating = true;
+          this.evalResult = [];
+          this.sampleModelResponse = "";
+          console.log("runEval: Payload:", _.cloneDeep(this.testConfig));
+          await ky.post(`/evaluate`, {
+            json: { basename: this.selectedEvalName, testConfig: this.testConfig },
+            timeout: 600000, // 10 minutes
+          });
+          this.loadEvalResult(this.selectedEvalName);
+          this.isEvaluating = false;
+        },
+        showCreateEvalModal() {
+          const modal = new bootstrap.Modal(
+                  document.getElementById("createEvalModal"),
+          );
+          modal.show();
+        },
+        async createEval() {
+          try {
+            await ky.post("/create-eval", {
+              json: { basename: this.newEvalName },
+            });
+            await this.loadEvalNames();
+            this.chooseEval(this.newEvalName);
+            bootstrap.Modal.getInstance(
+                    document.getElementById("createEvalModal"),
+            ).hide();
+            this.newEvalName = "";
+          } catch (error) {
+            console.error("createEval: Error creating eval:", error);
+          }
+        },
+        async chooseSystemPrompt(promptName) {
+          this.selectedSystemPromptName = promptName;
+          let response = await ky
+            .post("/system-prompt", { json: { basename: promptName } })
+            .json();
+          this.systemPrompt = response.content;
+        },
+        async saveSystemPrompt() {
+          this.isSavingPrompt = true;
+          try {
+            await ky.post("/save-system-prompt", {
+              json: {
+                basename: this.selectedSystemPromptName,
+                content: this.systemPrompt,
+              },
+            });
+            console.log("saveSystemPrompt: System prompt saved successfully");
+          } catch (error) {
+            console.error(
+              "saveSystemPrompt: Error saving system prompt:",
+              error,
+            );
+          }
+          this.isSavingPrompt = false;
+        },
+        showCreateSystemPromptModal() {
+          const modal = new bootstrap.Modal(
+            document.getElementById("createSystemPromptModal"),
+          );
+          modal.show();
+        },
+        async createSystemPrompt() {
+          try {
+            await ky.post("/create-system-prompt", {
+              json: { basename: this.newSystemPromptName },
+            });
+            await this.loadSystemPrompts();
+            this.chooseSystemPrompt(this.newSystemPromptName);
+
+            bootstrap.Modal.getInstance(
+              document.getElementById("createSystemPromptModal"),
+            ).hide();
+            this.newSystemPromptName = "";
+          } catch (error) {
+            console.error(
+              "createSystemPrompt: Error creating system prompt:",
+              error,
+            );
+          }
+        },
+      },
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+</script>
