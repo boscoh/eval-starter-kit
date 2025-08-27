@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -6,6 +7,9 @@ from typing import Any, Dict, List, Optional
 
 import ollama
 from openai import OpenAI
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
@@ -225,7 +229,7 @@ class OllamaChatClient(IChatClient):
                 },
             }
         except Exception as e:
-            print(f"Error calling Ollama: {e}")
+            logger.error(f"Error calling Ollama: {e}")
             return {
                 "text": f"Error: {str(e)}",
                 "metadata": {"Usage": {"TotalTokenCount": 0, "elapsed_ms": 0}},
@@ -284,7 +288,7 @@ class OpenAIChatClient(IChatClient):
                 "metadata": {"Usage": {"TotalTokenCount": token_count}},
             }
         except Exception as e:
-            print(f"Error calling OpenAI: {e}")
+            logger.error(f"Error calling OpenAI: {e}")
             return {
                 "text": f"Error: {str(e)}",
                 "metadata": {"Usage": {"TotalTokenCount": 0}},

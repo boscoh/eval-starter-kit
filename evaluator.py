@@ -1,6 +1,9 @@
+import logging
 import re
 import textwrap
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 from schemas import JobConfig
 
@@ -18,12 +21,10 @@ def parse_score_text(score_text: str) -> float:
     try:
         return max(0.0, min(1.0, float(score_text.strip())))
     except (ValueError, TypeError):
-        # Try to extract a number from the response
         numbers = re.findall(r"\b0?\.\d+\b|\b1(?:\.0+)?\b", str(score_text.strip()))
         if numbers:
             return max(0.0, min(1.0, float(numbers[0])))
-    return 0.5  # Default fallback score
-
+    return 0.5
 
 class EvaluationRunner:
     @staticmethod
@@ -63,7 +64,7 @@ class EvaluationRunner:
                     results[evaluator_name] = result
                 elif evaluator_name.lower() == "equivalence":
                     if not self.job_config.expected_answer:
-                        print("Warning: No answer provided for equivalence evaluation")
+                        logging.warning("No answer provided for equivalence evaluation")
                         results[evaluator_name] = {
                             "score": None,
                             "text": "",
@@ -85,17 +86,16 @@ class EvaluationRunner:
                     )
                     results[evaluator_name] = result
                 else:
-                    # Fallback for other evaluators
                     results[evaluator_name] = {
-                        "score": 1.0,
-                        "text": "",
-                        "elapsed_ms": 0,
-                        "token_count": 0,
-                    }
+                    "score": 1.0,
+                    "text": "",
+                    "elapsed_ms": 0,
+                    "token_count": 0,
+                }
             except Exception as e:
-                print(f"Error in {evaluator_name} evaluation: {e}")
+                logging.error(f"Error in {evaluator_name} evaluation: {e}", exc_info=True)
                 results[evaluator_name] = {
-                    "score": 0.5,  # Default fallback score
+                    "score": 0.5,
                     "text": str(e),
                     "elapsed_ms": 0,
                     "token_count": 0,
@@ -121,7 +121,7 @@ class CoherenceEvaluator:
                 - token_count (int): Number of tokens used in the evaluation
         """
         result = {
-            "score": 0.5,  # Default fallback score
+            "score": 0.5,
             "text": "",
             "elapsed_ms": 0,
             "token_count": 0,
@@ -165,7 +165,7 @@ class CoherenceEvaluator:
             result["score"] = parse_score_text(response.get("text", ""))
 
         except Exception as e:
-            print(f"Error in coherence evaluation: {e}")
+            logging.error("Error in coherence evaluation", exc_info=True)
 
         return result
 
@@ -185,25 +185,21 @@ class EquivalenceEvaluator:
                 - elapsed_ms (int): Time taken for the evaluation in milliseconds
                 - token_count (int): Number of tokens used in the evaluation
         """
-        # Initialize default result
         result = {
-            "score": 0.5,  # Default fallback score
+            "score": 0.5,
             "text": "",
             "elapsed_ms": 0,
             "token_count": 0,
         }
 
-        # Skip if either answer is empty
         if not answer.strip() or not actual_answer.strip():
             result["score"] = 0.0
             return result
 
-        # Simple string equality check first (fast path)
         if answer.strip().lower() == actual_answer.strip().lower():
             result["score"] = 1.0
             return result
 
-        # If not an exact match, use LLM to evaluate semantic equivalence
         try:
             prompt = f"""
             Compare the following two answers and determine how semantically equivalent they are.
@@ -242,7 +238,7 @@ class EquivalenceEvaluator:
             result["score"] = parse_score_text(response.get("text", ""))
 
         except Exception as e:
-            print(f"Error in semantic equivalence evaluation: {e}")
+            logger.error(f"Error in semantic equivalence evaluation: {e}")
             result["text"] = str(e)
 
         return result
@@ -278,7 +274,7 @@ class WordCountEvaluator:
                 - token_count (int): 0 (no chat client used)
         """
         result = {
-            "score": 1.0,  # Default score if no requirements
+            "score": 1.0,
             "text": "",
             "elapsed_ms": 0,
             "token_count": 0,
@@ -287,14 +283,12 @@ class WordCountEvaluator:
         try:
             word_count = len(text.split())
 
-            # If target_words is specified, calculate score based on proximity to target
             if target_words is not None:
                 if word_count == 0:
                     result["score"] = 0.0
                     return result
-                # Score is 1.0 at target, decreasing linearly to 0.5 at 0 or 2*target
                 distance = abs(word_count - target_words)
-                if distance >= target_words:  # If more than target words away
+                if distance >= target_words:
                     result["score"] = 0.5 * (
                         1 - (distance - target_words) / (target_words + 1)
                     )
@@ -302,25 +296,20 @@ class WordCountEvaluator:
                     result["score"] = 1.0 - (0.5 * (distance / target_words))
                 return result
 
-            # Check min_words requirement
             if min_words is not None and word_count < min_words:
-                # Score increases linearly from 0.5 at 0 words to 1.0 at min_words
                 result["score"] = 0.5 + (0.5 * min(1.0, word_count / max(1, min_words)))
                 return result
 
-            # Check max_words requirement
             if max_words is not None and word_count > max_words:
-                # Score decreases from 1.0 at max_words to 0.5 at 2*max_words
                 excess = word_count - max_words
                 result["score"] = max(
                     0.5, 1.0 - (0.5 * min(1.0, excess / max(1, max_words)))
                 )
                 return result
 
-            # If no requirements or all requirements met
             return result
 
         except Exception as e:
-            print(f"Error in word count evaluation: {e}")
-            result["score"] = 0.5  # Default fallback score
+            logger.error(f"Error in word count evaluation: {e}")
+            result["score"] = 0.5
             return result

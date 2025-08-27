@@ -1,8 +1,12 @@
 import asyncio
+import logging
 from statistics import mean, stdev
 from typing import List
 
 from path import Path
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
@@ -31,7 +35,7 @@ class JobRunner:
 
         response_texts = []
         for i in range(self._config.repeat):
-            print(f"Iteration #{i}")
+            logger.info(f"Iteration #{i}")
 
             start = asyncio.get_event_loop().time()
 
@@ -48,8 +52,8 @@ class JobRunner:
                 token_count * self._cost_per_token if token_count is not None else None
             )
 
-            print(f"ElapsedMs: {elapsed}")
-            print(f"TokenCount: {token_count}")
+            logger.debug(f"ElapsedMs: {elapsed}")
+            logger.debug(f"TokenCount: {token_count}")
 
             eval_results_dict["elapsed_ms"].values.append(elapsed)
             eval_results_dict["token_count"].values.append(token_count)
@@ -76,20 +80,20 @@ class JobRunner:
         stem = Path(self._config.file_path).stem
         results_path = self.results_dir / f"{stem}.yaml"
         save_yaml(eval_results, results_path)
-        print(f"Results saved to: {results_path}")
+        logger.info(f"Results saved to: {results_path}")
 
 
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) == 1:
-        print("Usage: python runner.py <config_file_path>")
-        print("No file path provided, run all in `./jobs/*.yaml`")
+        logger.info("Usage: python runner.py <config_file_path>")
+        logger.info("No file path provided, run all in `./jobs/*.yaml`")
         file_paths = Path('jobs').glob('*.yaml')
     else:
         file_paths = [Path(sys.argv[1])]
 
     for file_path in file_paths:
-        print(f">>> Running '{file_path}'")
+        logger.info(f"Running job: {file_path}")
         asyncio.run(JobRunner(file_path).save_results())
 

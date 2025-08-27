@@ -12,19 +12,43 @@ from evaluator import EvaluationRunner
 from runner import JobRunner
 from util import load_yaml, save_yaml
 
+from rich.logging import RichHandler
+import uvicorn
+
+
 JOB_DIR = Path("./jobs")
 PROMPTS_DIR = Path("system-prompts")
 PROMPTS_DIR.makedirs_p()
 RESULTS_DIR = Path("results")
 RESULTS_DIR.makedirs_p()
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format="%(message)s",
+    handlers=[
+        RichHandler(
+            rich_tracebacks=True,
+            show_time=False,
+            show_path=True,
+            markup=True,
+            log_time_format="[%X]"
+        )
+    ],
+    force=True
 )
+
 logger = logging.getLogger(__name__)
 
+# uvicorn_logger = logging.getLogger("uvicorn")
+# uvicorn_logger.handlers = []
+# uvicorn_logger.propagate = False
+
+uvicorn_access = logging.getLogger("uvicorn.access")
+uvicorn_access.handlers = []
+uvicorn_access.propagate = False
+
+# Configure h11 logging
+logging.getLogger("h11").setLevel(logging.WARNING)
 
 app = FastAPI()
 
@@ -54,11 +78,11 @@ async def get_json_from_request(request) -> Dict[str, Any]:
     )
 
 
-# Optional: add logging middleware for requests
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    time = f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
-    logger.info(f"{time} {request.method} {request.url.path}")
+    # Only log non-asset requests
+    if not any(ext in str(request.url) for ext in ['.js', '.css', '.ico', '.png', '.jpg']):
+        logger.info(f"{request.method} {request.url.path}")
     return await call_next(request)
 
 
@@ -93,7 +117,7 @@ async def summary(request: Request):
                 status_code=404,
                 detail=f"Summary file '{file_path}' not found in {RESULTS_DIR}",
             )
-        logger.info(f"Successfully loaded summary YAML for {basename}")
+        logger.debug(f"Loaded summary for {basename}")
         return {
             "basename": basename,
             "content": load_yaml(file_path),
@@ -114,7 +138,7 @@ async def summary(request: Request):
 def list_evaluators():
     try:
         allowed_evaluators = EvaluationRunner.allowed_evaluators()
-        logger.info(f"Allowed evaluators: {allowed_evaluators}")
+        logger.debug(f"Available evaluators: {', '.join(allowed_evaluators)}")
         return {"evaluators": allowed_evaluators}
     except Exception as ex:
         logger.error(f"Error listing evaluators: {ex}")
@@ -133,7 +157,7 @@ def list_system_prompts():
     logger.info(f"Listing system prompts in directory: {PROMPTS_DIR}")
     try:
         basenames = [f.stem for f in PROMPTS_DIR.iterdir() if f.suffix == ".txt"]
-        logger.info(f"System prompt basenames: {basenames}")
+        logger.debug(f"Found system prompts: {', '.join(basenames) or 'none'}")
         return {"system_prompts": basenames}
     except Exception as ex:
         logger.error(f"Error listing system prompts: {ex}")
@@ -226,7 +250,7 @@ def list_evals():
                 detail=f"Test directory not found: {JOB_DIR}",
             )
         basenames = [f.stem for f in JOB_DIR.iterdir() if f.suffix == ".yaml"]
-        logger.info(f"YAML basenames found: {basenames}")
+        logger.debug(f"Found evaluations: {', '.join(basenames) or 'none'}")
         return {"files": basenames}
     except Exception as ex:
         logger.error(f"Error reading test config directory: {ex}")
@@ -273,7 +297,7 @@ async def get_eval(request: Request):
                 status_code=404,
                 detail=f"File '{basename}.yaml' not found in test directory",
             )
-        logger.info(f"Successfully loaded YAML for {basename}")
+        logger.debug(f"Loaded YAML for {basename}")
         return {
             "basename": basename,
             "filename": f"{basename}.yaml",
@@ -431,6 +455,11 @@ async def evaluate(request: Request):
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(
+        f"{Path(__file__).stem}:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False,
+        log_config=None,  # We handle our own logging
+        access_log=False  # Disable uvicorn access logs
+    )
