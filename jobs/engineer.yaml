@@ -1,6 +1,6 @@
 repeat: '1'
 service: openai
-system_prompt_ref: candidate-skills
+system_prompt_ref: candidate-summary
 model: gpt-4o-mini
 evaluators:
 - equivalence

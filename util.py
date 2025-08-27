@@ -4,7 +4,7 @@ MAX_LEN_LINE = 80
 
 
 def block_str_yaml_representer(dumper, data):
-    if isinstance(data, str) and ("\n" in data or len(data) > MAX_LEN_LINE):
+    if isinstance(data, str) and ("\n" in data or len(data) >= MAX_LEN_LINE):
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 

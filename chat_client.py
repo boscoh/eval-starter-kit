@@ -8,6 +8,9 @@ from typing import Any, Dict, List, Optional
 
 import ollama
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -126,27 +129,49 @@ class IChatClient(ABC):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """
-        Get a chat completion from the model.
+        """Get a chat completion from the model.
 
         Args:
-            messages: List of message dictionaries with 'role' and 'content' keys
-            tools: Optional list of tool/function definitions
-            max_tokens: Maximum number of tokens to generate
+            messages: List of message dictionaries, where each dict has structure:
+                {
+                    'role': 'user' | 'assistant' | 'system',  # Message role
+                    'content': str,  # The message content
+                    'name': str  # Optional: Name of the message sender
+                }
+            tools: Optional list of tool definitions, where each dict has structure:
+                {
+                    'type': str,  # Type of tool (e.g., 'function')
+                    'function': {
+                        'name': str,  # Function name
+                        'description': str,  # Optional: Function description
+                        'parameters': dict  # JSON Schema for parameters
+                    }
+                }
+            max_tokens: Maximum number of tokens to generate (None for model default)
             temperature: Sampling temperature (0.0 to 1.0)
 
         Returns:
-            Dict with 'text' and 'metadata' keys
+            {
+                'text': str,  # Generated response content
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': int,  # Tokens in prompt
+                        'completion_tokens': int,  # Tokens in completion
+                        'total_tokens': int  # Total tokens used
+                    },
+                    'model': str,  # Model used
+                    'finish_reason': str  # Reason generation stopped
+                }
+            }
         """
         pass
 
     @abstractmethod
     def get_token_cost(self) -> float:
-        """
-        Get the cost per token for the specified model.
+        """Get the cost per 1K tokens for the model.
 
         Returns:
-            Cost per token in USD
+            float: Cost in USD per 1K tokens
         """
         pass
 
@@ -161,13 +186,24 @@ class IChatClient(ABC):
         Invoke the chat model with a prompt and a system prompt loaded from a file.
 
         Args:
-            prompt: The user's input prompt
+            prompt: The user's input prompt as a string
             system_prompt_key: The key to load the system prompt from system-prompts/<key>.txt
             max_tokens: Maximum number of tokens to generate (default: None for model's default)
             temperature: Sampling temperature (0.0 for deterministic output, higher for more randomness)
 
         Returns:
-            Dict with 'text' and 'metadata' keys, same as get_completion
+            {
+                'text': str,  # Generated response content
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': int,  # Tokens in prompt
+                        'completion_tokens': int,  # Tokens in completion
+                        'total_tokens': int  # Total tokens used
+                    },
+                    'model': str,  # Model used
+                    'finish_reason': str  # Reason generation stopped
+                }
+            }
         """
         # Load system prompt from file
         system_prompt_path = Path("system-prompts") / f"{system_prompt_key}.txt"
@@ -190,6 +226,11 @@ class IChatClient(ABC):
 
 class OllamaChatClient(IChatClient):
     def __init__(self, model: str = "llama3.2"):
+        """Initialize Ollama chat client.
+        
+        Args:
+            model: Name of the Ollama model to use (default: "llama3.2")
+        """
         self.model = model
         self.client = ollama.AsyncClient()
 
@@ -200,8 +241,32 @@ class OllamaChatClient(IChatClient):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """
-        Get a chat completion from the Ollama model.
+        """Get a chat completion from the Ollama model.
+        
+        Args:
+            messages: List of message dicts with format:
+                [{"role": "user"|"assistant"|"system", "content": str}, ...]
+            tools: Not currently supported in Ollama implementation
+            max_tokens: Optional maximum number of tokens to generate
+            temperature: Sampling temperature (0.0 to 1.0)
+            
+        Returns:
+            Dict with structure:
+            {
+                'text': str,  # Generated response content
+                'metadata': {
+                    'Usage': {
+                        'TotalTokenCount': int,  # Total tokens used (prompt + completion)
+                        'elapsed_ms': int  # Generation time in milliseconds
+                    }
+                }
+            }
+            
+            On error, returns:
+            {
+                'text': f"Error: {error_message}",
+                'metadata': {'Usage': {'TotalTokenCount': 0, 'elapsed_ms': 0}}
+            }
         """
         try:
             options = {
@@ -236,18 +301,34 @@ class OllamaChatClient(IChatClient):
             }
 
     def get_token_cost(self) -> float:
-        """
-        Get the cost per token for Ollama models.
-        Since Ollama is typically run locally, the cost is 0.
+        """Get the cost per 1K tokens for the Ollama model.
+        
+        Since Ollama runs locally, the cost is always 0.
+        
+        Returns:
+            float: Always returns 0.0 (no cost for local models)
         """
         return 0.0
 
 
 class OpenAIChatClient(IChatClient):
-    def __init__(self, model: str = "gpt-4o", max_tokens: int = 1000):
-        api_key = os.getenv("OPENAI_API_KEY")
+    def __init__(self, model: str = "gpt-4o", max_tokens: int = 1000, api_key: Optional[str] = None):
+        """Initialize OpenAI chat client.
+        
+        Args:
+            model: Name of the OpenAI model to use (default: "gpt-4o")
+            max_tokens: Default max tokens per response (default: 1000)
+            api_key: Optional API key. If not provided, will be read from OPENAI_API_KEY environment variable
+            
+        Raises:
+            ValueError: If OPENAI_API_KEY environment variable is not set and no api_key is provided
+        """
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set.")
+            raise ValueError(
+                "OPENAI_API_KEY environment variable is not set and no api_key was provided. "
+                "Either set OPENAI_API_KEY in your .env file or pass the api_key parameter."
+            )
         self.client = OpenAI(api_key=api_key)
         self.model = model
         self.max_tokens = max_tokens
@@ -259,11 +340,46 @@ class OpenAIChatClient(IChatClient):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
+        """Get a chat completion from the OpenAI model.
+        
+        Args:
+            messages: List of message dicts with format:
+                [{"role": "user"|"assistant"|"system", "content": str}, ...]
+            tools: Optional list of tool definitions with format:
+                [{
+                    'type': 'function',
+                    'function': {
+                        'name': str,
+                        'description': str,
+                        'parameters': dict
+                    }
+                }, ...]
+            max_tokens: Optional maximum number of tokens to generate
+            temperature: Sampling temperature (0.0 to 1.0)
+            
+        Returns:
+            Dict with structure:
+            {
+                'text': str,  # Generated response content
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': int,  # Tokens in prompt
+                        'completion_tokens': int,  # Tokens in completion
+                        'total_tokens': int  # Total tokens used
+                    },
+                    'model': str,  # Model used
+                    'finish_reason': str  # Reason generation stopped
+                }
+            }
+            
+            On error, returns:
+            {
+                'text': f"Error: {error_message}",
+                'metadata': {'usage': {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}}
+            }
         """
-        Get a chat completion from the OpenAI model.
-        """
-
         def sync_call():
+            """Synchronous wrapper for get_completion."""
             return self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -295,12 +411,21 @@ class OpenAIChatClient(IChatClient):
             }
 
     def get_token_cost(self) -> float:
-        """
-        Get the cost per token for OpenAI models.
+        """Get the cost per 1K tokens for the OpenAI model.
+        
+        Returns:
+            float: Cost in USD per 1K tokens based on the model
+            
+        Note:
+            - gpt-4o: $0.005/1K tokens
+            - gpt-4-turbo: $0.01/1K tokens
+            - gpt-4: $0.03/1K tokens
+            - gpt-3.5-turbo: $0.0005/1K tokens
         """
         pricing = {
             "gpt-4": 0.03,  # $0.03 per 1K tokens
-            "gpt-4o": 0.03,  # Assuming same pricing as gpt-4
-            "gpt-3.5-turbo": 0.002,  # $0.002 per 1K tokens
+            "gpt-4o": 0.005,  # $0.005 per 1K tokens
+            "gpt-4-turbo": 0.01,  # $0.01 per 1K tokens
+            "gpt-3.5-turbo": 0.0005,  # $0.0005 per 1K tokens
         }
         return pricing.get(self.model.lower(), 0.0)
