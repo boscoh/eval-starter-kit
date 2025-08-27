@@ -1,11 +1,12 @@
 from typing import List, Optional
 
-import yaml
 from path import Path
 from pydantic import BaseModel, Field
 
+from util import load_yaml
 
-class EvalConfig(BaseModel):
+
+class JobConfig(BaseModel):
     name: Optional[str] = None
     file_path: Optional[str] = None
     system_prompt: Optional[str] = None
@@ -18,8 +19,15 @@ class EvalConfig(BaseModel):
     evaluators: List[str] = Field(default_factory=lambda: ["CoherenceEvaluator"])
 
     @staticmethod
-    def read_from_yaml(file_path: str) -> "EvalConfig":
-        data = yaml.safe_load(Path(file_path).read_text())
+    def read_from_yaml(file_path: str) -> "JobConfig":
+        data = load_yaml(file_path)
         data["file_path"] = file_path
         data["name"] = Path(file_path).stem
-        return EvalConfig(**data)
+        return JobConfig(**data)
+
+
+class JobResult(BaseModel):
+    name: str
+    values: List[Optional[float]] = Field(default_factory=list)
+    average: Optional[float] = None
+    standard_deviation: Optional[float] = None

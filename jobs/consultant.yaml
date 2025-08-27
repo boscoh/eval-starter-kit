@@ -1,0 +1,161 @@
+evaluators:
+- word_count
+- coherence
+- equivalence
+repeat: 2
+service: openai
+model: gpt-4o-mini
+system_prompt_ref: candidate-summary
+expected_answer: |-
+  [
+    "Systems Analyst",
+    "Software Development Lifecycle (SDLC)",
+    "Computer Systems Validation (CSV)",
+    "Documentum DCM",
+    "Documentum D2",
+    "MS Access",
+    "VBA",
+    "C",
+    "C++",
+    "HTML",
+    "Assembly language programming",
+    "Project leadership",
+    "Analytical skills",
+    "Problem-solving skills",
+    "Organizational skills",
+    "Communication skills",
+    "General application support",
+    "Software development",
+    "Data communications",
+    "System administration",
+    "Consultant",
+    "GxP",
+    "SOX compliant applications",
+    "Document transformation",
+    "Printing",
+    "Reporting",
+    "User troubleshooting",
+    "Production Application support",
+    "Root cause analysis",
+    "Payroll application",
+    "Manufacturing application",
+    "Windows operating system",
+    "Windows 2000",
+    "Windows XP",
+    "Windows Vista",
+    "Windows Server",
+    "Network administration",
+    "Relational database",
+    "Client/server",
+    "Messaging",
+    "Real-time",
+    "VAX/VMS",
+    "IBM",
+    "M.S: Computer Science Data Communications",
+    "B.A: Computer Science"
+  ]
+prompt: "# CONSULTANT Professional Profile\nHighly motivated and self-driven Systems\
+  \ Analyst with vast experience in various environments and technologies in support\
+  \ of multiple departments across the enterprise. Expertise in Software Development\
+  \ Lifecycle (SDLC) and Computer Systems Validation (CSV). Looking for an opportunity\
+  \ to apply and develop strong analytical skills and problem solving techniques.\n\
+  ## Qualifications - Documentum DCM and Documentum D2 - MS Access, VBA, C, C++, some\
+  \ HTML, Assembly language programming - Project leadership, strong technical skills,\
+  \ analytical skills - Problem-solving skills, organizational skills and communication\
+  \ skills - Systems analyst, general application support, software development -\
+  \ Data communications, System administration\n## Professional Experience\n### Consultant\
+  \ **January 1999 to November 2015**   *Company Name, City, State*\n- Provided consultant\
+  \ expertise in various roles supporting McNeil Consumer Healthcare including but\
+  \ not limited to shop floor applications, document management applications, timekeeper\
+  \ applications, and business process applications - Knowledgeable in the SDLC process\
+  \ and GxP, SOX compliant applications - Project Leadership roles in several projects\
+  \ including application upgrades - Provided support to GxP compliant document management\
+  \ applications based on Documentum D2 and DCM environments - Conducted detailed\
+  \ analysis of issues including document transformation, printing issues, reporting\
+  \ and troubleshooting - Provided Level 2 Production Application support, attending\
+  \ to user requests through ITSM and emails - Generated Scheduled and Adhoc Reports\
+  \ for Users - Performed Daily Consistency Checks to ensure proper functioning of\
+  \ servers, services and Documentum jobs - Fixed bugs and provided solutions for\
+  \ minor enhancements requiring Change Requests - Conducted root cause analysis for\
+  \ recurring issues - Escalated to Level 3 Support/Core Team when needed - Monitored\
+  \ Validation and Training Environments - Supported SOX compliant payroll applications\
+  \ and Microsoft Access databases - Designed, developed and tested VBA code in databases\
+  \ and Excel spreadsheets - Supported FDA-validated manufacturing applications for\
+  \ shop floor reporting - Assisted with IT rollouts and upgrades of Windows operating\
+  \ systems\n### Consultant **January 1990 to January 1999**   *Company Name, City,\
+  \ State*\n- Provided design, development, testing and support for Client/server\
+  \ messaging applications - Developed communication solutions between VAX and IBM\
+  \ systems for large enterprises - Worked on electronic batch record applications\
+  \ within large teams - Provided relational database expertise across multiple projects\
+  \ - Delivered training for Digital products - Provided system administration support\n\
+  ### Systems Programmer **January 1985 to January 1990**   *Company Name, City, State*\n\
+  - Designed, developed, tested and supported real-time client/server applications\
+  \ - Created messaging systems between VAX/VMS and IBM applications - Developed applications\
+  \ for tracking train movements and locations - Converted assembly language applications\
+  \ to C - Provided general system and network administration support\n## Education\
+  \ - **M.S. Computer Science Data Communications**, 1996  \n  Villanova University,\
+  \ City, State\n- **B.A. Computer Science**, 1985  \n  LaSalle University, City,\
+  \ State\n\n## Technical Skills - **Programming Languages**: C, C++, VBA, Assembly\
+  \ language, HTML - **Databases**: MS Access, Documentum DCM/D2, Relational databases\
+  \ - **Systems**: VAX/VMS, Windows, Client/Server architectures - **Methodologies**:\
+  \ SDLC, Computer Systems Validation, GxP, SOX compliance - **Other**: Analytical\
+  \ skills, problem-solving, project leadership, system administration, Data communications,\
+  \ database and applications, DBA, databases, designing, document management, Documentation,\
+  \ Documentum, some HTML, IBM, managing, manufacturing process, messaging, Microsoft\
+  \ Access, MS Access, Excel spreadsheets, Windows operating system, Windows, Windows\
+  \ 2000, Windows XP, network administration, Operating Systems, organizational skills,\
+  \ payroll, programming, Project Leadership, real-time, relational database, reporting,\
+  \ SDLC, servers, System administration, User Training, troubleshooting, upgrades,\
+  \ Validation, VAX, VAX/VMS, Vista, VBA, Windows Server, written \\n## Qualifications\\\
+  n- Documentum DCM and Documentum D2\\n- MS Access, VBA, C, C++,\\ \\ some HTML,\
+  \ Assembly language programming\\n- Project leadership, strong technical\\ \\ skills,\
+  \ analytical skills\\n- Problem-solving skills, organizational skills and\\ \\ communication\
+  \ skills\\n- Systems analyst, general application support, software\\ \\ development\\\
+  n- Data communications, System administration\\n\\n## Professional Experience\\\
+  n\\ \\n### Consultant\\n**January 1999 to November 2015**  \\n*Company Name, City,\
+  \ State*\\n\\ \\n- Provided consultant expertise in various roles supporting McNeil\
+  \ Consumer Healthcare\\ \\ including but not limited to shop floor applications,\
+  \ document management applications,\\ \\ timekeeper applications, and business process\
+  \ applications\\n- Knowledgeable in\\ \\ the SDLC process and GxP, SOX compliant\
+  \ applications\\n- Project Leadership roles\\ \\ in several projects including application\
+  \ upgrades\\n- Provided support to GxP\\ \\ compliant document management applications\
+  \ based on Documentum D2 and DCM environments\\n\\ - Conducted detailed analysis\
+  \ of issues including document transformation, printing\\ \\ issues, reporting and\
+  \ troubleshooting\\n- Provided Level 2 Production Application\\ \\ support, attending\
+  \ to user requests through ITSM and emails\\n- Generated Scheduled\\ \\ and Adhoc\
+  \ Reports for Users\\n- Performed Daily Consistency Checks to ensure proper\\ \\\
+  \ functioning of servers, services and Documentum jobs\\n- Fixed bugs and provided\\\
+  \ \\ solutions for minor enhancements requiring Change Requests\\n- Conducted root\
+  \ cause\\ \\ analysis for recurring issues\\n- Escalated to Level 3 Support/Core\
+  \ Team when needed\\n\\ - Monitored Validation and Training Environments\\n- Supported\
+  \ SOX compliant payroll\\ \\ applications and Microsoft Access databases\\n- Designed,\
+  \ developed and tested\\ \\ VBA code in databases and Excel spreadsheets\\n- Supported\
+  \ FDA-validated manufacturing\\ \\ applications for shop floor reporting\\n- Assisted\
+  \ with IT rollouts and upgrades\\ \\ of Windows operating systems\\n\\n### Consultant\\\
+  n**January 1990 to January 1999**\\ \\  \\n*Company Name, City, State*\\n\\n- Provided\
+  \ design, development, testing and\\ \\ support for Client/server messaging applications\\\
+  n- Developed communication solutions\\ \\ between VAX and IBM systems for large\
+  \ enterprises\\n- Worked on electronic batch\\ \\ record applications within large\
+  \ teams\\n- Provided relational database expertise\\ \\ across multiple projects\\\
+  n- Delivered training for Digital products\\n- Provided\\ \\ system administration\
+  \ support\\n\\n### Systems Programmer\\n**January 1985 to January\\ \\ 1990**  \\\
+  n*Company Name, City, State*\\n\\n- Designed, developed, tested and supported\\\
+  \ \\ real-time client/server applications\\n- Created messaging systems between\
+  \ VAX/VMS\\ \\ and IBM applications\\n- Developed applications for tracking train\
+  \ movements and\\ \\ locations\\n- Converted assembly language applications to C\\\
+  n- Provided general\\ \\ system and network administration support\\n\\n## Education\\\
+  n- **M.S. Computer Science\\ \\ Data Communications**, 1996  \\n  Villanova University,\
+  \ City, State\\n- **B.A. Computer\\ \\ Science**, 1985  \\n  LaSalle University,\
+  \ City, State\\n\\n## Technical Skills\\n\\ - **Programming Languages**: C, C++,\
+  \ VBA, Assembly language, HTML\\n- **Databases**:\\ \\ MS Access, Documentum DCM/D2,\
+  \ Relational databases\\n- **Systems**: VAX/VMS, Windows,\\ \\ Client/Server architectures\\\
+  n- **Methodologies**: SDLC, Computer Systems Validation,\\ \\ GxP, SOX compliance\\\
+  n- **Other**: Analytical skills, problem-solving, project\\ \\ leadership, system\
+  \ administration, Data communications, database and applications,\\ \\ DBA, databases,\
+  \ designing, document management, Documentation, Documentum, some\\ \\ HTML, IBM,\
+  \ managing, manufacturing process, messaging, Microsoft Access, MS Access,\\ \\\
+  \ Excel spreadsheets, Windows operating system, Windows, Windows 2000, Windows XP,\\\
+  \ \\ network administration, Operating Systems, organizational skills, payroll,\
+  \ programming,\\ \\ Project Leadership, real-time, relational database, reporting,\
+  \ SDLC, servers,\\ \\ System administration, User Training, troubleshooting, upgrades,\
+  \ Validation, VAX,\\ \\ VAX/VMS, Vista, VBA, Windows Server, written\""

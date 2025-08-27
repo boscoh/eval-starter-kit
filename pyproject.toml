@@ -14,5 +14,6 @@ dependencies = [
     "pydash>=8.0.5",
     "fastapi>=0.116.1",
     "pyyaml>=6.0.2",
+    "crossfiledialog>=1.0.0",
 ]
 

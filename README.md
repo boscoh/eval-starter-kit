@@ -1,6 +1,6 @@
 # AI Eval Starter Kit
 
-A ready-to-use toolkit for quickly setting up and running evaluations of AI model responses. This starter kit provides pre-configured evaluation metrics and templates to help you assess and compare AI model outputs with minimal setup.
+A ready-to-use toolkit for setting up and running evaluations of AI model responses. This starter kit provides a web interface and API for assessing and comparing AI model outputs with minimal setup.
 
 ## Features
 
@@ -17,7 +17,7 @@ A ready-to-use toolkit for quickly setting up and running evaluations of AI mode
 
 ### Prerequisites
 - Python 3.8+
-- `uv` package manager (`pip install uv`)
+- [uv](https://github.com/astral-sh/uv) - Fast Python package installer
 - One of the following:
   - For local models: [Ollama](https://ollama.ai/) installed and running
   - For OpenAI: `OPENAI_API_KEY` set in your environment or `.env` file
@@ -27,18 +27,28 @@ A ready-to-use toolkit for quickly setting up and running evaluations of AI mode
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd eval
+   cd eval-starter-kit
    ```
 
-2. Install dependencies:
+2. Install dependencies using uv:
    ```bash
    # Install uv if not already installed
-   curl -sSf https://astral.sh/uv/install.sh | sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    
-   uv install -r requirements.txt
+   # Install dependencies and .venv
+   uv sync
    ```
 
-### Running Evaluations
+### Running the Web Interface
+
+1. Start the web server:
+   ```bash
+   uv run server.py
+   ```
+
+2. Open your browser to http://localhost:8000
+
+### Running Evaluations via CLI
 
 1. **Using Ollama (Local Models)**
    ```bash
@@ -46,7 +56,7 @@ A ready-to-use toolkit for quickly setting up and running evaluations of AI mode
    ollama serve
    
    # Run an evaluation
-   uv run eval_runner.py sample-evals/engineer.yaml
+   uv run runner.py jobs/engineer.yaml
    ```
 
 2. **Using OpenAI**
@@ -54,50 +64,87 @@ A ready-to-use toolkit for quickly setting up and running evaluations of AI mode
    # Set your OpenAI API key
    echo "OPENAI_API_KEY=your-api-key-here" > .env
    
-   # Run an evaluation
-   uv run eval_runner.py sample-evals/engineer.yaml --service openai --model gpt-4
+   # Run an evaluation with OpenAI
+   uv run runner.py jobs/engineer.yaml --service openai --model gpt-4
    ```
 
 ## Configuration
 
-Evaluation configurations are defined in YAML files. See the `SampleEvals` directory for examples.
+Evaluation configurations are defined in YAML files in the `jobs/` directory.
 
 ### Example Configuration
 
 ```yaml
-# sample-evals/engineer.yaml
+# jobs/engineer.yaml
 name: "Engineering Candidate Evaluation"
-system_prompt_ref: "candidate-skills"  # References a file in system-prompts/
-service: "ollama"  # or "openai"
-model: "llama3.2"  # or "gpt-4", etc.
+system_prompt: |
+  You are an experienced engineering manager evaluating a candidate's technical skills.
+  Analyze the following resume and provide a detailed assessment.
+
 prompt: |
-  Please analyze the following resume and provide a summary of the candidate's 
-  technical skills and experience.
+  Candidate Name: John Doe
+  Position: Senior Software Engineer
   
-  [RESUME CONTENT HERE]
+  Experience:
+  - 5 years at TechCorp as Full Stack Developer
+  - Worked with Python, JavaScript, and AWS
+  - Led team of 4 developers
+  
+  Skills: Python, React, AWS, Docker, CI/CD
+
+model: "llama3.2"  # or "gpt-4", etc.
+service: "ollama"  # or "openai"
+temperature: 0.7
+max_tokens: 1000
 
 evaluators:
-  - CoherenceEvaluator
-  - WordCountEvaluator:
-      min_words: 100
-      max_words: 300
+  - type: coherence
+  - type: word_count
+    min_words: 200
+    max_words: 500
 ```
 
 ## Available Evaluators
 
-1. **CoherenceEvaluator**
+1. **Coherence**
    - Evaluates the logical flow and coherence of the response
    - Returns a score between 0.0 (incoherent) and 1.0 (highly coherent)
 
-2. **EquivalenceEvaluator**
-   - Compares the response against an expected answer
-   - Returns a similarity score between 0.0 (completely different) and 1.0 (identical)
-
-3. **WordCountEvaluator**
+2. **Word Count**
    - Validates response length against word count constraints
-   - Configurable minimum, maximum, or target word count
+   - Configurable minimum and maximum word counts
 
-## Sample Evaluations
+3. **Custom Evaluators**
+   - Extend the base `Evaluator` class to create custom evaluation metrics
+
+## Project Structure
+
+```
+.
+├── jobs/                  # YAML job configurations
+├── results/               # Evaluation results
+├── system-prompts/        # Reusable system prompts
+├── chat_client.py         # Client for interacting with the API
+├── evaluator.py           # Core evaluation logic
+├── runner.py              # CLI for running evaluations
+├── schemas.py             # Pydantic models
+├── server.py              # Web server and API
+└── util.py                # Utility functions
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a new branch for your feature
+3. Commit your changes
+4. Push to the branch
+5. Open a pull request
+
+## License
+
+MIT
+
+## Sample Evals
 
 The `SampleEvals` directory contains example configurations:
 
@@ -112,22 +159,11 @@ The `SampleEvals` directory contains example configurations:
 2. Update the `allowed_evaluators()` method in `EvaluationRunner`
 3. Add your evaluator to the YAML configuration file
 
-### Running Tests
-
-```bash
-# Run the test suite
-uv run pytest tests/
-```
-
 ## License
 
-[Specify License]
+MIT
 
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## Acknowledgments
-
-- Built with Python's asyncio for efficient async operations
-- Uses Pydantic for data validation and settings management

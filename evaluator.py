@@ -1,7 +1,28 @@
 import re
+import textwrap
 from typing import Any, Dict, Optional
 
-from eval_config import EvalConfig
+from schemas import JobConfig
+
+
+def parse_score_text(score_text: str) -> float:
+    """
+    Parse a score text string into a float value clamped between 0.0 and 1.0.
+
+    Args:
+        score_text: The text containing the score to parse
+
+    Returns:
+        float: The parsed score clamped between 0.0 and 1.0
+    """
+    try:
+        return max(0.0, min(1.0, float(score_text.strip())))
+    except (ValueError, TypeError):
+        # Try to extract a number from the response
+        numbers = re.findall(r"\b0?\.\d+\b|\b1(?:\.0+)?\b", str(score_text.strip()))
+        if numbers:
+            return max(0.0, min(1.0, float(numbers[0])))
+    return 0.5  # Default fallback score
 
 
 class EvaluationRunner:
@@ -9,9 +30,9 @@ class EvaluationRunner:
     def allowed_evaluators() -> list:
         return ["coherence", "equivalence", "word_count"]
 
-    def __init__(self, chat_client, test_config: EvalConfig):
+    def __init__(self, chat_client, job_config: JobConfig):
         self.chat_client = chat_client
-        self.test_config = test_config
+        self.job_config = job_config
         self.coherence_evaluator = CoherenceEvaluator(chat_client)
         self.equivalence_evaluator = EquivalenceEvaluator(chat_client)
         self.word_count_evaluator = WordCountEvaluator()
@@ -33,15 +54,15 @@ class EvaluationRunner:
         """
         results = {}
 
-        for evaluator_name in self.test_config.evaluators:
+        for evaluator_name in self.job_config.evaluators:
             try:
                 if evaluator_name.lower() == "coherence":
                     result = await self.coherence_evaluator.evaluate_coherence(
-                        question=self.test_config.prompt or "", answer=response["text"]
+                        question=self.job_config.prompt or "", answer=response["text"]
                     )
                     results[evaluator_name] = result
                 elif evaluator_name.lower() == "equivalence":
-                    if not self.test_config.expected_answer:
+                    if not self.job_config.expected_answer:
                         print("Warning: No answer provided for equivalence evaluation")
                         results[evaluator_name] = {
                             "score": None,
@@ -51,16 +72,16 @@ class EvaluationRunner:
                         }
                     else:
                         result = await self.equivalence_evaluator.evaluate_equivalence(
-                            answer=self.test_config.expected_answer,
+                            answer=self.job_config.expected_answer,
                             actual_answer=response["text"],
                         )
                         results[evaluator_name] = result
                 elif evaluator_name.lower() == "word_count":
                     result = await self.word_count_evaluator.evaluate_word_count(
                         response["text"],
-                        min_words=getattr(self.test_config, "min_words", None),
-                        max_words=getattr(self.test_config, "max_words", None),
-                        target_words=getattr(self.test_config, "target_words", None),
+                        min_words=getattr(self.job_config, "min_words", None),
+                        max_words=getattr(self.job_config, "max_words", None),
+                        target_words=getattr(self.job_config, "target_words", None),
                     )
                     results[evaluator_name] = result
                 else:
@@ -127,8 +148,9 @@ class CoherenceEvaluator:
                     "role": "system",
                     "content": "You are a helpful evaluation assistant.",
                 },
-                {"role": "user", "content": coherence_prompt},
+                {"role": "user", "content": textwrap.dedent(coherence_prompt.strip())},
             ]
+
             response = await self.chat_client.get_completion(messages)
 
             # Update result with response details
@@ -140,17 +162,7 @@ class CoherenceEvaluator:
                 }
             )
 
-            # Extract score from response
-            score_text = response.get("text", "").strip()
-            try:
-                score = float(score_text)
-                result["score"] = max(0.0, min(1.0, score))  # Clamp between 0 and 1
-            except ValueError:
-                # If we can't parse the score, try to extract a number
-                # Match numbers between 0.0 and 1.0 (with or without leading zero)
-                numbers = re.findall(r"\b0?\.\d+\b|\b1(?:\.0+)?\b", score_text)
-                if numbers:
-                    result["score"] = max(0.0, min(1.0, float(numbers[0])))
+            result["score"] = parse_score_text(response.get("text", ""))
 
         except Exception as e:
             print(f"Error in coherence evaluation: {e}")
@@ -173,6 +185,7 @@ class EquivalenceEvaluator:
                 - elapsed_ms (int): Time taken for the evaluation in milliseconds
                 - token_count (int): Number of tokens used in the evaluation
         """
+        # Initialize default result
         result = {
             "score": 0.5,  # Default fallback score
             "text": "",
@@ -180,50 +193,25 @@ class EquivalenceEvaluator:
             "token_count": 0,
         }
 
-        try:
-            # Skip if either answer is empty
-            if not answer.strip() or not actual_answer.strip():
-                result["score"] = 0.0
-                return result
-
-            # Simple string equality check first (fast path)
-            if answer.strip().lower() == actual_answer.strip().lower():
-                result["score"] = 1.0
-                return result
-
-            # If not an exact match, use LLM to evaluate semantic equivalence
-            return await self._evaluate_semantic_equivalence(answer, actual_answer)
-
-        except Exception as e:
-            print(f"Error in equivalence evaluation: {e}")
+        # Skip if either answer is empty
+        if not answer.strip() or not actual_answer.strip():
+            result["score"] = 0.0
             return result
 
-    async def _evaluate_semantic_equivalence(self, expected: str, actual: str) -> dict:
-        """
-        Use LLM to evaluate semantic equivalence between two answers.
+        # Simple string equality check first (fast path)
+        if answer.strip().lower() == actual_answer.strip().lower():
+            result["score"] = 1.0
+            return result
 
-        Returns:
-            dict: A dictionary containing:
-                - score (float): A score between 0.0 (completely different) and 1.0 (equivalent)
-                - text (str): The full response text from the chat client
-                - elapsed_ms (int): Time taken for the evaluation in milliseconds
-                - token_count (int): Number of tokens used in the evaluation
-        """
-        result = {
-            "score": 0.5,  # Default fallback score
-            "text": "",
-            "elapsed_ms": 0,
-            "token_count": 0,
-        }
-
+        # If not an exact match, use LLM to evaluate semantic equivalence
         try:
             prompt = f"""
             Compare the following two answers and determine how semantically equivalent they are.
             Consider the meaning and key information, not just exact wording.
             
-            Expected Answer: {expected}
+            Expected Answer: {answer}
             
-            Actual Answer: {actual}
+            Actual Answer: {actual_answer}
             
             Rate the semantic equivalence on a scale from 0.0 to 1.0, where:
             - 1.0 means the answers are completely equivalent in meaning
@@ -238,12 +226,11 @@ class EquivalenceEvaluator:
                     "role": "system",
                     "content": "You are a helpful evaluation assistant.",
                 },
-                {"role": "user", "content": prompt.strip()},
+                {"role": "user", "content": textwrap.dedent(prompt.strip())},
             ]
 
             response = await self.chat_client.get_completion(messages)
 
-            # Update result with response details
             result.update(
                 {
                     "text": response.get("text", ""),
@@ -252,19 +239,11 @@ class EquivalenceEvaluator:
                 }
             )
 
-            score_text = response.get("text", "").strip()
-
-            try:
-                score = float(score_text)
-                result["score"] = max(0.0, min(1.0, score))  # Clamp between 0 and 1
-            except ValueError:
-                # Try to extract a number from the response
-                numbers = re.findall(r"\b0?\.\d+\b|\b1(?:\.0+)?\b", score_text)
-                if numbers:
-                    result["score"] = max(0.0, min(1.0, float(numbers[0])))
+            result["score"] = parse_score_text(response.get("text", ""))
 
         except Exception as e:
             print(f"Error in semantic equivalence evaluation: {e}")
+            result["text"] = str(e)
 
         return result
 

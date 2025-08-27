@@ -3,13 +3,20 @@ import json
 import logging
 from typing import Any, Dict
 
-import yaml
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
 
-from eval_runner import EvaluationRunner, TestRunner
+from evaluator import EvaluationRunner
+from runner import JobRunner
+from util import load_yaml, save_yaml
+
+JOB_DIR = Path("./jobs")
+PROMPTS_DIR = Path("system-prompts")
+PROMPTS_DIR.makedirs_p()
+RESULTS_DIR = Path("results")
+RESULTS_DIR.makedirs_p()
 
 # Configure logging
 logging.basicConfig(
@@ -30,12 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TEST_CONFIG_DIR = Path("./sample-evals")
-SYSTEM_PROMPTS_DIR = TEST_CONFIG_DIR / "system-prompts"
-SYSTEM_PROMPTS_DIR.makedirs_p()
-SUMMARY_DIR = TEST_CONFIG_DIR / "summary"
-SUMMARY_DIR.makedirs_p()
-
 
 async def get_json_from_request(request) -> Dict[str, Any]:
     """Helper function to extract JSON data from a request.
@@ -51,6 +52,14 @@ async def get_json_from_request(request) -> Dict[str, Any]:
         if hasattr(request, "json")
         else json.loads(await request.body())
     )
+
+
+# Optional: add logging middleware for requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    time = f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
+    logger.info(f"{time} {request.method} {request.url.path}")
+    return await call_next(request)
 
 
 # GET /summary
@@ -77,18 +86,17 @@ async def summary(request: Request):
             raise HTTPException(
                 status_code=400, detail="basename parameter is required"
             )
-        file_path = (SUMMARY_DIR / basename + "-summary").with_suffix(".yaml")
+        file_path = (RESULTS_DIR / basename).with_suffix(".yaml")
         if not file_path.exists():
-            logger.error(f"Summary file '{file_path}' not found in {SUMMARY_DIR}")
+            logger.error(f"Summary file '{file_path}' not found in {RESULTS_DIR}")
             raise HTTPException(
                 status_code=404,
-                detail=f"Summary file '{file_path}' not found in {SUMMARY_DIR}",
+                detail=f"Summary file '{file_path}' not found in {RESULTS_DIR}",
             )
-        yaml_object = yaml.safe_load(file_path.read_text(encoding="utf-8"))
         logger.info(f"Successfully loaded summary YAML for {basename}")
         return {
             "basename": basename,
-            "content": yaml_object,
+            "content": load_yaml(file_path),
         }
     except Exception as ex:
         logger.error(f"Error in /summary endpoint: {ex}")
@@ -122,9 +130,9 @@ def list_evaluators():
 # }
 @app.get("/system-prompts")
 def list_system_prompts():
-    logger.info(f"Listing system prompts in directory: {SYSTEM_PROMPTS_DIR}")
+    logger.info(f"Listing system prompts in directory: {PROMPTS_DIR}")
     try:
-        basenames = [f.stem for f in SYSTEM_PROMPTS_DIR.iterdir() if f.suffix == ".txt"]
+        basenames = [f.stem for f in PROMPTS_DIR.iterdir() if f.suffix == ".txt"]
         logger.info(f"System prompt basenames: {basenames}")
         return {"system_prompts": basenames}
     except Exception as ex:
@@ -152,13 +160,13 @@ async def get_system_prompt(request: Request):
     try:
         data = await get_json_from_request(request)
         basename = data.get("basename")
-        logger.info(f"Request to get system prompt for basename: {basename}")
         if not basename:
             logger.error("Missing 'basename' parameter in system-prompt request")
             raise HTTPException(
                 status_code=400, detail="basename parameter is required"
             )
-        file_path = (SYSTEM_PROMPTS_DIR / basename).with_suffix(".txt")
+        logger.info(f"Request to get system prompt for basename: {basename}")
+        file_path = (PROMPTS_DIR / basename).with_suffix(".txt")
         if not file_path.exists():
             logger.error(
                 f"System prompt '{file_path}' not found in system prompts directory"
@@ -181,14 +189,14 @@ async def get_system_prompt(request: Request):
 
 
 # GET /
-# Serves the main index page (eval.html)
+# Serves the main index page (index.html)
 #
 # Response:
 # HTML content of the index page
 @app.get("/", response_class=HTMLResponse)
 def serve_index():
     try:
-        index_path = Path("./eval.html")
+        index_path = Path("./index.html")
         logger.info(f"Serving index page from: {index_path}")
         if not index_path.exists():
             logger.error(f"index.html not found at {index_path}")
@@ -209,15 +217,15 @@ def serve_index():
 # }
 @app.get("/evals")
 def list_evals():
-    logger.info(f"Listing evals in directory: {TEST_CONFIG_DIR}")
+    logger.info(f"Listing evals in directory: {JOB_DIR}")
     try:
-        if not TEST_CONFIG_DIR.exists():
-            logger.error(f"Test directory not found: {TEST_CONFIG_DIR}")
+        if not JOB_DIR.exists():
+            logger.error(f"Test directory not found: {JOB_DIR}")
             raise HTTPException(
                 status_code=404,
-                detail=f"Test directory not found: {TEST_CONFIG_DIR}",
+                detail=f"Test directory not found: {JOB_DIR}",
             )
-        basenames = [f.stem for f in TEST_CONFIG_DIR.iterdir() if f.suffix == ".yaml"]
+        basenames = [f.stem for f in JOB_DIR.iterdir() if f.suffix == ".yaml"]
         logger.info(f"YAML basenames found: {basenames}")
         return {"files": basenames}
     except Exception as ex:
@@ -252,25 +260,24 @@ async def get_eval(request: Request):
             raise HTTPException(
                 status_code=400, detail="basename parameter is required"
             )
-        if not TEST_CONFIG_DIR.exists():
-            logger.error(f"Test directory not found: {TEST_CONFIG_DIR}")
+        if not JOB_DIR.exists():
+            logger.error(f"Test directory not found: {JOB_DIR}")
             raise HTTPException(
                 status_code=404,
-                detail=f"Test directory not found: {TEST_CONFIG_DIR}",
+                detail=f"Test directory not found: {JOB_DIR}",
             )
-        file_path = (TEST_CONFIG_DIR / basename).with_suffix(".yaml")
+        file_path = (JOB_DIR / basename).with_suffix(".yaml")
         if not file_path.exists():
             logger.error(f"File '{basename}.yaml' not found in test directory")
             raise HTTPException(
                 status_code=404,
                 detail=f"File '{basename}.yaml' not found in test directory",
             )
-        yaml_object = yaml.safe_load(file_path.read_text(encoding="utf-8"))
         logger.info(f"Successfully loaded YAML for {basename}")
         return {
             "basename": basename,
             "filename": f"{basename}.yaml",
-            "content": yaml_object,
+            "content": load_yaml(file_path),
         }
     except Exception as ex:
         logger.error(f"Error reading or converting file '{basename}.yaml': {ex}")
@@ -310,7 +317,7 @@ async def create_system_prompt(request: Request):
         if content is None:
             logger.error("Missing 'content' parameter in create-system-prompt request")
             raise HTTPException(status_code=400, detail="content parameter is required")
-        file_path = (SYSTEM_PROMPTS_DIR / basename).with_suffix(".txt")
+        file_path = (PROMPTS_DIR / basename).with_suffix(".txt")
         if file_path.exists():
             logger.error(f"System prompt '{file_path}' already exists")
             raise HTTPException(
@@ -350,7 +357,6 @@ async def save_system_prompt(request: Request):
         data = await get_json_from_request(request)
         basename = data.get("basename")
         content = data.get("content")
-        logger.info(f"Request to save system prompt for basename: {basename}")
         if not basename:
             logger.error("Missing 'basename' parameter in save-system-prompt request")
             raise HTTPException(
@@ -359,7 +365,8 @@ async def save_system_prompt(request: Request):
         if content is None:
             logger.error("Missing 'content' parameter in save-system-prompt request")
             raise HTTPException(status_code=400, detail="content parameter is required")
-        file_path = (SYSTEM_PROMPTS_DIR / basename).with_suffix(".txt")
+        logger.info(f"Request to save system prompt for basename: {basename}")
+        file_path = (PROMPTS_DIR / basename).with_suffix(".txt")
         file_path.write_text(content, encoding="utf-8")
         logger.info(f"System prompt '{basename}' saved successfully at {file_path}")
         return {"message": f"System prompt '{file_path}' saved successfully"}
@@ -368,20 +375,10 @@ async def save_system_prompt(request: Request):
         raise HTTPException(status_code=500, detail=f"Error saving system prompt: {ex}")
 
 
-# Optional: add logging middleware for requests
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info(
-        f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S} {request.method} {request.url.path}"
-    )
-    response = await call_next(request)
-    return response
-
-
 @app.post("/evaluate")
 async def evaluate(request: Request):
     """
-    Run evaluation for a given test configuration using TestRunner.
+    Run evaluation for a given test configuration using JobRunner.
 
     Request Body:
     {
@@ -411,13 +408,13 @@ async def evaluate(request: Request):
         basename = data.get("basename")
         if not basename:
             raise HTTPException(status_code=400, detail="basename is required")
-        config_path = (TEST_CONFIG_DIR / basename).with_suffix(".yaml")
+        config_path = (JOB_DIR / basename).with_suffix(".yaml")
         test_config = data.get("testConfig")
         if not test_config:
             raise HTTPException(status_code=400, detail="testConfig is required")
-        config_path.write_text(yaml.dump(test_config, allow_unicode=True))
-        test_runner = TestRunner(config_path)
-        await test_runner.save_evaluation_results()
+        save_yaml(test_config, config_path)
+        job_runner = JobRunner(config_path)
+        await job_runner.save_results()
         return {
             "success": True,
             "message": "Evaluation completed successfully",
