@@ -29,14 +29,12 @@ class JobRunner:
         self.results_dir.makedirs_p()
 
     async def run_evaluations(self) -> List[JobResult]:
-        fields = self._config.evaluators + ["elapsed_ms", "token_count", "cost"]
+        fields = self._config.evaluators + ["elapsed_seconds", "token_count", "cost"]
         eval_results_dict = {name: JobResult(name=name) for name in fields}
 
         response_texts = []
         for i in range(self._config.repeat):
             logger.info(f"Iteration #{i}")
-
-            start = asyncio.get_event_loop().time()
 
             response = await self._chat_client.invoke(
                 system_prompt_key=self._config.system_prompt_ref,
@@ -45,16 +43,16 @@ class JobRunner:
 
             response_texts.append(response["text"])
 
-            elapsed = (asyncio.get_event_loop().time() - start) * 1000
+            elapsed_seconds = response["metadata"]["usage"]["elapsed_seconds"]
             token_count = response["metadata"]["usage"].get("total_tokens", 0)
             cost_value = (
                 token_count * self._cost_per_token if token_count is not None else None
             )
 
-            logger.debug(f"ElapsedMs: {elapsed}")
+            logger.debug(f"ElapsedSeconds: {elapsed_seconds}")
             logger.debug(f"TokenCount: {token_count}")
 
-            eval_results_dict["elapsed_ms"].values.append(elapsed)
+            eval_results_dict["elapsed_seconds"].values.append(elapsed_seconds)
             eval_results_dict["token_count"].values.append(token_count)
             eval_results_dict["cost"].values.append(cost_value)
 
