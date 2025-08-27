@@ -5,13 +5,12 @@ from typing import List
 
 from path import Path
 
-# Configure logger
-logger = logging.getLogger(__name__)
-
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
 from schemas import JobConfig, JobResult
 from util import save_yaml
+
+logger = logging.getLogger(__name__)
 
 
 class JobRunner:
@@ -89,11 +88,10 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         logger.info("Usage: python runner.py <config_file_path>")
         logger.info("No file path provided, run all in `./jobs/*.yaml`")
-        file_paths = Path('jobs').glob('*.yaml')
+        file_paths = Path("jobs").glob("*.yaml")
     else:
         file_paths = [Path(sys.argv[1])]
 
     for file_path in file_paths:
         logger.info(f"Running job: {file_path}")
         asyncio.run(JobRunner(file_path).save_results())
-

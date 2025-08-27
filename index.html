@@ -1,70 +1,70 @@
 <!doctype html>
 <html>
-<head>
-  <!-- avoid text rendering issues on various platforms -->
-  <meta charset="utf-8"/>
+  <head>
+    <!-- avoid text rendering issues on various platforms -->
+    <meta charset="utf-8" />
 
-  <!-- prevent auto-zooming on mobile browsers -->
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <!-- prevent auto-zooming on mobile browsers -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Bootstrap -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Font Awesome -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
-    rel="stylesheet"
-  />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
 
-  <!-- Lodash -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <!-- Lodash -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
 
-  <!-- Vue 3 -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-  <!-- Pug template compiler -->
-  <script src="https://pugjs.org/js/pug.js"></script>
-  <script>
-    window.pug = require("pug");
+    <!-- Pug template compiler -->
+    <script src="https://pugjs.org/js/pug.js"></script>
+    <script>
+      window.pug = require("pug");
 
-    function renderHtmlFromPug(str) {
-      const lines = str.replace(/^\n/, "").split("\n");
-      const minIndent = Math.min(
-        ...lines
-          .filter((l) => l.trim())
-          .map((l) => l.match(/^\s*/)[0].length),
-      );
-      return pug.render(lines.map((l) => l.slice(minIndent)).join("\n"));
-    }
-  </script>
-
-  <!-- Ky -->
-  <script type="module">
-    import ky from "https://unpkg.com/ky/distribution/index.js";
-
-    window.ky = ky;
-  </script>
-
-  <!-- Custom styles -->
-  <style>
-      .scrollable-column {
-          height: calc(100vh - 106px);
-          overflow-y: auto;
+      function renderHtmlFromPug(str) {
+        const lines = str.replace(/^\n/, "").split("\n");
+        const minIndent = Math.min(
+          ...lines
+            .filter((l) => l.trim())
+            .map((l) => l.match(/^\s*/)[0].length),
+        );
+        return pug.render(lines.map((l) => l.slice(minIndent)).join("\n"));
       }
-  </style>
-</head>
+    </script>
 
-<body class="overflow-hidden">
-<div id="app"></div>
-</body>
+    <!-- Ky -->
+    <script type="module">
+      import ky from "https://unpkg.com/ky/distribution/index.js";
 
-<script>
-  // language=pug
-  const template = renderHtmlFromPug(`
+      window.ky = ky;
+    </script>
+
+    <!-- Custom styles -->
+    <style>
+      .scrollable-column {
+        height: calc(100vh - 106px);
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+
+  <body class="overflow-hidden">
+    <div id="app"></div>
+  </body>
+
+  <script>
+    // language=pug
+    const template = renderHtmlFromPug(`
     .container-fluid.h-100
       .row.h-100
         .col-12
@@ -295,255 +295,255 @@
 
   `);
 
-  const {createApp, ref, onMounted} = Vue;
+    const { createApp, ref, onMounted } = Vue;
 
-  function setup() {
-    // State
-    const evalNames = ref([]);
-    const allEvaluators = ref([]);
-    const selectedEvalName = ref("");
-    const newEvalName = ref("");
-    const testConfig = ref({
-      system_prompt_ref: "",
-      prompt: "",
-      expected_answer: "",
-      repeat: 1,
-      model: "",
-      evaluators: [],
-    });
-    const evalResult = ref({});
-    const isEvaluating = ref(false);
-    const sampleModelResponse = ref("");
-    const systemPrompts = ref([]);
-    const selectedSystemPromptName = ref("");
-    const newSystemPromptName = ref("");
-    const systemPrompt = ref("");
-    const isSavingPrompt = ref(false);
-
-    // Lifecycle hooks
-    onMounted(async () => {
-      await loadEvalNames();
-      await loadSystemPrompts();
-      const response = await ky.get("/evaluators").json();
-      allEvaluators.value = response.evaluators;
-
-      if (evalNames.value.length > 0) {
-        await chooseEval(evalNames.value[0]);
-      }
-    });
-
-    // Methods
-    async function loadEvalNames() {
-      try {
-        const result = await ky.get("/evals").json();
-        evalNames.value = result.files;
-        console.log("Loaded eval names:", evalNames.value);
-      } catch (error) {
-        console.error("Failed to load eval names:", error);
-      }
-    }
-
-    async function loadSystemPrompts() {
-      try {
-        const response = await ky.get("/system-prompts").json();
-        systemPrompts.value = response.system_prompts;
-        console.log("Loaded system prompts:", systemPrompts.value);
-      } catch (error) {
-        console.error("Failed to load system prompts:", error);
-      }
-    }
-
-    async function chooseEval(evalName) {
-      selectedEvalName.value = evalName;
-      await Promise.all([loadTestConfig(evalName), loadEvalResult(evalName)]);
-    }
-
-    async function loadTestConfig(evalName) {
-      try {
-        const response = await ky
-          .post("/eval", {json: {basename: evalName}})
-          .json();
-        testConfig.value = response.content;
-
-        if (testConfig.value.system_prompt_ref) {
-          await loadSystemPrompt();
-        }
-      } catch (error) {
-        console.error(`Failed to load test config for ${evalName}:`, error);
-      }
-    }
-
-    async function loadEvalResult(evalName) {
-      evalResult.value = {};
-      sampleModelResponse.value = "";
-
-      try {
-        const response = await ky
-          .post("/summary", {json: {basename: evalName}})
-          .json();
-        console.log("Loaded eval result:", response);
-
-        if (response.content) {
-          evalResult.value = response.content.evaluations || [];
-          const responseTexts = response.content.texts || [];
-          sampleModelResponse.value = responseTexts[0] || "";
-        }
-      } catch (error) {
-        console.log(`No summary found for ${evalName} - starting fresh`);
-      }
-    }
-
-    async function loadSystemPrompt() {
-      if (testConfig.value.system_prompt_ref) {
-        try {
-          const response = await ky
-            .post("/system-prompt", {
-              json: {basename: testConfig.value.system_prompt_ref},
-            })
-            .json();
-          systemPrompt.value = response.content;
-          selectedSystemPromptName.value = testConfig.value.system_prompt_ref;
-        } catch (error) {
-          console.error("Failed to load system prompt:", error);
-        }
-      }
-    }
-
-    async function runEval() {
-      if (!selectedEvalName.value) return;
-
-      isEvaluating.value = true;
-      evalResult.value = {};
-      sampleModelResponse.value = "";
-
-      try {
-        console.log("Running evaluation with config:", testConfig.value);
-        await ky.post(`/evaluate`, {
-          json: {
-            basename: selectedEvalName.value,
-            testConfig: testConfig.value,
-          },
-          timeout: 600000, // 10 minutes
-        });
-
-        await loadEvalResult(selectedEvalName.value);
-      } catch (error) {
-        console.error("Evaluation failed:", error);
-        alert("Evaluation failed. Check console for details.");
-      } finally {
-        isEvaluating.value = false;
-      }
-    }
-
-    async function createEval() {
-      if (!newEvalName.value) return;
-
-      try {
-        await ky.post("/create-eval", {
-          json: {basename: newEvalName.value},
-        });
-
-        await loadEvalNames();
-        await chooseEval(newEvalName.value);
-
-        const modal = bootstrap.Modal.getInstance(
-          document.getElementById("createEvalModal"),
-        );
-        modal.hide();
-      } catch (error) {
-        console.error("Failed to create eval:", error);
-        alert("Failed to create eval. Check console for details.");
-      }
-    }
-
-    function chooseSystemPrompt(promptName) {
-      selectedSystemPromptName.value = promptName;
-      systemPrompt.value = "";
-      ky.post("/system-prompt", {json: {basename: promptName}})
-        .then((response) => response.json())
-        .then((data) => {
-          systemPrompt.value = data.content;
-        });
-    }
-
-    async function saveSystemPrompt() {
-      if (!selectedSystemPromptName.value) return;
-
-      isSavingPrompt.value = true;
-
-      try {
-        await ky.post("/save-system-prompt", {
-          json: {
-            basename: selectedSystemPromptName.value,
-            content: systemPrompt.value,
-          },
-        });
-
-        await loadSystemPrompts();
-        alert("System prompt saved successfully!");
-      } catch (error) {
-        console.error("Failed to save system prompt:", error);
-        alert("Failed to save system prompt. Check console for details.");
-      } finally {
-        isSavingPrompt.value = false;
-      }
-    }
-
-    async function createSystemPrompt() {
-      if (!newSystemPromptName.value) return;
-
-      try {
-        await ky.post("/create-system-prompt", {
-          json: {
-            basename: newSystemPromptName.value,
-            content: "",
-          },
-        });
-
-        await loadSystemPrompts();
-        await chooseSystemPrompt(newSystemPromptName.value);
-        newSystemPromptName.value = ""; // Clear the input field
-      } catch (error) {
-        console.error("Failed to create system prompt:", error);
-        alert("Failed to create system prompt. Check console for details.");
-      }
-    }
-
-    // Expose variables and methods to template
-    return {
+    function setup() {
       // State
-      evalNames,
-      allEvaluators,
-      selectedEvalName,
-      newEvalName,
-      testConfig,
-      evalResult,
-      isEvaluating,
-      sampleModelResponse,
-      systemPrompts,
-      selectedSystemPromptName,
-      newSystemPromptName,
-      systemPrompt,
-      isSavingPrompt,
+      const evalNames = ref([]);
+      const allEvaluators = ref([]);
+      const selectedEvalName = ref("");
+      const newEvalName = ref("");
+      const testConfig = ref({
+        system_prompt_ref: "",
+        prompt: "",
+        expected_answer: "",
+        repeat: 1,
+        model: "",
+        evaluators: [],
+      });
+      const evalResult = ref({});
+      const isEvaluating = ref(false);
+      const sampleModelResponse = ref("");
+      const systemPrompts = ref([]);
+      const selectedSystemPromptName = ref("");
+      const newSystemPromptName = ref("");
+      const systemPrompt = ref("");
+      const isSavingPrompt = ref(false);
+
+      // Lifecycle hooks
+      onMounted(async () => {
+        await loadEvalNames();
+        await loadSystemPrompts();
+        const response = await ky.get("/evaluators").json();
+        allEvaluators.value = response.evaluators;
+
+        if (evalNames.value.length > 0) {
+          await chooseEval(evalNames.value[0]);
+        }
+      });
 
       // Methods
-      chooseEval,
-      loadSystemPrompt,
-      runEval,
-      createEval,
-      chooseSystemPrompt,
-      saveSystemPrompt,
-      createSystemPrompt,
-    };
-  }
+      async function loadEvalNames() {
+        try {
+          const result = await ky.get("/evals").json();
+          evalNames.value = result.files;
+          console.log("Loaded eval names:", evalNames.value);
+        } catch (error) {
+          console.error("Failed to load eval names:", error);
+        }
+      }
 
-  // Initialize the app
-  document.addEventListener("DOMContentLoaded", () => {
-    const app = createApp({
-      template,
-      setup,
+      async function loadSystemPrompts() {
+        try {
+          const response = await ky.get("/system-prompts").json();
+          systemPrompts.value = response.system_prompts;
+          console.log("Loaded system prompts:", systemPrompts.value);
+        } catch (error) {
+          console.error("Failed to load system prompts:", error);
+        }
+      }
+
+      async function chooseEval(evalName) {
+        selectedEvalName.value = evalName;
+        await Promise.all([loadTestConfig(evalName), loadEvalResult(evalName)]);
+      }
+
+      async function loadTestConfig(evalName) {
+        try {
+          const response = await ky
+            .post("/eval", { json: { basename: evalName } })
+            .json();
+          testConfig.value = response.content;
+
+          if (testConfig.value.system_prompt_ref) {
+            await loadSystemPrompt();
+          }
+        } catch (error) {
+          console.error(`Failed to load test config for ${evalName}:`, error);
+        }
+      }
+
+      async function loadEvalResult(evalName) {
+        evalResult.value = {};
+        sampleModelResponse.value = "";
+
+        try {
+          const response = await ky
+            .post("/summary", { json: { basename: evalName } })
+            .json();
+          console.log("Loaded eval result:", response);
+
+          if (response.content) {
+            evalResult.value = response.content.evaluations || [];
+            const responseTexts = response.content.texts || [];
+            sampleModelResponse.value = responseTexts[0] || "";
+          }
+        } catch (error) {
+          console.log(`No summary found for ${evalName} - starting fresh`);
+        }
+      }
+
+      async function loadSystemPrompt() {
+        if (testConfig.value.system_prompt_ref) {
+          try {
+            const response = await ky
+              .post("/system-prompt", {
+                json: { basename: testConfig.value.system_prompt_ref },
+              })
+              .json();
+            systemPrompt.value = response.content;
+            selectedSystemPromptName.value = testConfig.value.system_prompt_ref;
+          } catch (error) {
+            console.error("Failed to load system prompt:", error);
+          }
+        }
+      }
+
+      async function runEval() {
+        if (!selectedEvalName.value) return;
+
+        isEvaluating.value = true;
+        evalResult.value = {};
+        sampleModelResponse.value = "";
+
+        try {
+          console.log("Running evaluation with config:", testConfig.value);
+          await ky.post(`/evaluate`, {
+            json: {
+              basename: selectedEvalName.value,
+              testConfig: testConfig.value,
+            },
+            timeout: 600000, // 10 minutes
+          });
+
+          await loadEvalResult(selectedEvalName.value);
+        } catch (error) {
+          console.error("Evaluation failed:", error);
+          alert("Evaluation failed. Check console for details.");
+        } finally {
+          isEvaluating.value = false;
+        }
+      }
+
+      async function createEval() {
+        if (!newEvalName.value) return;
+
+        try {
+          await ky.post("/create-eval", {
+            json: { basename: newEvalName.value },
+          });
+
+          await loadEvalNames();
+          await chooseEval(newEvalName.value);
+
+          const modal = bootstrap.Modal.getInstance(
+            document.getElementById("createEvalModal"),
+          );
+          modal.hide();
+        } catch (error) {
+          console.error("Failed to create eval:", error);
+          alert("Failed to create eval. Check console for details.");
+        }
+      }
+
+      function chooseSystemPrompt(promptName) {
+        selectedSystemPromptName.value = promptName;
+        systemPrompt.value = "";
+        ky.post("/system-prompt", { json: { basename: promptName } })
+          .then((response) => response.json())
+          .then((data) => {
+            systemPrompt.value = data.content;
+          });
+      }
+
+      async function saveSystemPrompt() {
+        if (!selectedSystemPromptName.value) return;
+
+        isSavingPrompt.value = true;
+
+        try {
+          await ky.post("/save-system-prompt", {
+            json: {
+              basename: selectedSystemPromptName.value,
+              content: systemPrompt.value,
+            },
+          });
+
+          await loadSystemPrompts();
+          alert("System prompt saved successfully!");
+        } catch (error) {
+          console.error("Failed to save system prompt:", error);
+          alert("Failed to save system prompt. Check console for details.");
+        } finally {
+          isSavingPrompt.value = false;
+        }
+      }
+
+      async function createSystemPrompt() {
+        if (!newSystemPromptName.value) return;
+
+        try {
+          await ky.post("/create-system-prompt", {
+            json: {
+              basename: newSystemPromptName.value,
+              content: "",
+            },
+          });
+
+          await loadSystemPrompts();
+          await chooseSystemPrompt(newSystemPromptName.value);
+          newSystemPromptName.value = ""; // Clear the input field
+        } catch (error) {
+          console.error("Failed to create system prompt:", error);
+          alert("Failed to create system prompt. Check console for details.");
+        }
+      }
+
+      // Expose variables and methods to template
+      return {
+        // State
+        evalNames,
+        allEvaluators,
+        selectedEvalName,
+        newEvalName,
+        testConfig,
+        evalResult,
+        isEvaluating,
+        sampleModelResponse,
+        systemPrompts,
+        selectedSystemPromptName,
+        newSystemPromptName,
+        systemPrompt,
+        isSavingPrompt,
+
+        // Methods
+        chooseEval,
+        loadSystemPrompt,
+        runEval,
+        createEval,
+        chooseSystemPrompt,
+        saveSystemPrompt,
+        createSystemPrompt,
+      };
+    }
+
+    // Initialize the app
+    document.addEventListener("DOMContentLoaded", () => {
+      const app = createApp({
+        template,
+        setup,
+      });
+      app.mount("#app");
     });
-    app.mount("#app");
-  });
-</script>
+  </script>
 </html>

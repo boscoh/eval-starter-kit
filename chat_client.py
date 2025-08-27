@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -8,7 +9,6 @@ from typing import Any, Dict, List, Optional
 import ollama
 from openai import OpenAI
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 
@@ -53,11 +53,11 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
 
 def parse_response_as_json_list(response):
     """Parse JSON from text response, extracting from markdown blocks if needed.
-    
+
     Returns transactions list if found in dict, otherwise the parsed data.
     """
     import re
-    
+
     # Extract text from response
     if isinstance(response, dict):
         response_text = response.get("text", "")
@@ -93,9 +93,9 @@ def parse_response_as_json_list(response):
     # Try markdown code blocks
     patterns = [
         r"```(?:json|python)?\s*([\s\S]*?)\s*```",  # Any code block
-        r"```(?:json)?\s*({[\s\S]*})\s*```",        # JSON object in block
-        r"\{[\s\S]*\}",                             # Any JSON object
-        r"({[\s\S]*})"                              # Last resort: any braces
+        r"```(?:json)?\s*({[\s\S]*})\s*```",  # JSON object in block
+        r"\{[\s\S]*\}",  # Any JSON object
+        r"({[\s\S]*})",  # Last resort: any braces
     ]
 
     for pattern in patterns:

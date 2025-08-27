@@ -1,20 +1,17 @@
-import datetime
 import json
 import logging
 from typing import Any, Dict
 
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
+from rich.logging import RichHandler
 
 from evaluator import EvaluationRunner
 from runner import JobRunner
 from util import load_yaml, save_yaml
-
-from rich.logging import RichHandler
-import uvicorn
-
 
 JOB_DIR = Path("./jobs")
 PROMPTS_DIR = Path("system-prompts")
@@ -31,10 +28,10 @@ logging.basicConfig(
             show_time=False,
             show_path=True,
             markup=True,
-            log_time_format="[%X]"
+            log_time_format="[%X]",
         )
     ],
-    force=True
+    force=True,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,7 +78,9 @@ async def get_json_from_request(request) -> Dict[str, Any]:
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     # Only log non-asset requests
-    if not any(ext in str(request.url) for ext in ['.js', '.css', '.ico', '.png', '.jpg']):
+    if not any(
+        ext in str(request.url) for ext in [".js", ".css", ".ico", ".png", ".jpg"]
+    ):
         logger.info(f"{request.method} {request.url.path}")
     return await call_next(request)
 
@@ -461,5 +460,5 @@ if __name__ == "__main__":
         port=8000,
         reload=False,
         log_config=None,  # We handle our own logging
-        access_log=False  # Disable uvicorn access logs
+        access_log=False,  # Disable uvicorn access logs
     )

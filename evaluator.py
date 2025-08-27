@@ -3,21 +3,13 @@ import re
 import textwrap
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
-
 from schemas import JobConfig
+
+logger = logging.getLogger(__name__)
 
 
 def parse_score_text(score_text: str) -> float:
-    """
-    Parse a score text string into a float value clamped between 0.0 and 1.0.
-
-    Args:
-        score_text: The text containing the score to parse
-
-    Returns:
-        float: The parsed score clamped between 0.0 and 1.0
-    """
+    """Parse a score text string into a float value clamped between 0.0 and 1.0."""
     try:
         return max(0.0, min(1.0, float(score_text.strip())))
     except (ValueError, TypeError):
@@ -25,6 +17,7 @@ def parse_score_text(score_text: str) -> float:
         if numbers:
             return max(0.0, min(1.0, float(numbers[0])))
     return 0.5
+
 
 class EvaluationRunner:
     @staticmethod
@@ -47,11 +40,12 @@ class EvaluationRunner:
 
         Returns:
             Dict[str, dict]: A dictionary mapping evaluator names to their result dictionaries.
-                           Each result dictionary contains:
-                           - score (float): The evaluation score
-                           - text (str): The full response text from the chat client (if applicable)
-                           - elapsed_ms (int): Time taken for evaluation in milliseconds (if applicable)
-                           - token_count (int): Number of tokens used in evaluation (if applicable)
+
+            Each result dictionary contains:
+                - score (float): The evaluation score
+                - text (str): The full response text from the chat client (if applicable)
+                - elapsed_ms (int): Time taken for evaluation in milliseconds (if applicable)
+                - token_count (int): Number of tokens used in evaluation (if applicable)
         """
         results = {}
 
@@ -87,13 +81,15 @@ class EvaluationRunner:
                     results[evaluator_name] = result
                 else:
                     results[evaluator_name] = {
-                    "score": 1.0,
-                    "text": "",
-                    "elapsed_ms": 0,
-                    "token_count": 0,
-                }
+                        "score": 1.0,
+                        "text": "",
+                        "elapsed_ms": 0,
+                        "token_count": 0,
+                    }
             except Exception as e:
-                logging.error(f"Error in {evaluator_name} evaluation: {e}", exc_info=True)
+                logging.error(
+                    f"Error in {evaluator_name} evaluation: {e}", exc_info=True
+                )
                 results[evaluator_name] = {
                     "score": 0.5,
                     "text": str(e),
@@ -164,7 +160,7 @@ class CoherenceEvaluator:
 
             result["score"] = parse_score_text(response.get("text", ""))
 
-        except Exception as e:
+        except Exception:
             logging.error("Error in coherence evaluation", exc_info=True)
 
         return result
