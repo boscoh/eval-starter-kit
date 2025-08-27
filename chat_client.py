@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import ollama
-from openai import OpenAI
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -157,7 +157,8 @@ class IChatClient(ABC):
                     'usage': {
                         'prompt_tokens': int,  # Tokens in prompt
                         'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int  # Total tokens used
+                        'total_tokens': int,  # Total tokens used
+                        'elapsed_seconds': float  # Time taken for completion in seconds
                     },
                     'model': str,  # Model used
                     'finish_reason': str  # Reason generation stopped
@@ -198,7 +199,8 @@ class IChatClient(ABC):
                     'usage': {
                         'prompt_tokens': int,  # Tokens in prompt
                         'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int  # Total tokens used
+                        'total_tokens': int,  # Total tokens used
+                        'elapsed_seconds': float  # Time taken for completion in seconds
                     },
                     'model': str,  # Model used
                     'finish_reason': str  # Reason generation stopped
@@ -227,7 +229,7 @@ class IChatClient(ABC):
 class OllamaChatClient(IChatClient):
     def __init__(self, model: str = "llama3.2"):
         """Initialize Ollama chat client.
-        
+
         Args:
             model: Name of the Ollama model to use (default: "llama3.2")
         """
@@ -242,32 +244,47 @@ class OllamaChatClient(IChatClient):
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Get a chat completion from the Ollama model.
-        
+
         Args:
             messages: List of message dicts with format:
                 [{"role": "user"|"assistant"|"system", "content": str}, ...]
             tools: Not currently supported in Ollama implementation
             max_tokens: Optional maximum number of tokens to generate
             temperature: Sampling temperature (0.0 to 1.0)
-            
+
         Returns:
             Dict with structure:
             {
                 'text': str,  # Generated response content
                 'metadata': {
-                    'Usage': {
-                        'TotalTokenCount': int,  # Total tokens used (prompt + completion)
-                        'elapsed_ms': int  # Generation time in milliseconds
-                    }
+                    'usage': {
+                        'prompt_tokens': int,  # Tokens in prompt
+                        'completion_tokens': int,  # Tokens in completion
+                        'total_tokens': int,  # Total tokens used
+                        'elapsed_seconds': float  # Time taken for completion in seconds
+                    },
+                    'model': str,  # Model used
+                    'finish_reason': str  # Reason generation stopped
                 }
             }
-            
+
             On error, returns:
             {
                 'text': f"Error: {error_message}",
-                'metadata': {'Usage': {'TotalTokenCount': 0, 'elapsed_ms': 0}}
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': 0,
+                        'completion_tokens': 0,
+                        'total_tokens': 0,
+                        'elapsed_seconds': 0.0
+                    }
+                }
             }
         """
+        import time
+
+        start_time = time.time()
+
         try:
             options = {
                 "temperature": temperature,
@@ -278,33 +295,45 @@ class OllamaChatClient(IChatClient):
             response = await self.client.chat(
                 model=self.model, messages=messages, options=options
             )
+            elapsed_seconds = time.time() - start_time
 
             response_text = response["message"]["content"]
-            token_count = sum(
-                len(m.get("content", "").split()) for m in messages
-            ) + len(response_text.split())
+            completion_tokens = len(response_text.split())
+            prompt_tokens = sum(len(m.get("content", "").split()) for m in messages)
+            total_tokens = prompt_tokens + completion_tokens
 
             return {
                 "text": response_text,
                 "metadata": {
-                    "Usage": {
-                        "TotalTokenCount": token_count,
-                        "elapsed_ms": response.get("elapsed_ms", 0),
-                    }
+                    "usage": {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": total_tokens,
+                        "elapsed_seconds": elapsed_seconds,
+                    },
+                    "model": self.model,
+                    "finish_reason": response.get("done_reason", "stop"),
                 },
             }
         except Exception as e:
             logger.error(f"Error calling Ollama: {e}")
             return {
                 "text": f"Error: {str(e)}",
-                "metadata": {"Usage": {"TotalTokenCount": 0, "elapsed_ms": 0}},
+                "metadata": {
+                    "usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0,
+                        "elapsed_seconds": time.time() - start_time,
+                    }
+                },
             }
 
     def get_token_cost(self) -> float:
         """Get the cost per 1K tokens for the Ollama model.
-        
+
         Since Ollama runs locally, the cost is always 0.
-        
+
         Returns:
             float: Always returns 0.0 (no cost for local models)
         """
@@ -312,14 +341,19 @@ class OllamaChatClient(IChatClient):
 
 
 class OpenAIChatClient(IChatClient):
-    def __init__(self, model: str = "gpt-4o", max_tokens: int = 1000, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        model: str = "gpt-4o",
+        max_tokens: int = 1000,
+        api_key: Optional[str] = None,
+    ):
         """Initialize OpenAI chat client.
-        
+
         Args:
             model: Name of the OpenAI model to use (default: "gpt-4o")
             max_tokens: Default max tokens per response (default: 1000)
             api_key: Optional API key. If not provided, will be read from OPENAI_API_KEY environment variable
-            
+
         Raises:
             ValueError: If OPENAI_API_KEY environment variable is not set and no api_key is provided
         """
@@ -341,7 +375,7 @@ class OpenAIChatClient(IChatClient):
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Get a chat completion from the OpenAI model.
-        
+
         Args:
             messages: List of message dicts with format:
                 [{"role": "user"|"assistant"|"system", "content": str}, ...]
@@ -356,7 +390,7 @@ class OpenAIChatClient(IChatClient):
                 }, ...]
             max_tokens: Optional maximum number of tokens to generate
             temperature: Sampling temperature (0.0 to 1.0)
-            
+
         Returns:
             Dict with structure:
             {
@@ -365,19 +399,31 @@ class OpenAIChatClient(IChatClient):
                     'usage': {
                         'prompt_tokens': int,  # Tokens in prompt
                         'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int  # Total tokens used
+                        'total_tokens': int,  # Total tokens used
+                        'elapsed_seconds': float  # Time taken for completion in seconds
                     },
                     'model': str,  # Model used
                     'finish_reason': str  # Reason generation stopped
                 }
             }
-            
+
             On error, returns:
             {
                 'text': f"Error: {error_message}",
-                'metadata': {'usage': {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}}
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': 0,
+                        'completion_tokens': 0,
+                        'total_tokens': 0,
+                        'elapsed_seconds': 0.0
+                    }
+                }
             }
         """
+        import time
+
+        start_time = time.time()
+
         def sync_call():
             """Synchronous wrapper for get_completion."""
             return self.client.chat.completions.create(
@@ -391,17 +437,34 @@ class OpenAIChatClient(IChatClient):
         try:
             loop = asyncio.get_event_loop()
             completion = await loop.run_in_executor(None, sync_call)
+            elapsed_seconds = time.time() - start_time
 
             text = completion.choices[0].message.content if completion.choices else ""
-            token_count = (
-                completion.usage.total_tokens
-                if hasattr(completion, "usage") and completion.usage
-                else 0
-            )
+
+            if hasattr(completion, "usage") and completion.usage:
+                usage = {
+                    "prompt_tokens": completion.usage.prompt_tokens,
+                    "completion_tokens": completion.usage.completion_tokens,
+                    "total_tokens": completion.usage.total_tokens,
+                    "elapsed_seconds": elapsed_seconds,
+                }
+            else:
+                usage = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                    "elapsed_seconds": elapsed_seconds,
+                }
 
             return {
                 "text": text,
-                "metadata": {"Usage": {"TotalTokenCount": token_count}},
+                "metadata": {
+                    "usage": usage,
+                    "model": self.model,
+                    "finish_reason": completion.choices[0].finish_reason
+                    if completion.choices and completion.choices[0].finish_reason
+                    else "stop",
+                },
             }
         except Exception as e:
             logger.error(f"Error calling OpenAI: {e}")
@@ -412,10 +475,10 @@ class OpenAIChatClient(IChatClient):
 
     def get_token_cost(self) -> float:
         """Get the cost per 1K tokens for the OpenAI model.
-        
+
         Returns:
             float: Cost in USD per 1K tokens based on the model
-            
+
         Note:
             - gpt-4o: $0.005/1K tokens
             - gpt-4-turbo: $0.01/1K tokens

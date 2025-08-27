@@ -46,7 +46,7 @@ class JobRunner:
             response_texts.append(response["text"])
 
             elapsed = (asyncio.get_event_loop().time() - start) * 1000
-            token_count = response["metadata"]["Usage"]["TotalTokenCount"]
+            token_count = response["metadata"]["usage"].get("total_tokens", 0)
             cost_value = (
                 token_count * self._cost_per_token if token_count is not None else None
             )
