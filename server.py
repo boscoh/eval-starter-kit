@@ -13,7 +13,7 @@ from evaluator import EvaluationRunner
 from runner import JobRunner
 from util import load_yaml, save_yaml
 
-JOB_DIR = Path("./jobs")
+JOB_DIR = Path("./queries")
 PROMPTS_DIR = Path("system-prompts")
 PROMPTS_DIR.makedirs_p()
 RESULTS_DIR = Path("results")

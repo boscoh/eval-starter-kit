@@ -1,0 +1,144 @@
+---
+evaluators:
+- word_count
+- coherence
+- equivalence
+repeat: 2
+service: openai
+model: gpt-4o-mini
+system_prompt_ref: candidate-summary
+expected_answer: >-
+  [
+    "Systems Analyst",
+    "Software Development Lifecycle (SDLC)",
+    "Computer Systems Validation (CSV)",
+    "Documentum DCM",
+    "Documentum D2",
+    "MS Access",
+    "VBA",
+    "C",
+    "C++",
+    "HTML",
+    "Assembly language programming",
+    "Project leadership",
+    "Analytical skills",
+    "Problem-solving skills",
+    "Organizational skills",
+    "Communication skills",
+    "General application support",
+    "Software development",
+    "Data communications",
+    "System administration",
+    "Consultant",
+    "GxP",
+    "SOX compliant applications",
+    "Document transformation",
+    "Printing",
+    "Reporting",
+    "User troubleshooting",
+    "Production Application support",
+    "Root cause analysis",
+    "Payroll application",
+    "Manufacturing application",
+    "Windows operating system",
+    "Windows 2000",
+    "Windows XP",
+    "Windows Vista",
+    "Windows Server",
+    "Network administration",
+    "Relational database",
+    "Client/server",
+    "Messaging",
+    "Real-time",
+    "VAX/VMS",
+    "IBM",
+    "M.S: Computer Science Data Communications",
+    "B.A: Computer Science"
+  ]
+prompt: >-
+  CONSULTANT Professional Profile
+
+  Highly motivated and self-driven Systems Analyst with vast experience in
+  various environments and technologies supporting multiple departments across
+  the enterprise. Expertise in Software Development Lifecycle (SDLC) and
+  Computer Systems Validation (CSV). Looking to apply and develop strong
+  analytical skills and problem-solving techniques.
+
+
+  Qualifications
+
+  Documentum DCM and Documentum D2
+  MS Access, VBA, C, C++, some HTML, Assembly language programming
+  Project leadership, strong technical and analytical skills
+  Problem-solving, organizational, and communication skills
+  Systems analysis, general application support, software development
+  Data communications and system administration
+  Professional Experience
+
+  Consultant
+
+  January 1999 – November 2015
+  Company Name, City, State
+
+  Provided consulting expertise in supporting McNeil Consumer Healthcare across
+  shop floor, document management, timekeeper, and business process apps
+  Applied knowledge of SDLC processes and GxP/SOX compliance
+  Served in project leadership roles including application upgrades
+  Supported GxP-compliant document management applications (Documentum D2/DCM)
+  Conducted issue analysis (document transformation, printing, reporting,
+  troubleshooting)
+  Delivered Level 2 production support via ITSM and email requests
+  Generated scheduled and ad-hoc reports
+  Performed daily consistency checks of servers, services, and Documentum jobs
+  Fixed bugs and developed minor enhancements with CR process
+  Conducted root cause analysis for recurring issues
+  Escalated to Level 3/Core teams as needed
+  Monitored validation and training environments
+  Supported SOX-compliant payroll applications and Access databases
+  Designed, developed, and tested VBA automation in Access/Excel
+  Supported FDA-validated manufacturing applications (shop floor reporting)
+  Assisted IT in Windows OS rollouts and upgrades
+
+
+  Consultant
+
+  January 1990 – January 1999
+  Company Name, City, State
+
+  Designed, developed, tested, and supported client/server messaging applications
+  Developed communication solutions between VAX and IBM systems for large enterprises
+  Contributed to electronic batch record applications within large teams
+  Provided relational database expertise across multiple projects
+  Delivered training for Digital products
+  Performed system administration support
+
+
+  Systems Programmer
+
+  January 1985 – January 1990
+  Company Name, City, State
+
+  Designed, developed, tested, and supported real-time client/server applications
+  Built messaging systems between VAX/VMS and IBM applications
+  Developed applications for train movement/location tracking
+  Converted assembly language applications to C
+  Provided general system/network administration
+
+
+  Education
+
+  M.S. Computer Science (Data Communications), 1996
+  Villanova University, City, State
+
+  B.A. Computer Science, 1985
+  LaSalle University, City, State
+
+  Technical Skills
+
+  Programming Languages: C, C++, VBA, Assembly, HTML
+  Databases: MS Access, Documentum DCM/D2, relational databases
+  Systems: VAX/VMS, Windows, client/server architectures
+  Methodologies: SDLC, CSV, GxP, SOX compliance
+  Other: Analytical and problem-solving skills, project leadership, system administration,
+  data communications, document management, Microsoft Access/Excel VBA automation,
+  network administration, OS upgrades, reporting, troubleshooting, validation

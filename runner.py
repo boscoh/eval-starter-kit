@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 1:
         logger.info("Usage: python runner.py <config_file_path>")
-        logger.info("No file path provided, run all in `./jobs/*.yaml`")
-        file_paths = Path("jobs").glob("*.yaml")
+        logger.info("No file path provided, run all in `./queries/*.yaml`")
+        file_paths = Path("queries").glob("*.yaml")
     else:
         file_paths = [Path(sys.argv[1])]
 
