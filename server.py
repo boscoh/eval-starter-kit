@@ -80,13 +80,13 @@ async def log_requests(request: Request, call_next):
     return await call_next(request)
 
 
-# GET /
-# Serves the main index page (index.html)
-#
-# Response:
-# HTML content of the index page
 @app.get("/", response_class=HTMLResponse)
 def serve_index():
+    """Serves the main index page (index.html)
+    
+    Response:
+        HTML content of the index page
+    """
     try:
         index_path = Path("./index.html")
         logger.info(f"Serving index page from: {index_path}")
@@ -168,15 +168,14 @@ async def get_basenames_of_directory(this_dir: Path, ext: str = ".txt"):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-# GET /evaluators
-# Lists all available evaluators
-#
-# Response:
-# {
-#     "evaluators": ["string"]  # Array of available evaluator names
-# }
 @app.get("/evaluators")
 def list_evaluators():
+    """    
+    Response:
+        {
+            "evaluators": ["string"] 
+        }
+    """
     try:
         allowed_evaluators = EvaluationRunner.allowed_evaluators()
         logger.debug(f"Available evaluators: {', '.join(allowed_evaluators)}")
@@ -186,33 +185,30 @@ def list_evaluators():
         raise HTTPException(status_code=500, detail=f"Error listing evaluators: {ex}")
 
 
-# GET /queries
-# Lists available query files
-#
-# Response:
-# {
-#     "queries": ["string"]  # Array of query basenames
-# }
 @app.get("/queries")
 async def list_queries():
+    """    
+    Response:
+        {
+            "queries": ["string"] 
+        }
+    """
     return {"queries": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
 
 
-# POST /query
-# Retrieves a query file by basename
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename of the query file
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "content": "string"  # Raw text content of the system prompt
-# }
 @app.post("/query")
 async def get_query(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string"  
+        }
+
+    Response:
+        {
+            "content": object 
+        }
+    """
     basename = await get_json_field_from_request(request, "basename")
     logger.info(f"Request to get query for basename: '{basename}'")
     return {
@@ -220,34 +216,31 @@ async def get_query(request: Request):
     }
 
 
-# GET /system-prompts
-# Lists available system prompt files
-#
-# Response:
-# {
-#     "system_prompts": ["string"]  # Array of system prompt basenames
-# }
 @app.get("/system-prompts")
 async def list_system_prompts():
+    """    
+    Response:
+        {
+            "system_prompts": ["string"] 
+        }
+    """
     logger.info(f"Listing system prompts in directory: {PROMPTS_DIR}")
     return {"system_prompts": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
 
 
-# POST /system-prompt
-# Retrieves a system prompt file by basename
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename of the system prompt file
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "content": "string"  # Raw text content of the system prompt
-# }
 @app.post("/system-prompt")
 async def get_system_prompt(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string"  
+        }
+
+    Response:
+        {
+            "content": "string" 
+        }
+    """
     basename = await get_json_field_from_request(request, "basename")
     logger.info(f"Request to get system prompt for basename: '{basename}'")
     return {
@@ -255,36 +248,34 @@ async def get_system_prompt(request: Request):
     }
 
 
-# GET /evals
-# Lists available evaluation files
-#
-# Response:
-# {
-#     "files": ["string"]  # Array of evaluation file basenames
-# }
 @app.get("/evals")
 async def list_evals():
+    """    
+    Response:
+        {
+            "files": ["string"] 
+        }
+    """
     logger.info(f"Listing evals in directory: {RUNS_DIR}")
     return {"files": await get_basenames_of_directory(RUNS_DIR, ".yaml")}
 
 
-# POST /create-system-prompt
-# Creates a new system prompt file 
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename for the new system prompt
-#     "content": "string"   # Required: The content of the system prompt
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "filename": "string",
-#     "content": "string"  # The created system prompt content
-# }
 @app.post("/create-eval")
 async def create_eval(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string",
+            "content": object    
+        }
+
+    Response:
+        {
+            "basename": "string",
+            "filename": "string",
+            "content": object    
+        }
+    """
     try:
         data = await get_json_from_request(request)
         basename = data.get("basename")
@@ -315,22 +306,19 @@ async def create_eval(request: Request):
         raise HTTPException(status_code=500, detail=f"Error creating eval: {ex}")
 
 
-# POST /eval
-# Retrieves an evaluation file by basename
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename of the eval file
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "filename": "string",
-#     "content": "object"  # Parsed YAML content of the eval file
-# }
 @app.post("/eval")
 async def get_eval(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string"  
+        }
+
+    Response:
+        {
+            "content": object  
+        }
+    """
     basename = await get_json_field_from_request(request, "basename")
     logger.info(f"Received request for eval with basename: {basename}")
     return {
@@ -340,31 +328,18 @@ async def get_eval(request: Request):
 
 @app.post("/evaluate")
 async def evaluate(request: Request):
-    """
-    Run evaluation for a given test configuration using JobRunner.
-
+    """    
     Request Body:
-    {
-        "basename": "string"  # Required: The basename of the evaluation config
-        "testConfig": Dict of TestConfig
-    }
+        {
+            "basename": "string",  
+            "testConfig": object
+        }
 
     Response:
-    {
-        "success": bool,
-        "message": "string",
-        "results": {
-            "texts": ["string"],  # List of generated responses
-            "evaluations": [      # List of evaluation results
-                {
-                    "name": "string",
-                    "values": [float],
-                    "average": float,
-                    "standard_deviation": float
-                }
-            ]
+        {
+            "success": true,
+            "message": "string",
         }
-    }
     """
     try:
         data = await get_json_from_request(request)
@@ -396,43 +371,44 @@ async def evaluate(request: Request):
         )
 
 
-# POST /result
-# Retrieves a result YAML file by basename
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename of the result file to retrieve
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "content": "object"  # Parsed YAML content
-# }
 @app.post("/result")
 async def result(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string"  
+        }
+
+    Response:
+        {
+            "basename": "string", 
+            "content": object 
+        }
+    """
     basename = await get_json_field_from_request(request, "basename")
     logger.info(f"Received request at /result endpoint for basename: {basename}")
-    return {"content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml")}
+    return {
+        "basename": basename,
+        "content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml"),
+    }
 
 
-# POST /create-system-prompt
-# Creates a new system prompt file
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename for the new system prompt
-#     "content": "string"   # Required: The content of the system prompt
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "filename": "string",
-#     "content": "string"  # The created system prompt content
-# }
 @app.post("/create-system-prompt")
 async def create_system_prompt(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string",  
+            "content": "string"    
+        }
+
+    Response:
+        {
+            "basename": "string", 
+            "filename": "string", 
+            "content": "string"   
+        }
+    """
     try:
         data = await get_json_from_request(request)
         basename = data.get("basename")
@@ -465,23 +441,22 @@ async def create_system_prompt(request: Request):
         )
 
 
-# POST /save-system-prompt
-# Saves an existing system prompt file
-#
-# Request Body:
-# {
-#     "basename": "string"  # Required: The basename of the system prompt to save
-#     "content": "string"   # Required: The new content of the system prompt
-# }
-#
-# Response:
-# {
-#     "basename": "string",
-#     "filename": "string",
-#     "content": "string"  # The saved system prompt content
-# }
 @app.post("/save-system-prompt")
 async def save_system_prompt(request: Request):
+    """    
+    Request Body:
+        {
+            "basename": "string",  
+            "content": "string"    
+        }
+
+    Response:
+        {
+            "basename": "string", 
+            "filename": "string", 
+            "content": "string"    
+        }
+    """
     try:
         data = await get_json_from_request(request)
         basename = data.get("basename")
