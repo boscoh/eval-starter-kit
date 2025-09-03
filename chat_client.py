@@ -2,13 +2,14 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
+import time
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import ollama
+import openai
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -28,7 +29,7 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
             - "openai": Creates an OpenAIChatClient instance
             - "ollama": Creates an OllamaChatClient instance
         **kwargs: Additional keyword arguments specific to the chat client type:
-            - For OpenAI: model (str), max_tokens (int)
+            - For OpenAI: model (str)
             - For Ollama: model (str)
 
     Returns:
@@ -40,7 +41,7 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     Example:
         ```python
         # Create an OpenAI chat client
-        openai_client = get_chat_client("openai", model="gpt-4", max_tokens=1000)
+        openai_client = get_chat_client("openai", model="gpt-4")
 
         # Create an Ollama chat client
         ollama_client = get_chat_client("ollama", model="llama3.2")
@@ -176,55 +177,6 @@ class IChatClient(ABC):
         """
         pass
 
-    async def invoke(
-        self,
-        prompt: str,
-        system_prompt_key: str,
-        max_tokens: Optional[int] = None,
-        temperature: float = 0.0,
-    ) -> Dict[str, Any]:
-        """
-        Invoke the chat model with a prompt and a system prompt loaded from a file.
-
-        Args:
-            prompt: The user's input prompt as a string
-            system_prompt_key: The key to load the system prompt from system-prompts/<key>.txt
-            max_tokens: Maximum number of tokens to generate (default: None for model's default)
-            temperature: Sampling temperature (0.0 for deterministic output, higher for more randomness)
-
-        Returns:
-            {
-                'text': str,  # Generated response content
-                'metadata': {
-                    'usage': {
-                        'prompt_tokens': int,  # Tokens in prompt
-                        'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int,  # Total tokens used
-                        'elapsed_seconds': float  # Time taken for completion in seconds
-                    },
-                    'model': str,  # Model used
-                    'finish_reason': str  # Reason generation stopped
-                }
-            }
-        """
-        # Load system prompt from file
-        system_prompt_path = Path("system-prompts") / f"{system_prompt_key}.txt"
-        try:
-            system_prompt = system_prompt_path.read_text(encoding="utf-8").strip()
-        except FileNotFoundError:
-            raise ValueError(f"System prompt file not found: {system_prompt_path}")
-
-        # Prepare messages
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ]
-
-        # Get completion with parameters
-        return await self.get_completion(
-            messages=messages, max_tokens=max_tokens, temperature=temperature
-        )
-
 
 class OllamaChatClient(IChatClient):
     def __init__(self, model: str = "llama3.2"):
@@ -232,9 +184,36 @@ class OllamaChatClient(IChatClient):
 
         Args:
             model: Name of the Ollama model to use (default: "llama3.2")
+
+        Raises:
+            RuntimeError: If Ollama is not running or the model is not available
         """
         self.model = model
+        self.client = None
+
+    def load_client(self):
+        if self.client:
+            return
+
+        # Check if Ollama is running
+        try:
+            subprocess.run(["ollama", "--version"], capture_output=True, check=True)
+        except (subprocess.SubprocessError, FileNotFoundError):
+            raise RuntimeError(
+                "Ollama is not running or not installed. "
+                "Please start the Ollama service and try again."
+            )
+
+        # Initialize the client and check if model is available
         self.client = ollama.AsyncClient()
+        try:
+            # This will raise an exception if the model is not found
+            ollama.show(self.model)
+        except Exception as e:
+            raise RuntimeError(
+                f"Model '{self.model}' is not available. "
+                f"Please ensure the model is pulled and available. Error: {str(e)}"
+            )
 
     async def get_completion(
         self,
@@ -281,7 +260,7 @@ class OllamaChatClient(IChatClient):
                 }
             }
         """
-        import time
+        self.load_client()
 
         start_time = time.time()
 
@@ -344,28 +323,47 @@ class OpenAIChatClient(IChatClient):
     def __init__(
         self,
         model: str = "gpt-4o",
-        max_tokens: int = 1000,
-        api_key: Optional[str] = None,
     ):
         """Initialize OpenAI chat client.
 
         Args:
             model: Name of the OpenAI model to use (default: "gpt-4o")
-            max_tokens: Default max tokens per response (default: 1000)
-            api_key: Optional API key. If not provided, will be read from OPENAI_API_KEY environment variable
 
         Raises:
-            ValueError: If OPENAI_API_KEY environment variable is not set and no api_key is provided
+            ValueError: If OPENAI_API_KEY environment variable is not set
+            RuntimeError: If the API key is invalid or the model is not available
         """
-        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.model = model
+        self.client = None
+
+    def load_client(self):
+        if self.client:
+            return
+
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
-                "OPENAI_API_KEY environment variable is not set and no api_key was provided. "
-                "Either set OPENAI_API_KEY in your .env file or pass the api_key parameter."
+                "OPENAI_API_KEY environment variable is not set. "
+                "Please set OPENAI_API_KEY in your .env file or environment variables."
             )
-        self.client = OpenAI(api_key=api_key)
-        self.model = model
-        self.max_tokens = max_tokens
+
+        self.client = openai.OpenAI(api_key=api_key)
+
+        # Verify API key and model availability
+        try:
+            # Make a lightweight request to check the API key and model
+            self.client.models.retrieve(self.model)
+        except openai.AuthenticationError as e:
+            raise RuntimeError(
+                "Invalid OpenAI API key. Please check your API key and try again."
+            ) from e
+        except openai.NotFoundError as e:
+            raise RuntimeError(
+                f"Model '{self.model}' not found or you don't have access to it. "
+                f"Please check the model name and your API permissions."
+            ) from e
+        except Exception as e:
+            raise RuntimeError(f"Failed to connect to OpenAI API: {str(e)}") from e
 
     async def get_completion(
         self,
@@ -420,7 +418,7 @@ class OpenAIChatClient(IChatClient):
                 }
             }
         """
-        import time
+        self.load_client()
 
         start_time = time.time()
 
@@ -430,7 +428,7 @@ class OpenAIChatClient(IChatClient):
                 model=self.model,
                 messages=messages,
                 tools=tools,
-                max_tokens=max_tokens or self.max_tokens,
+                max_tokens=max_tokens,
                 temperature=temperature,
             )
 

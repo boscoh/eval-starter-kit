@@ -51,14 +51,24 @@
 
     <!-- Custom styles -->
     <style>
+      body {
+        overflow-y: hidden;
+      }
       .scrollable-column {
-        height: calc(100vh - 106px);
+        height: calc(100vh - 182px);
         overflow-y: auto;
+      }
+
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1100;
       }
     </style>
   </head>
 
-  <body class="overflow-hidden">
+  <body>
     <div id="app"></div>
   </body>
 
@@ -66,12 +76,33 @@
     // language=pug
     const template = renderHtmlFromPug(`
     .container-fluid.h-100
+
+      .toast-container
+        .toast.align-items-center.text-white.border-0(
+          v-for="(notification, index) in notifications"
+          :key="notification.id"
+          :data-toast-id="notification.id"
+          :class="[notification.bgClass]"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          data-bs-autohide="true"
+          :data-bs-delay="notification.timeout"
+        )
+          .d-flex
+            .toast-body {{ notification.message }}
+            button.btn-close.btn-close-white.me-2.m-auto(
+              type="button"
+              data-bs-dismiss="toast"
+              aria-label="Close"
+            )
+
       .row.h-100
         .col-12
 
           // Title
           .d-flex.justify-content-between.align-items-center.mt-3
-            h3.mb-0 Eval Starter Kit
+            .display-2.mx-3.my-3 Eval Starter Kit
 
           // Tab navigation
           ul.nav.nav-tabs.mt-3
@@ -79,8 +110,11 @@
               a.nav-link.active(data-bs-toggle="tab" href="#evals-tab")
                 | Evals
             li.nav-item
+              a.nav-link(data-bs-toggle="tab" href="#queries-tab")
+                | Queries
+            li.nav-item
               a.nav-link(data-bs-toggle="tab" href="#system-prompts-tab")
-                | System Prompts
+                | Prompts
 
           // Tab content
           .tab-content.h-100
@@ -93,12 +127,11 @@
                 .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 250px;")
                   .px-3.pt-4
 
-                    h3 Evals
                     button.btn.btn-success(
                       data-bs-toggle="modal"
                       data-bs-target="#createEvalModal"
                       @click="newEvalName = ''"
-                    ) + Create Eval
+                    ) + new
 
                     ul.list-group
                       li.list-group-item(
@@ -108,86 +141,55 @@
                       )
                         | {{f}}
 
-                //// Eval tab - middle column
-                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
+                //// Eval tab - central column
+                .d-flex.flex-column.scrollable-column.border.flex-grow-1(style="max-width: 20em")
                   .px-3.pt-4
 
-                    h3.mt-5 {{selectedEvalName}}
+                    h3.mt-3 Run config: {{selectedEvalName}}
 
-                    h5.mt-3 System Prompt
-                    .form-group
-                      select.form-select(v-model="testConfig.system_prompt_ref" @change="loadSystemPrompt")
-                        option(value="" disabled)
-                          | Select a system prompt
-                        option(v-for="prompt in systemPrompts" :key="prompt" :value="prompt")
-                          | {{ prompt }}
-                    .form-group
-                      textarea.form-control(
-                        rows="20"
-                        v-model="systemPrompt"
-                        placeholder="Please summarize the skills of this candidate."
-                        readonly
-                      )
-
-                    form(@submit.prevent="runEval")
-
-                      h5.mt-3 Prompt
-                      .form-group
-                        textarea#input.form-control(
-                          rows="20"
-                          v-model="testConfig.prompt"
-                          placeholder="A humble query"
-                        )
-
-                      h5.mt-4 Expected
-                      .form-group
-                        textarea#expected.form-control(
-                          rows="20"
-                          v-model="testConfig.expected_answer"
-                          placeholder="expected"
-                        )
-
-                      h5.mt-4 Repeat
-                      .form-group
-                        input#repeat.form-control(
-                          type="number"
-                          v-model="testConfig.repeat"
-                          placeholder="1"
-                          min="1"
-                        )
-
-                      h5.mt-3 Model
-                      .form-group
-                        input#name.form-control(type="text" v-model="testConfig.model" placeholder="query")
-
-                      h5.mt-4 Evaluators
-                      .form-group
-                        div(v-for="evaluator in allEvaluators" :key="evaluator")
-                          .form-check
-                            input.form-check-input(
-                              type="checkbox"
-                              :id="'evaluator-' + evaluator"
-                              :value="evaluator"
-                              v-model="testConfig.evaluators"
-                            )
-                            label.form-check-label(:for="'evaluator-' + evaluator")
-                              | {{ evaluator }}
-
-                    .pb-5
-                    .pb-5
-
-                //// Eval tab - right column
-                .d-flex.flex-column.scrollable-column.border(style="flex: 0 0 500px;")
-                  .px-3.pt-4
-
-                    .mt-5
+                    .mt-4
                     button.btn.btn-success(@click="runEval" :disabled="isEvaluating")
                       span.spinner-border.spinner-border-sm(
                         v-if="isEvaluating"
                         role="status"
                         aria-hidden="true"
                       )
-                      | {{ isEvaluating ? ' Evaluating...' : 'Evaluate' }}
+                      | {{ isEvaluating ? ' evaluating...' : 'evaluate' }}
+
+
+                    h5.mt-4 Repeat
+                    .form-group
+                      input#repeat.form-control(
+                        type="number"
+                        v-model="testConfig.repeat"
+                        placeholder="1"
+                        min="1"
+                      )
+
+                    h5.mt-3 Service
+                    .form-group
+                      input#name.form-control(type="text" v-model="testConfig.service" placeholder="query")
+
+                      h5.mt-3 Model
+                    .form-group
+                      input#name.form-control(type="text" v-model="testConfig.model" placeholder="query")
+
+                    h5.mt-4 Evaluators
+                    .form-group
+                      div(v-for="evaluator in allEvaluators" :key="evaluator")
+                        .form-check
+                          input.form-check-input(
+                            type="checkbox"
+                            :id="'evaluator-' + evaluator"
+                            :value="evaluator"
+                            v-model="testConfig.evaluators"
+                          )
+                          label.form-check-label(:for="'evaluator-' + evaluator")
+                            | {{ evaluator }}
+
+                    hr
+
+                    h3.mt-3 Results
 
                     .mt-4
                     template(v-if="evalResult")
@@ -208,6 +210,103 @@
                       h5.mt-3 Sample Model Response
                       textarea.form-control(rows="20" v-model="sampleModelResponse" readonly)
 
+                //// Eval tab - right column
+                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
+                  .px-3.pt-4
+
+                    .d-flex.flex-row.align-items-end
+                      h5.mt-3 System Prompt:
+                      .ms-2.form-group
+                        select.form-select(v-model="testConfig.system_prompt_ref" @change="loadSystemPrompt")
+                          option(value="" disabled)
+                            | Select a system prompt
+                          option(v-for="prompt in systemPrompts" :key="prompt" :value="prompt")
+                            | {{ prompt }}
+
+                    .form-group
+                      textarea.form-control(
+                        rows="7"
+                        v-model="systemPrompt"
+                        placeholder="Please summarize the skills of this candidate."
+                        readonly
+                      )
+
+                    h5.mt-3 Query: {{testConfig.query_ref}}
+                    .form-group
+                      textarea#input.form-control(
+                        rows="20"
+                        v-model="testConfig.prompt"
+                        placeholder="A humble query"
+                      )
+
+                    h5.mt-4 Expected
+                    .form-group
+                      textarea#expected.form-control(
+                        rows="20"
+                        v-model="testConfig.expected_answer"
+                        placeholder="expected"
+                      )
+
+                    .pb-5
+                    .pb-5
+
+            /// Queries tab
+            #queries-tab.tab-pane.fade.h-100
+              .d-flex.flex-row.h-100
+
+                //// Queries tab - left column
+                .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 300px;")
+                  .px-3.pt-4
+
+                    h3 Queries
+
+                    button.btn.btn-success(
+                      data-bs-toggle="modal"
+                      data-bs-target="#create-query-modal"
+                    ) + new
+
+                    ul.list-group
+                      li.list-group-item(
+                        v-for="query in queries"
+                        :key="query"
+                        @click="chooseQuery(query)"
+                        :class="{ 'list-group-item-info': selectedQueryName == query }"
+                        role="button"
+                      )
+                        | {{query}}
+
+                //// Queries tab - central column
+                .d-flex.flex-column.scrollable-column.flex-grow-1
+                  .px-3.pt-4
+
+                    h3.mt-5 {{selectedQueryName}}
+
+                    textarea.form-control(rows="25" v-model="query.prompt")
+
+                    button.btn.btn-success(
+                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
+                    )
+                      span.spinner-border.spinner-border-sm(Z
+                        v-if="isSavingPrompt" role="status" aria-hidden="true"
+                      )
+                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
+
+                //// Queries tab - right column
+                .d-flex.flex-column.scrollable-column.flex-grow-1
+                  .px-3.pt-4
+
+                    h3.mt-5 {{selectedQueryName}}
+
+                    textarea.form-control(rows="25" v-model="query.expected_answer")
+
+                    button.btn.btn-success(
+                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
+                    )
+                      span.spinner-border.spinner-border-sm(
+                        v-if="isSavingPrompt" role="status" aria-hidden="true"
+                      )
+                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
+
             /// System prompts tab
             #system-prompts-tab.tab-pane.fade.h-100
               .d-flex.flex-row.h-100
@@ -220,12 +319,14 @@
 
                     button.btn.btn-success(
                       data-bs-toggle="modal"
-                      data-bs-target="#createSystemPromptModal"
-                    ) + Create
+                      data-bs-target="#create-system-prompt-modal"
+                    ) + new
 
                     ul.list-group
                       li.list-group-item(
-                        v-for="prompt in systemPrompts" :key="prompt" @click="chooseSystemPrompt(prompt)"
+                        v-for="prompt in systemPrompts"
+                        :key="prompt"
+                        @click="chooseSystemPrompt(prompt)"
                         :class="{ 'list-group-item-info': selectedSystemPromptName == prompt }"
                         role="button"
                       )
@@ -237,13 +338,15 @@
 
                     h3.mt-5 {{selectedSystemPromptName}}
 
-                    .form-group(v-if="systemPrompt")
-                      textarea.form-control(rows="25" v-model="systemPrompt")
+                    textarea.form-control(rows="25" v-model="systemPrompt")
 
-                    .form-group(v-if="systemPrompt")
-                      button.btn.btn-success(@click="saveSystemPrompt" :disabled="isSavingPrompt")
-                        span.spinner-border.spinner-border-sm(v-if="isSavingPrompt" role="status" aria-hidden="true")
-                        | {{ isSavingPrompt ? ' Saving...' : 'Save System Prompt' }}
+                    button.btn.btn-success(
+                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
+                    )
+                      span.spinner-border.spinner-border-sm(
+                        v-if="isSavingPrompt" role="status" aria-hidden="true"
+                      )
+                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
 
         //// Modals
 
@@ -268,7 +371,7 @@
                 button.btn.btn-primary(@click="createEval" :disabled="!newEvalName") Create
 
         // Create System Prompt Modal
-        .modal.fade(id="createSystemPromptModal" tabindex="-1")
+        .modal.fade(id="create-system-prompt-modal" tabindex="-1")
           .modal-dialog
             .modal-content
               .modal-header
@@ -282,18 +385,32 @@
                     v-model="newSystemPromptName"
                     placeholder="prompt-name"
                     id="systemPromptNameInput"
-                    @keyup.enter="createSystemPrompt"
-                    data-bs-dismiss="modal"
+                    @keyup.entßßer="createSystemPrompt"
                   )
               .modal-footer
                 button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
                 button.btn.btn-primary(
                   @click="createSystemPrompt"
                   :disabled="!newSystemPromptName"
-                  data-bs-dismiss="modal"
                 ) Create
 
   `);
+
+    function deepCamelCaseKeys(value) {
+      if (_.isArray(value)) {
+        return value.map(deepCamelCaseKeys);
+      }
+      if (_.isPlainObject(value)) {
+        const camelKeyed = _.mapKeys(value, (v, k) => _.camelCase(k));
+        return _.mapValues(camelKeyed, deepCamelCaseKeys);
+      }
+      return value;
+    }
+
+    async function getJson(url) {
+      let result = await ky.get(url).json();
+      return deepCamelCaseKeys(result);
+    }
 
     const { createApp, ref, onMounted } = Vue;
 
@@ -314,16 +431,38 @@
       const evalResult = ref({});
       const isEvaluating = ref(false);
       const sampleModelResponse = ref("");
+
       const systemPrompts = ref([]);
       const selectedSystemPromptName = ref("");
       const newSystemPromptName = ref("");
       const systemPrompt = ref("");
+
       const isSavingPrompt = ref(false);
 
+      const queries = ref([]);
+      const query = ref("");
+      const selectedQueryName = ref("");
+      const newQueryName = ref("");
+
+      const notifications = ref([]);
+
       // Lifecycle hooks
+      // Initialize toast when a new notification is added
+      function initializeToast(toastEl) {
+        const toast = new bootstrap.Toast(toastEl, { autohide: true });
+        toast.show();
+
+        // Auto-hide after timeout
+        toastEl.addEventListener("hidden.bs.toast", () => {
+          const id = parseInt(toastEl.getAttribute("data-toast-id"));
+          removeNotification(id);
+        });
+      }
+
       onMounted(async () => {
         await loadEvalNames();
         await loadSystemPrompts();
+        await loadQueries();
         const response = await ky.get("/evaluators").json();
         allEvaluators.value = response.evaluators;
 
@@ -353,8 +492,19 @@
         }
       }
 
+      async function loadQueries() {
+        try {
+          const response = await ky.get("/queries").json();
+          queries.value = response.queries;
+          console.log("Loaded queries:", _.cloneDeep(queries.value));
+        } catch (error) {
+          console.error("Failed to load queries:", error);
+        }
+      }
+
       async function chooseEval(evalName) {
         selectedEvalName.value = evalName;
+        systemPrompt.value = "";
         await Promise.all([loadTestConfig(evalName), loadEvalResult(evalName)]);
       }
 
@@ -379,7 +529,7 @@
 
         try {
           const response = await ky
-            .post("/summary", { json: { basename: evalName } })
+            .post("/result", { json: { basename: evalName } })
             .json();
           console.log("Loaded eval result:", response);
 
@@ -403,6 +553,7 @@
               .json();
             systemPrompt.value = response.content;
             selectedSystemPromptName.value = testConfig.value.system_prompt_ref;
+            selectedQueryName.value = testConfig.value.query_ref;
           } catch (error) {
             console.error("Failed to load system prompt:", error);
           }
@@ -415,10 +566,11 @@
         isEvaluating.value = true;
         evalResult.value = {};
         sampleModelResponse.value = "";
+        showNotification("Starting evaluation...", "info");
 
         try {
           console.log("Running evaluation with config:", testConfig.value);
-          await ky.post(`/evaluate`, {
+          const response = await ky.post(`/evaluate`, {
             json: {
               basename: selectedEvalName.value,
               testConfig: testConfig.value,
@@ -427,9 +579,12 @@
           });
 
           await loadEvalResult(selectedEvalName.value);
+          showNotification("Evaluation completed successfully!", "success");
         } catch (error) {
-          console.error("Evaluation failed:", error);
-          alert("Evaluation failed. Check console for details.");
+          showNotification(
+            "Evaluation failed. Check console for details",
+            "danger",
+          );
         } finally {
           isEvaluating.value = false;
         }
@@ -445,15 +600,14 @@
 
           await loadEvalNames();
           await chooseEval(newEvalName.value);
-
-          const modal = bootstrap.Modal.getInstance(
-            document.getElementById("createEvalModal"),
-          );
-          modal.hide();
+          newEvalName.value = ""; // Clear the input field
+          showNotification("Evaluation created successfully!");
         } catch (error) {
-          console.error("Failed to create eval:", error);
-          alert("Failed to create eval. Check console for details.");
+          console.error("Failed to create evaluation:", error);
+          showNotification("Failed to create evaluation", "danger");
         }
+
+        closeBootstrapModal("createEvalModal");
       }
 
       function chooseSystemPrompt(promptName) {
@@ -464,6 +618,57 @@
           .then((data) => {
             systemPrompt.value = data.content;
           });
+      }
+
+      function chooseQuery(queryName) {
+        selectedQueryName.value = queryName;
+        query.value = "";
+        ky.post("/query", { json: { basename: queryName } })
+          .then((response) => response.json())
+          .then((data) => {
+            query.value = data.content;
+            console.log("Loaded query:", _.cloneDeep(query.value));
+          });
+      }
+
+      function saveQuery() {}
+
+      function createQuery() {}
+
+      function showNotification(message, type = "success") {
+        const id = Date.now();
+        const bgClass =
+          {
+            success: "bg-success",
+            danger: "bg-danger",
+            info: "bg-info",
+            warning: "bg-warning",
+          }[type] || "bg-success";
+
+        const notification = {
+          id,
+          message,
+          type,
+          bgClass,
+          timeout: type === "info" ? 3000 : 5000, // 3 seconds for info, 5 for others
+        };
+
+        notifications.value.push(notification);
+
+        // Initialize toast after Vue has updated the DOM
+        Vue.nextTick(() => {
+          const toastEl = document.querySelector(`[data-toast-id="${id}"]`);
+          if (toastEl) {
+            initializeToast(toastEl);
+          }
+        });
+      }
+
+      function removeNotification(id) {
+        const index = notifications.value.findIndex((n) => n.id === id);
+        if (index !== -1) {
+          notifications.value.splice(index, 1);
+        }
       }
 
       async function saveSystemPrompt() {
@@ -480,15 +685,20 @@
           });
 
           await loadSystemPrompts();
-          alert("System prompt saved successfully!");
+          showNotification("System prompt saved successfully!");
         } catch (error) {
-          console.error("Failed to save system prompt:", error);
-          alert("Failed to save system prompt. Check console for details.");
+          showNotification("Failed to save system prompt", "danger");
         } finally {
           isSavingPrompt.value = false;
         }
       }
 
+      function closeBootstrapModal(modalId) {
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById(modalId),
+        );
+        if (modal) modal.hide();
+      }
       async function createSystemPrompt() {
         if (!newSystemPromptName.value) return;
 
@@ -503,13 +713,16 @@
           await loadSystemPrompts();
           await chooseSystemPrompt(newSystemPromptName.value);
           newSystemPromptName.value = ""; // Clear the input field
+          showNotification("System prompt created successfully!");
         } catch (error) {
           console.error("Failed to create system prompt:", error);
-          alert("Failed to create system prompt. Check console for details.");
+          showNotification("Failed to create system prompt", "danger");
         }
+
+        closeBootstrapModal("create-system-prompt-modal");
       }
 
-      // Expose variables and methods to template
+      // Expose methods and state to template
       return {
         // State
         evalNames,
@@ -525,15 +738,24 @@
         newSystemPromptName,
         systemPrompt,
         isSavingPrompt,
+        queries,
+        selectedQueryName,
+        newQueryName,
+        query,
+        notifications,
 
         // Methods
         chooseEval,
-        loadSystemPrompt,
-        runEval,
         createEval,
+        runEval,
+        loadSystemPrompt,
         chooseSystemPrompt,
         saveSystemPrompt,
         createSystemPrompt,
+        chooseQuery,
+        saveQuery,
+        createQuery,
+        closeBootstrapModal,
       };
     }
 

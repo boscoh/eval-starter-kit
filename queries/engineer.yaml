@@ -1,35 +1,4 @@
 ---
-repeat: '1'
-service: openai
-system_prompt_ref: candidate-summary
-model: gpt-4o-mini
-evaluators:
-- equivalence
-expected_answer: >-
-  [
-    "Mathematics",
-    "Problem Solving",
-    "Creative Lesson Planning",
-    "Grading",
-    "Presentation",
-    "Training",
-    "SQL",
-    "Data Analysis",
-    "Forecasting",
-    "Inventory Management",
-    "Quantitative Analysis",
-    "Leadership",
-    "Operations Management",
-    "Procurement",
-    "Project Management",
-    "Optimization",
-    "C",
-    "C++",
-    "Microsoft Office Suite",
-    "Google Docs",
-    "Master of Business Administration: Decision Sciences",
-    "Bachelor of Science: Mathematical Engineering"
-  ]
 prompt: >-
   # SENIOR ENGINEERING MANAGER
 
@@ -128,3 +97,28 @@ prompt: >-
   customer care and satisfaction, data analysis, forecasting, inventory, quantitative
   analysis, leadership, operations management, procurement, project management, optimization
   - **Technical Skills**: C, C++, MS Office Suite, Google Docs, SQL
+expected_answer: >-
+  [
+    "Mathematics",
+    "Problem Solving",
+    "Creative Lesson Planning",
+    "Grading",
+    "Presentation",
+    "Training",
+    "SQL",
+    "Data Analysis",
+    "Forecasting",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Leadership",
+    "Operations Management",
+    "Procurement",
+    "Project Management",
+    "Optimization",
+    "C",
+    "C++",
+    "Microsoft Office Suite",
+    "Google Docs",
+    "Master of Business Administration: Decision Sciences",
+    "Bachelor of Science: Mathematical Engineering"
+  ]

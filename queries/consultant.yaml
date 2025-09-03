@@ -1,60 +1,4 @@
 ---
-evaluators:
-- word_count
-- coherence
-- equivalence
-repeat: 2
-service: openai
-model: gpt-4o-mini
-system_prompt_ref: candidate-summary
-expected_answer: >-
-  [
-    "Systems Analyst",
-    "Software Development Lifecycle (SDLC)",
-    "Computer Systems Validation (CSV)",
-    "Documentum DCM",
-    "Documentum D2",
-    "MS Access",
-    "VBA",
-    "C",
-    "C++",
-    "HTML",
-    "Assembly language programming",
-    "Project leadership",
-    "Analytical skills",
-    "Problem-solving skills",
-    "Organizational skills",
-    "Communication skills",
-    "General application support",
-    "Software development",
-    "Data communications",
-    "System administration",
-    "Consultant",
-    "GxP",
-    "SOX compliant applications",
-    "Document transformation",
-    "Printing",
-    "Reporting",
-    "User troubleshooting",
-    "Production Application support",
-    "Root cause analysis",
-    "Payroll application",
-    "Manufacturing application",
-    "Windows operating system",
-    "Windows 2000",
-    "Windows XP",
-    "Windows Vista",
-    "Windows Server",
-    "Network administration",
-    "Relational database",
-    "Client/server",
-    "Messaging",
-    "Real-time",
-    "VAX/VMS",
-    "IBM",
-    "M.S: Computer Science Data Communications",
-    "B.A: Computer Science"
-  ]
 prompt: >-
   CONSULTANT Professional Profile
 
@@ -127,3 +71,51 @@ prompt: >-
   skills, project leadership, system administration, data communications, document
   management, Microsoft Access/Excel VBA automation, network administration, OS upgrades,
   reporting, troubleshooting, validation
+expected_answer: >-
+  [
+    "Systems Analyst",
+    "Software Development Lifecycle (SDLC)",
+    "Computer Systems Validation (CSV)",
+    "Documentum DCM",
+    "Documentum D2",
+    "MS Access",
+    "VBA",
+    "C",
+    "C++",
+    "HTML",
+    "Assembly language programming",
+    "Project leadership",
+    "Analytical skills",
+    "Problem-solving skills",
+    "Organizational skills",
+    "Communication skills",
+    "General application support",
+    "Software development",
+    "Data communications",
+    "System administration",
+    "Consultant",
+    "GxP",
+    "SOX compliant applications",
+    "Document transformation",
+    "Printing",
+    "Reporting",
+    "User troubleshooting",
+    "Production Application support",
+    "Root cause analysis",
+    "Payroll application",
+    "Manufacturing application",
+    "Windows operating system",
+    "Windows 2000",
+    "Windows XP",
+    "Windows Vista",
+    "Windows Server",
+    "Network administration",
+    "Relational database",
+    "Client/server",
+    "Messaging",
+    "Real-time",
+    "VAX/VMS",
+    "IBM",
+    "M.S: Computer Science Data Communications",
+    "B.A: Computer Science"
+  ]

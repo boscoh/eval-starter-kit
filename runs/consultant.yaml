@@ -1,0 +1,11 @@
+---
+file_path: runs/consultant.yaml
+query_ref: consultant
+system_prompt_ref: candidate-summary
+service: ollama
+model: llama3.2
+repeat: 2
+evaluators:
+- word_count
+- coherence
+- equivalence

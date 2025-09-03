@@ -3,7 +3,7 @@ import re
 import textwrap
 from typing import Any, Dict, Optional
 
-from schemas import JobConfig
+from schemas import RunConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class EvaluationRunner:
     def allowed_evaluators() -> list:
         return ["coherence", "equivalence", "word_count"]
 
-    def __init__(self, chat_client, job_config: JobConfig):
+    def __init__(self, chat_client, job_config: RunConfig):
         self.chat_client = chat_client
         self.job_config = job_config
         self.coherence_evaluator = CoherenceEvaluator(chat_client)
