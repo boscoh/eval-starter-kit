@@ -39,7 +39,7 @@ class RunConfig(BaseModel):
         result.file_path = file_path
         logger.info(f"Loaded run config from '{file_path}'")
 
-        # Read system prompts from PROMPTS_DIR
+        # Get system prompt from PROMPTS_DIR
         system_prompt_path = PROMPTS_DIR / f"{result.system_prompt_ref}.txt"
         if system_prompt_path.exists():
             result.system_prompt = system_prompt_path.read_text()
@@ -75,20 +75,20 @@ class RunConfig(BaseModel):
         save_yaml(save_config, file_path)
         logger.info(f"Saved test config to '{file_path}'")
 
-        query_ref = self.query_ref
-        query_path = (QUERIES_DIR / f"{query_ref}").with_suffix(".yaml")
-        if query_ref:
-            data = {"prompt": self.prompt, "expected_answer": self.expected_answer}
-        else:
-            data = {"prompt": "", "expected_answer": ""}
-        save_yaml(data, query_path)
-        logger.info(f"Saved query to '{query_path}'")
+        # query_ref = self.query_ref
+        # query_path = (QUERIES_DIR / f"{query_ref}").with_suffix(".yaml")
+        # if query_ref:
+        #     data = {"prompt": self.prompt, "expected_answer": self.expected_answer}
+        # else:
+        #     data = {"prompt": "", "expected_answer": ""}
+        # save_yaml(data, query_path)
+        # logger.info(f"Saved query to '{query_path}'")
 
-        prompt_ref = self.system_prompt_ref
-        if prompt_ref:
-            prompt_path = (PROMPTS_DIR / prompt_ref).with_suffix(".txt")
-            write_text(self.system_prompt, prompt_path)
-            logger.info(f"Saved prompt to '{prompt_path}'")
+        # prompt_ref = self.system_prompt_ref
+        # if prompt_ref:
+        #     prompt_path = (PROMPTS_DIR / prompt_ref).with_suffix(".txt")
+        #     write_text(self.system_prompt, prompt_path)
+        #     logger.info(f"Saved prompt to '{prompt_path}'")
 
 
 class RunResult(BaseModel):

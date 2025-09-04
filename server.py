@@ -14,45 +14,6 @@ from runner import Runner
 from schemas import PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, RunConfig
 from util import load_yaml
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    handlers=[
-        RichHandler(
-            rich_tracebacks=True,
-            show_time=False,
-            show_path=True,
-            markup=True,
-            log_time_format="[%X]",
-        )
-    ],
-    force=True,
-)
-
-logger = logging.getLogger(__name__)
-
-# uvicorn_logger = logging.getLogger("uvicorn")
-# uvicorn_logger.handlers = []
-# uvicorn_logger.propagate = False
-
-uvicorn_access = logging.getLogger("uvicorn.access")
-uvicorn_access.handlers = []
-uvicorn_access.propagate = False
-
-# Configure h11 logging
-logging.getLogger("h11").setLevel(logging.WARNING)
-
-app = FastAPI()
-
-# Allow CORS for development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 async def get_json_from_request(request) -> Dict[str, Any]:
     """Helper function to extract JSON data from a request.
@@ -68,36 +29,6 @@ async def get_json_from_request(request) -> Dict[str, Any]:
         if hasattr(request, "json")
         else json.loads(await request.body())
     )
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    # Only log non-asset requests
-    if not any(
-        ext in str(request.url) for ext in [".js", ".css", ".ico", ".png", ".jpg"]
-    ):
-        logger.info(f"{request.method} {request.url.path}")
-    return await call_next(request)
-
-
-@app.get("/", response_class=HTMLResponse)
-def serve_index():
-    """Serves the main index page (index.html)
-    
-    Response:
-        HTML content of the index page
-    """
-    try:
-        index_path = Path("./index.html")
-        logger.info(f"Serving index page from: {index_path}")
-        if not index_path.exists():
-            logger.error(f"index.html not found at {index_path}")
-            raise HTTPException(status_code=404, detail="index.html not found")
-        html_content = index_path.read_text(encoding="utf-8")
-        return HTMLResponse(content=html_content)
-    except Exception as ex:
-        logger.error(f"Error serving index.html: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error serving index.html: {ex}")
 
 
 def read_text_or_yaml(path: Path, ext: str):
@@ -168,12 +99,82 @@ async def get_basenames_of_directory(this_dir: Path, ext: str = ".txt"):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[
+        RichHandler(
+            rich_tracebacks=True,
+            show_time=False,
+            show_path=True,
+            markup=True,
+            log_time_format="[%X]",
+        )
+    ],
+    force=True,
+)
+
+logger = logging.getLogger(__name__)
+
+# uvicorn_logger = logging.getLogger("uvicorn")
+# uvicorn_logger.handlers = []
+# uvicorn_logger.propagate = False
+
+uvicorn_access = logging.getLogger("uvicorn.access")
+uvicorn_access.handlers = []
+uvicorn_access.propagate = False
+
+# Configure h11 logging
+logging.getLogger("h11").setLevel(logging.WARNING)
+
+app = FastAPI()
+
+# Allow CORS for development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # Only log non-asset requests
+    if not any(
+        ext in str(request.url) for ext in [".js", ".css", ".ico", ".png", ".jpg"]
+    ):
+        logger.info(f"{request.method} {request.url.path}")
+    return await call_next(request)
+
+
+@app.get("/", response_class=HTMLResponse)
+def serve_index():
+    """Serves the main index page (index.html)
+
+    Response:
+        HTML content of the index page
+    """
+    try:
+        index_path = Path("./index.html")
+        logger.info(f"Serving index page from: {index_path}")
+        if not index_path.exists():
+            logger.error(f"index.html not found at {index_path}")
+            raise HTTPException(status_code=404, detail="index.html not found")
+        html_content = index_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=html_content)
+    except Exception as ex:
+        logger.error(f"Error serving index.html: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error serving index.html: {ex}")
+
+
 @app.get("/evaluators")
 def list_evaluators():
-    """    
+    """
     Response:
         {
-            "evaluators": ["string"] 
+            "evaluators": ["string"]
         }
     """
     try:
@@ -187,93 +188,57 @@ def list_evaluators():
 
 @app.get("/queries")
 async def list_queries():
-    """    
+    """
     Response:
         {
-            "queries": ["string"] 
+            "values": ["string"]
         }
     """
-    return {"queries": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
+    return {"values": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
 
 
 @app.post("/query")
 async def get_query(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string"  
+            "basename": "string"
         }
 
     Response:
         {
-            "content": object 
+            "content": object
         }
     """
     basename = await get_json_field_from_request(request, "basename")
-    logger.info(f"Request to get query for basename: '{basename}'")
-    return {
-        "content": read_text_or_yaml(QUERIES_DIR / basename, ".yaml"),
-    }
-
-
-@app.get("/system-prompts")
-async def list_system_prompts():
-    """    
-    Response:
-        {
-            "system_prompts": ["string"] 
-        }
-    """
-    logger.info(f"Listing system prompts in directory: {PROMPTS_DIR}")
-    return {"system_prompts": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
-
-
-@app.post("/system-prompt")
-async def get_system_prompt(request: Request):
-    """    
-    Request Body:
-        {
-            "basename": "string"  
-        }
-
-    Response:
-        {
-            "content": "string" 
-        }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    logger.info(f"Request to get system prompt for basename: '{basename}'")
-    return {
-        "content": read_text_or_yaml(PROMPTS_DIR / basename, ".txt"),
-    }
+    return {"content": read_text_or_yaml(QUERIES_DIR / basename, ".yaml")}
 
 
 @app.get("/evals")
 async def list_evals():
-    """    
+    """
     Response:
         {
-            "files": ["string"] 
+            "values": ["string"]
         }
     """
-    logger.info(f"Listing evals in directory: {RUNS_DIR}")
-    return {"files": await get_basenames_of_directory(RUNS_DIR, ".yaml")}
+    return {"values": await get_basenames_of_directory(RUNS_DIR, ".yaml")}
 
 
 @app.post("/create-eval")
 async def create_eval(request: Request):
-    """    
+    """
     Request Body:
         {
             "basename": "string",
-            "content": object    
+            "content": object
         }
 
     Response:
         {
             "basename": "string",
             "filename": "string",
-            "content": object    
+            "content": object
         }
     """
     try:
@@ -308,37 +273,35 @@ async def create_eval(request: Request):
 
 @app.post("/eval")
 async def get_eval(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string"  
+            "basename": "string"
         }
 
     Response:
         {
-            "content": object  
+            "content": object
         }
     """
     basename = await get_json_field_from_request(request, "basename")
-    logger.info(f"Received request for eval with basename: {basename}")
-    return {
-        "content": read_text_or_yaml(RUNS_DIR / basename, ".yaml")
-    }
+    config_path = (RUNS_DIR / basename).with_suffix(".yaml")
+    job_runner = Runner(config_path)
+    return {"content": job_runner._config.model_dump    ()}
 
 
 @app.post("/evaluate")
 async def evaluate(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string",  
-            "testConfig": object
+            "basename": "string",
+            "config": object
         }
 
     Response:
         {
             "success": true,
-            "message": "string",
         }
     """
     try:
@@ -347,18 +310,19 @@ async def evaluate(request: Request):
         if not basename:
             raise HTTPException(status_code=400, detail="basename is required")
 
-        test_config = data.get("testConfig")
-        if not test_config:
-            raise HTTPException(status_code=400, detail="testConfig is required")
+        config = data.get("config")
+        if not config:
+            raise HTTPException(status_code=400, detail="config is required")
 
         config_path = (RUNS_DIR / basename).with_suffix(".yaml")
-        config = RunConfig(**test_config)
-        config.save(config_path)
+        run_config = RunConfig(**config)
+        run_config.save(config_path)
         job_runner = Runner(config_path)
+        logger.info(f"Running evaluation with config: {pretty_repr(job_runner._config)}")
         await job_runner.save_results()
         return {
             "success": True,
-            "message": "Evaluation completed successfully",
+
         }
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
@@ -373,40 +337,65 @@ async def evaluate(request: Request):
 
 @app.post("/result")
 async def result(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string"  
+            "basename": "string"
         }
 
     Response:
         {
-            "basename": "string", 
-            "content": object 
+            "content": object
         }
     """
     basename = await get_json_field_from_request(request, "basename")
-    logger.info(f"Received request at /result endpoint for basename: {basename}")
+    return {"content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml")}
+
+
+@app.get("/system-prompts")
+async def list_system_prompts():
+    """
+    Response:
+        {
+            "values": ["string"]
+        }
+    """
+    return {"values": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
+
+
+@app.post("/system-prompt")
+async def get_system_prompt(request: Request):
+    """
+    Request Body:
+        {
+            "basename": "string"
+        }
+
+    Response:
+        {
+            "content": "string"
+        }
+    """
+    basename = await get_json_field_from_request(request, "basename")
     return {
-        "basename": basename,
-        "content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml"),
+        "content": read_text_or_yaml(PROMPTS_DIR / basename, ".txt"),
     }
 
 
 @app.post("/create-system-prompt")
 async def create_system_prompt(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string",  
-            "content": "string"    
+            "basename": "string",
+            "content": "string"
         }
 
     Response:
         {
-            "basename": "string", 
-            "filename": "string", 
-            "content": "string"   
+            "basename": "string",
+            "filename": "string",
+            "content": "string"
         }
     """
     try:
@@ -443,18 +432,18 @@ async def create_system_prompt(request: Request):
 
 @app.post("/save-system-prompt")
 async def save_system_prompt(request: Request):
-    """    
+    """
     Request Body:
         {
-            "basename": "string",  
-            "content": "string"    
+            "basename": "string",
+            "content": "string"
         }
 
     Response:
         {
-            "basename": "string", 
-            "filename": "string", 
-            "content": "string"    
+            "basename": "string",
+            "filename": "string",
+            "content": "string"
         }
     """
     try:
@@ -502,6 +491,6 @@ if __name__ == "__main__":
     #     host="0.0.0.0",
     #     port=8000,
     #     reload=False,
-    #     log_config=None,  # We handle our own logging
-    #     access_log=False,  # Disable uvicorn access logs
+    #     log_config=None, # We handle our own logging
+    #     access_log=False, # Disable uvicorn access logs
     # )
