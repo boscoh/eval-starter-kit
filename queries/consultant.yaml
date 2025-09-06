@@ -1,5 +1,5 @@
 ---
-prompt: >-
+input: >-
   CONSULTANT Professional Profile
 
   Highly motivated and self-driven Systems Analyst with vast experience in various
@@ -71,7 +71,7 @@ prompt: >-
   skills, project leadership, system administration, data communications, document
   management, Microsoft Access/Excel VBA automation, network administration, OS upgrades,
   reporting, troubleshooting, validation
-expected_answer: >-
+output: >-
   [
     "Systems Analyst",
     "Software Development Lifecycle (SDLC)",

@@ -24,9 +24,9 @@ class EvaluationRunner:
     def allowed_evaluators() -> list:
         return ["coherence", "equivalence", "word_count"]
 
-    def __init__(self, chat_client, job_config: RunConfig):
+    def __init__(self, chat_client, run_config: RunConfig):
         self.chat_client = chat_client
-        self.job_config = job_config
+        self.run_config = run_config
         self.coherence_evaluator = CoherenceEvaluator(chat_client)
         self.equivalence_evaluator = EquivalenceEvaluator(chat_client)
         self.word_count_evaluator = WordCountEvaluator()
@@ -49,15 +49,15 @@ class EvaluationRunner:
         """
         results = {}
 
-        for evaluator_name in self.job_config.evaluators:
+        for evaluator_name in self.run_config.evaluators:
             try:
                 if evaluator_name.lower() == "coherence":
                     result = await self.coherence_evaluator.evaluate_coherence(
-                        question=self.job_config.prompt or "", answer=response["text"]
+                        question=self.run_config.input or "", answer=response["text"]
                     )
                     results[evaluator_name] = result
                 elif evaluator_name.lower() == "equivalence":
-                    if not self.job_config.expected_answer:
+                    if not self.run_config.output:
                         logging.warning("No answer provided for equivalence evaluation")
                         results[evaluator_name] = {
                             "score": None,
@@ -67,16 +67,16 @@ class EvaluationRunner:
                         }
                     else:
                         result = await self.equivalence_evaluator.evaluate_equivalence(
-                            answer=self.job_config.expected_answer,
+                            answer=self.run_config.output,
                             actual_answer=response["text"],
                         )
                         results[evaluator_name] = result
                 elif evaluator_name.lower() == "word_count":
                     result = await self.word_count_evaluator.evaluate_word_count(
                         response["text"],
-                        min_words=getattr(self.job_config, "min_words", None),
-                        max_words=getattr(self.job_config, "max_words", None),
-                        target_words=getattr(self.job_config, "target_words", None),
+                        min_words=getattr(self.run_config, "min_words", None),
+                        max_words=getattr(self.run_config, "max_words", None),
+                        target_words=getattr(self.run_config, "target_words", None),
                     )
                     results[evaluator_name] = result
                 else:

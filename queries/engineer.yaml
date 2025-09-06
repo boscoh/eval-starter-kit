@@ -1,5 +1,5 @@
 ---
-prompt: >-
+input: >-
   # SENIOR ENGINEERING MANAGER
 
   Personable, patient and adaptable Math tutor with 3 years of experience tutoring
@@ -97,7 +97,7 @@ prompt: >-
   customer care and satisfaction, data analysis, forecasting, inventory, quantitative
   analysis, leadership, operations management, procurement, project management, optimization
   - **Technical Skills**: C, C++, MS Office Suite, Google Docs, SQL
-expected_answer: >-
+output: >-
   [
     "Mathematics",
     "Problem Solving",

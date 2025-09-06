@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import Any, Dict
 
 from fastapi import FastAPI, HTTPException, Request
@@ -12,18 +13,35 @@ from rich.pretty import pretty_repr
 from evaluator import EvaluationRunner
 from runner import Runner
 from schemas import PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, RunConfig
-from util import load_yaml
+from util import load_yaml, save_yaml
+
+logger = logging.getLogger(__name__)
+
+uvicorn_access = logging.getLogger("uvicorn.access")
+uvicorn_access.handlers = []
+uvicorn_access.propagate = False
+logging.getLogger("h11").setLevel(logging.WARNING)
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[
+        RichHandler(
+            rich_tracebacks=True,
+            show_time=True,
+            show_path=True,
+            markup=True,
+            log_time_format="[%X]",
+        )
+    ],
+    force=True,
+)
+
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
-    """Helper function to extract JSON data from a request.
-
-    Args:
-        request: The FastAPI request object
-
-    Returns:
-        Dict containing the parsed JSON data
-    """
+    """Returns parsed json from request"""
     return (
         await request.json()
         if hasattr(request, "json")
@@ -99,35 +117,36 @@ async def get_basenames_of_directory(this_dir: Path, ext: str = ".txt"):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    handlers=[
-        RichHandler(
-            rich_tracebacks=True,
-            show_time=False,
-            show_path=True,
-            markup=True,
-            log_time_format="[%X]",
-        )
-    ],
-    force=True,
-)
 
-logger = logging.getLogger(__name__)
+async def save_content_to_dir(request: Request, dir: Path, ext: str):
+    try:
+        data = await get_json_from_request(request)
+        basename = data.get("basename")
+        content = data.get("content")
+        if not basename:
+            logger.error("Missing 'basename' parameter in save request")
+            raise HTTPException(
+                status_code=400, detail="basename parameter is required"
+            )
+        if content is None:
+            logger.error("Missing 'content' parameter in save request")
+            raise HTTPException(status_code=400, detail="content parameter is required")
+        logger.info(f"Request to save {dir} for basename: {basename}")
+        file_path = (dir / basename).with_suffix(ext)
+        if ext == ".yaml":
+            save_yaml(content, file_path)
+        else:
+            file_path.write_text(content)
+        logger.info(f"{dir} '{basename}' saved successfully at {file_path}")
+        return {"message": f"{dir} '{file_path}' saved successfully"}
+    except Exception as ex:
+        logger.error(f"Error saving {dir}: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error saving {dir}: {ex}")
 
-# uvicorn_logger = logging.getLogger("uvicorn")
-# uvicorn_logger.handlers = []
-# uvicorn_logger.propagate = False
 
-uvicorn_access = logging.getLogger("uvicorn.access")
-uvicorn_access.handlers = []
-uvicorn_access.propagate = False
-
-# Configure h11 logging
-logging.getLogger("h11").setLevel(logging.WARNING)
 
 app = FastAPI()
+
 
 # Allow CORS for development
 app.add_middleware(
@@ -151,17 +170,10 @@ async def log_requests(request: Request, call_next):
 
 @app.get("/", response_class=HTMLResponse)
 def serve_index():
-    """Serves the main index page (index.html)
-
-    Response:
-        HTML content of the index page
-    """
+    """Serves the main index page (index.html)"""
+    index_path = Path("./index.html")
+    logger.info(f"Serving index page from: {index_path}")
     try:
-        index_path = Path("./index.html")
-        logger.info(f"Serving index page from: {index_path}")
-        if not index_path.exists():
-            logger.error(f"index.html not found at {index_path}")
-            raise HTTPException(status_code=404, detail="index.html not found")
         html_content = index_path.read_text(encoding="utf-8")
         return HTMLResponse(content=html_content)
     except Exception as ex:
@@ -172,137 +184,115 @@ def serve_index():
 @app.get("/evaluators")
 def list_evaluators():
     """
-    Response:
-        {
-            "evaluators": ["string"]
-        }
+    Response: { "evaluators": ["string"] }
     """
     try:
         allowed_evaluators = EvaluationRunner.allowed_evaluators()
-        logger.debug(f"Available evaluators: {', '.join(allowed_evaluators)}")
+        logger.info(f"Available evaluators: {', '.join(allowed_evaluators)}")
         return {"evaluators": allowed_evaluators}
     except Exception as ex:
         logger.error(f"Error listing evaluators: {ex}")
         raise HTTPException(status_code=500, detail=f"Error listing evaluators: {ex}")
 
 
-@app.get("/queries")
-async def list_queries():
-    """
-    Response:
-        {
-            "values": ["string"]
-        }
-    """
-    return {"values": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
-
-
-@app.post("/query")
-async def get_query(request: Request):
-    """
-    Request Body:
-        {
-            "basename": "string"
-        }
-
-    Response:
-        {
-            "content": object
-        }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {"content": read_text_or_yaml(QUERIES_DIR / basename, ".yaml")}
-
-
-@app.get("/evals")
-async def list_evals():
-    """
-    Response:
-        {
-            "values": ["string"]
-        }
-    """
+@app.get("/runs")
+async def list_runs():
+    """Response: { "values": ["string"] }"""
     return {"values": await get_basenames_of_directory(RUNS_DIR, ".yaml")}
 
 
-@app.post("/create-eval")
-async def create_eval(request: Request):
+@app.post("/create-run")
+async def create_run(request: Request):
     """
-    Request Body:
-        {
-            "basename": "string",
-            "content": object
-        }
-
-    Response:
-        {
-            "basename": "string",
-            "filename": "string",
-            "content": object
-        }
+    Request Body: { "basename": "string", "content": object }
+    Response: { "message": "string" }
     """
     try:
-        data = await get_json_from_request(request)
-        basename = data.get("basename")
-        logger.info(f"Request to create eval for basename: {basename}")
-        if not basename:
-            logger.error("Missing 'basename' parameter in create_eval request")
-            raise HTTPException(
-                status_code=400, detail="basename parameter is required"
-            )
+        basename = await get_json_field_from_request(request, "basename")
         file_path = (RUNS_DIR / basename).with_suffix(".yaml")
         if file_path.exists():
             logger.error(f"Eval '{file_path}' already exists")
             raise HTTPException(
                 status_code=400, detail=f"Eval '{file_path}' already exists"
             )
-        config = RunConfig()
-        config.query_ref = basename
-        config.save(file_path)
-        logger.info(pretty_repr(config))
-        content = config.model_dump()
-        logger.info(f"Eval '{file_path}' created successfully at {file_path}")
+        RunConfig().save(file_path)
+        logger.info(f"Run '{file_path}' created successfully at {file_path}")
         return {
-            "basename": basename,
-            "content": content,
+            "message": f"Run '{file_path}' created successfully at {file_path}"
         }
     except Exception as ex:
         logger.error(f"Error creating eval: {ex}")
         raise HTTPException(status_code=500, detail=f"Error creating eval: {ex}")
 
 
-@app.post("/eval")
-async def get_eval(request: Request):
+@app.post("/run")
+async def get_run(request: Request):
     """
-    Request Body:
-        {
-            "basename": "string"
-        }
-
-    Response:
-        {
-            "content": object
-        }
+    Request Body: { "basename": "string" }
+    Response: { "content": object }
     """
     basename = await get_json_field_from_request(request, "basename")
-    config_path = (RUNS_DIR / basename).with_suffix(".yaml")
-    job_runner = Runner(config_path)
-    return {"content": job_runner._config.model_dump    ()}
+    return {"content": read_text_or_yaml(RUNS_DIR / basename, '.yaml')}
+
+
+
+@app.get("/queries")
+async def list_queries():
+    """Response: { "values": ["string"] }"""
+    return {"values": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
+
+
+@app.post("/query")
+async def get_query(request: Request):
+    """
+    Request Body: { "basename": "string" }
+    Response: { "content": object }
+    """
+    basename = await get_json_field_from_request(request, "basename")
+    return {"content": read_text_or_yaml(QUERIES_DIR / basename, ".yaml")}
+
+
+@app.get("/prompts")
+async def list_system_prompts():
+    """Response: { "values": ["string"] }"""
+    return {"values": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
+
+
+@app.post("/prompt")
+async def get_system_prompt(request: Request):
+    """
+    Request Body: { "basename": "string" }
+    Response: { "content": "string" }
+    """
+    basename = await get_json_field_from_request(request, "basename")
+    return {
+        "content": read_text_or_yaml(PROMPTS_DIR / basename, ".txt"),
+    }
+
+
+@app.post("/save-prompt")
+async def save_system_prompt(request: Request):
+    """
+    Request Body: { "basename": "string", "content": "string" }
+    Response: { "message": "string" }
+    """
+    return await save_content_to_dir(request, PROMPTS_DIR, ".txt")
+
+
+@app.post("/save-query")
+async def save_query(request: Request):
+    """
+    Request Body: { "basename": "string", "content": "string" }
+    Response: { "message": "string" }
+    """
+    return await save_content_to_dir(request, QUERIES_DIR, ".yaml")
 
 
 @app.post("/evaluate")
 async def evaluate(request: Request):
     """
-    Request Body:
-        {
-            "basename": "string",
-            "config": object
-        }
-
-    Response:
-        {
-            "success": true,
-        }
+    Request Body: { "basename": "string", "content": object }
+    Response: { "success": true }
     """
     try:
         data = await get_json_from_request(request)
@@ -310,7 +300,7 @@ async def evaluate(request: Request):
         if not basename:
             raise HTTPException(status_code=400, detail="basename is required")
 
-        config = data.get("config")
+        config = data.get("content")
         if not config:
             raise HTTPException(status_code=400, detail="config is required")
 
@@ -318,11 +308,12 @@ async def evaluate(request: Request):
         run_config = RunConfig(**config)
         run_config.save(config_path)
         job_runner = Runner(config_path)
-        logger.info(f"Running evaluation with config: {pretty_repr(job_runner._config)}")
+        logger.info(
+            f"Running evaluation with config '{config_path}'"
+        )
         await job_runner.save_results()
         return {
             "success": True,
-
         }
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
@@ -338,159 +329,13 @@ async def evaluate(request: Request):
 @app.post("/result")
 async def result(request: Request):
     """
-    Request Body:
-        {
-            "basename": "string"
-        }
-
-    Response:
-        {
-            "content": object
-        }
+    Request Body: { "basename": "string" }
+    Response: { "content": object }
     """
     basename = await get_json_field_from_request(request, "basename")
     return {"content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml")}
 
 
-@app.get("/system-prompts")
-async def list_system_prompts():
-    """
-    Response:
-        {
-            "values": ["string"]
-        }
-    """
-    return {"values": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
-
-
-@app.post("/system-prompt")
-async def get_system_prompt(request: Request):
-    """
-    Request Body:
-        {
-            "basename": "string"
-        }
-
-    Response:
-        {
-            "content": "string"
-        }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {
-        "content": read_text_or_yaml(PROMPTS_DIR / basename, ".txt"),
-    }
-
-
-@app.post("/create-system-prompt")
-async def create_system_prompt(request: Request):
-    """
-    Request Body:
-        {
-            "basename": "string",
-            "content": "string"
-        }
-
-    Response:
-        {
-            "basename": "string",
-            "filename": "string",
-            "content": "string"
-        }
-    """
-    try:
-        data = await get_json_from_request(request)
-        basename = data.get("basename")
-        logger.info(f"Request to create system prompt for basename: {basename}")
-        if not basename:
-            logger.error("Missing 'basename' parameter in create-system-prompt request")
-            raise HTTPException(
-                status_code=400, detail="basename parameter is required"
-            )
-        content = data.get("content")
-        if content is None:
-            logger.error("Missing 'content' parameter in create-system-prompt request")
-            raise HTTPException(status_code=400, detail="content parameter is required")
-        file_path = (PROMPTS_DIR / basename).with_suffix(".txt")
-        if file_path.exists():
-            logger.error(f"System prompt '{file_path}' already exists")
-            raise HTTPException(
-                status_code=400, detail=f"System prompt '{file_path}' already exists"
-            )
-        file_path.write_text(content, encoding="utf-8")
-        logger.info(f"System prompt '{file_path}' created successfully at {file_path}")
-        return {
-            "basename": basename,
-            "content": content,
-        }
-    except Exception as ex:
-        logger.error(f"Error creating system prompt: {ex}")
-        raise HTTPException(
-            status_code=500, detail=f"Error creating system prompt: {ex}"
-        )
-
-
-@app.post("/save-system-prompt")
-async def save_system_prompt(request: Request):
-    """
-    Request Body:
-        {
-            "basename": "string",
-            "content": "string"
-        }
-
-    Response:
-        {
-            "basename": "string",
-            "filename": "string",
-            "content": "string"
-        }
-    """
-    try:
-        data = await get_json_from_request(request)
-        basename = data.get("basename")
-        content = data.get("content")
-        if not basename:
-            logger.error("Missing 'basename' parameter in save-system-prompt request")
-            raise HTTPException(
-                status_code=400, detail="basename parameter is required"
-            )
-        if content is None:
-            logger.error("Missing 'content' parameter in save-system-prompt request")
-            raise HTTPException(status_code=400, detail="content parameter is required")
-        logger.info(f"Request to save system prompt for basename: {basename}")
-        file_path = (PROMPTS_DIR / basename).with_suffix(".txt")
-        file_path.write_text(content, encoding="utf-8")
-        logger.info(f"System prompt '{basename}' saved successfully at {file_path}")
-        return {"message": f"System prompt '{file_path}' saved successfully"}
-    except Exception as ex:
-        logger.error(f"Error saving system prompt: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error saving system prompt: {ex}")
-
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        handlers=[
-            RichHandler(
-                rich_tracebacks=True,
-                show_time=False,
-                show_path=True,
-                markup=True,
-                log_time_format="[%X]",
-            )
-        ],
-        force=True,
-    )
-    import os
-
     os.system("uvicorn server:app --host 0.0.0.0 --port 8000 --reload")
-    # uvicorn.run(
-    #     f"{Path(__file__).stem}:app",
-    #     host="0.0.0.0",
-    #     port=8000,
-    #     reload=False,
-    #     log_config=None, # We handle our own logging
-    #     access_log=False, # Disable uvicorn access logs
-    # )

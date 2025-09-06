@@ -35,8 +35,8 @@ class Runner:
 
             response = await self._chat_client.get_completion(
                 messages=[
-                    {"role": "system", "content": self._config.system_prompt},
-                    {"role": "user", "content": self._config.prompt},
+                    {"role": "system", "content": self._config.prompt},
+                    {"role": "user", "content": self._config.input},
                 ]
             )
 

@@ -26,7 +26,7 @@
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-    <!-- Pug template compiler -->
+    <!-- Pug HTML template compiler -->
     <script src="https://pugjs.org/js/pug.js"></script>
     <script>
       window.pug = require("pug");
@@ -107,45 +107,45 @@
           // Tab navigation
           ul.nav.nav-tabs.mt-3
             li.nav-item
-              a.nav-link.active(data-bs-toggle="tab" href="#evals-tab")
-                | Evals
+              a.nav-link.active(data-bs-toggle="tab" href="#runs-tab")
+                | Runs
             li.nav-item
               a.nav-link(data-bs-toggle="tab" href="#queries-tab")
                 | Queries
             li.nav-item
-              a.nav-link(data-bs-toggle="tab" href="#system-prompts-tab")
+              a.nav-link(data-bs-toggle="tab" href="#prompts-tab")
                 | Prompts
 
           // Tab content
           .tab-content.h-100
 
-            /// Eval tab
-            #evals-tab.tab-pane.fade.show.active.h-100
+            /// Run tab
+            #runs-tab.tab-pane.fade.show.active.h-100
               .d-flex.flex-row
 
-                //// Eval tab - left column
+                //// Run tab - left column
                 .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 250px;")
                   .px-3.pt-4
 
                     button.btn.btn-success(
                       data-bs-toggle="modal"
-                      data-bs-target="#createEvalModal"
-                      @click="newEvalName = ''"
+                      data-bs-target="#create-run-modal"
+                      @click="newRunName = ''"
                     ) + new
 
                     ul.list-group
                       li.list-group-item(
-                        v-for="f in evalNames" :key="f" @click="chooseEval(f)"
-                        :class="{ 'list-group-item-info': selectedEvalName == f }"
+                        v-for="f in runNames" :key="f" @click="chooseRun(f)"
+                        :class="{ 'list-group-item-info': selectedRunName == f }"
                         role="button"
                       )
                         | {{f}}
 
-                //// Eval tab - central column
+                  //// Run tab - central column
                 .d-flex.flex-column.scrollable-column.border.flex-grow-1(style="max-width: 20em")
                   .px-3.pt-4
 
-                    h3.mt-3 Run config: {{selectedEvalName}}
+                    h3.mt-3 Run config: {{selectedRunName}}
 
                     .mt-4
                     button.btn.btn-success(@click="runEval" :disabled="isEvaluating")
@@ -161,28 +161,28 @@
                     .form-group
                       input#repeat.form-control(
                         type="number"
-                        v-model="testConfig.repeat"
+                        v-model="config.repeat"
                         placeholder="1"
                         min="1"
                       )
 
                     h5.mt-3 Service
                     .form-group
-                      input#name.form-control(type="text" v-model="testConfig.service" placeholder="query")
+                      input#name.form-control(type="text" v-model="config.service" placeholder="query")
 
                       h5.mt-3 Model
                     .form-group
-                      input#name.form-control(type="text" v-model="testConfig.model" placeholder="query")
+                      input#name.form-control(type="text" v-model="config.model" placeholder="query")
 
                     h5.mt-4 Evaluators
                     .form-group
-                      div(v-for="evaluator in allEvaluators" :key="evaluator")
+                      div(v-for="evaluator in dropdown.evaluators" :key="evaluator")
                         .form-check
                           input.form-check-input(
                             type="checkbox"
                             :id="'evaluator-' + evaluator"
                             :value="evaluator"
-                            v-model="testConfig.evaluators"
+                            v-model="config.evaluators"
                           )
                           label.form-check-label(:for="'evaluator-' + evaluator")
                             | {{ evaluator }}
@@ -192,59 +192,70 @@
                     h3.mt-3 Results
 
                     .mt-4
-                    template(v-if="evalResult")
-                      .table-responsive(v-if="evalResult.length")
+                    template(v-if="runResult")
+                      .table-responsive(v-if="runResult.length")
                         table.table.table-striped
                           thead
                             tr
                               th Metric
                               th Value
                           tbody
-                            tr(v-for="(row, index) in evalResult" :key="index")
+                            tr(v-for="(row, index) in runResult" :key="index")
                               td {{ row.name }}
                               td
                                 | {{ parseFloat(row.average).toFixed(1) }}
                                 | ± {{ parseFloat(row.standardDeviation).toFixed(1) }}
 
-                    .form-group(v-if="sampleModelResponse")
+                    .form-group(v-if="sampleOutput")
                       h5.mt-3 Sample Model Response
-                      textarea.form-control(rows="20" v-model="sampleModelResponse" readonly)
+                      textarea.form-control(rows="8" v-model="sampleOutput" readonly)
 
-                //// Eval tab - right column
+                //// Run tab - right column
                 .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
                   .px-3.pt-4
 
                     .d-flex.flex-row.align-items-end
-                      h5.mt-3 System Prompt:
+                      h5.mt-3 Prompt:
                       .ms-2.form-group
-                        select.form-select(v-model="testConfig.systemPromptRef" @change="loadSystemPrompt")
+                        select.form-select(v-model="config.promptRef" @change="e => choosePromptOfRun(e.target.value)")
                           option(value="" disabled)
-                            | Select a system prompt
-                          option(v-for="prompt in systemPrompts" :key="prompt" :value="prompt")
-                            | {{ prompt }}
+                            | Select a prompt
+                          option(v-for="promptName in promptRefs" :key="promptName" :value="promptName")
+                            | {{ promptName }}
 
                     .form-group
                       textarea.form-control(
-                        rows="7"
-                        v-model="systemPrompt"
+                        rows="8"
+                        v-model="config.prompt"
                         placeholder="Please summarize the skills of this candidate."
                         readonly
                       )
 
-                    h5.mt-3 Query: {{testConfig.queryRef}}
+                    .d-flex.flex-row.align-items-end
+                      h5.mt-4 Query:
+                      .ms-2.form-group
+                      select.form-select(v-model="config.queryRef" @change="e => chooseQueryOfRun(e.target.value)")
+                        option(value="" disabled)
+                          | Select a query
+                        option(v-for="queryName in queryRefs" :key="queryName" :value="queryName")
+                          | {{ queryName }}
+
+                    h6.mt-3 Input:
                     .form-group
                       textarea#input.form-control(
-                        rows="20"
-                        v-model="testConfig.prompt"
+                        rows="8"
+                        v-model="config.input"
                         placeholder="A humble query"
+                        readonly
                       )
 
-                    h5.mt-4 Expected
+                    h6.mt-4 Output:
                     .form-group
                       textarea#expected.form-control(
-                        rows="20"
-                        v-model="testConfig.expectedAnswer"
+                        rows="8"
+                        v-model="config.output"
                         placeholder="expected"
+                        readonly
                       )
 
                     .pb-5
@@ -267,10 +278,10 @@
 
                     ul.list-group
                       li.list-group-item(
-                        v-for="query in queries"
+                        v-for="query in queryRefs"
                         :key="query"
-                        @click="chooseQuery(query)"
-                        :class="{ 'list-group-item-info': selectedQueryName == query }"
+                        @click="chooseSelectedQuery(query)"
+                        :class="{ 'list-group-item-info': selectedQueryRef == query }"
                         role="button"
                       )
                         | {{query}}
@@ -279,12 +290,13 @@
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 {{selectedQueryName}}: prompt
+                    h3.mt-5 query[{{selectedQueryRef}}] - input
 
-                    textarea.form-control(rows="25" v-model="query.prompt")
+                    textarea.form-control(rows="25" v-model="selectedQuery.input")
 
+                    .mt-3
                     button.btn.btn-success(
-                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
+                      @click="saveQuery" :disabled="isSavingPrompt"
                     )
                       span.spinner-border.spinner-border-sm(Z
                         v-if="isSavingPrompt" role="status" aria-hidden="true"
@@ -295,63 +307,56 @@
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 {{selectedQueryName}}: answer
+                    h3.mt-5 query[{{selectedQueryRef}}] - output
 
-                    textarea.form-control(rows="25" v-model="query.expectedAnswer")
+                    textarea.form-control(rows="25" v-model="selectedQuery.output")
 
-                    button.btn.btn-success(
-                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
-                    )
-                      span.spinner-border.spinner-border-sm(
-                        v-if="isSavingPrompt" role="status" aria-hidden="true"
-                      )
-                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
-
-            /// System prompts tab
-            #system-prompts-tab.tab-pane.fade.h-100
+            /// Prompts tab
+            #prompts-tab.tab-pane.fade.h-100
               .d-flex.flex-row.h-100
 
-                //// System Prompts tab - left column
+                //// Prompts tab - left column
                 .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 300px;")
                   .px-3.pt-4
 
-                    h3 System Prompts
+                    h3 Prompts
 
                     button.btn.btn-success(
                       data-bs-toggle="modal"
-                      data-bs-target="#create-system-prompt-modal"
+                      data-bs-target="#create-prompt-modal"
                     ) + new
 
                     ul.list-group
                       li.list-group-item(
-                        v-for="prompt in systemPrompts"
-                        :key="prompt"
-                        @click="chooseSystemPrompt(prompt)"
-                        :class="{ 'list-group-item-info': selectedSystemPromptName == prompt }"
+                        v-for="promptName in promptRefs"
+                        :key="promptName"
+                        @click="chooseSelectedPrompt(promptName)"
+                        :class="{ 'list-group-item-info': selectedPromptRef == promptName }"
                         role="button"
                       )
-                        | {{prompt}}
+                        | {{promptName}}
 
-                //// System Prompts tab - right column
+                //// Prompts tab - right column
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 {{selectedSystemPromptName}}
+                    h3.mt-5 {{selectedPromptRef}}
 
-                    textarea.form-control(rows="25" v-model="systemPrompt")
+                    textarea.form-control(rows="25" v-model="selectedPrompt")
 
+                    .mt-3
                     button.btn.btn-success(
-                      @click="saveSystemPrompt" :disabled="isSavingPrompt"
+                      @click="savePrompt" :disabled="isSavingPrompt"
                     )
                       span.spinner-border.spinner-border-sm(
                         v-if="isSavingPrompt" role="status" aria-hidden="true"
                       )
                       | {{ isSavingPrompt ? ' saving...' : 'save' }}
 
-        //// Modals
+        // Modals
 
         // Create Eval Modal
-        .modal.fade(id="createEvalModal" tabindex="-1")
+        .modal.fade(id="create-run-modal" tabindex="-1")
           .modal-dialog
             .modal-content
               .modal-header
@@ -362,16 +367,38 @@
                   label.form-label Eval Name
                   input.form-control(
                     type="text"
-                    v-model="newEvalName"
+                    v-model="newRunName"
                     placeholder="eval-name"
-                    id="evalNameInput"
+                    @keyup.enter="createRun"
+                    autofocus
                   )
               .modal-footer
                 button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
-                button.btn.btn-primary(@click="createEval" :disabled="!newEvalName") Create
+                button.btn.btn-primary(@click="createRun" :disabled="!newRunName") Create
 
-        // Create System Prompt Modal
-        .modal.fade(id="create-system-prompt-modal" tabindex="-1")
+        // Create Query Modal
+        .modal.fade(id="create-query-modal" tabindex="-1")
+          .modal-dialog
+            .modal-content
+              .modal-header
+                h5.modal-title Create New Query
+                button.btn-close(data-bs-dismiss="modal" aria-label="Close")
+              .modal-body
+                .form-group.mb-3
+                  label.form-label Query Name
+                  input.form-control(
+                    type="text"
+                    v-model="newQueryRef"
+                    placeholder="query-name"
+                    @keyup.enter="createQuery"
+                    autofocus
+                  )
+              .modal-footer
+                button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
+                button.btn.btn-primary(@click="createQuery" :disabled="!newQueryRef") Create
+
+        // Create Prompt Modal
+        .modal.fade(id="create-prompt-modal" tabindex="-1")
           .modal-dialog
             .modal-content
               .modal-header
@@ -382,16 +409,16 @@
                   label.form-label System Prompt Name
                   input.form-control(
                     type="text"
-                    v-model="newSystemPromptName"
+                    v-model="newPromptRef"
                     placeholder="prompt-name"
-                    id="systemPromptNameInput"
-                    @keyup.entßßer="createSystemPrompt"
+                    @keyup.enter="createPrompt"
+                    autofocus
                   )
               .modal-footer
                 button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
                 button.btn.btn-primary(
-                  @click="createSystemPrompt"
-                  :disabled="!newSystemPromptName"
+                  @click="createPrompt"
+                  :disabled="!newPromptRef"
                 ) Create
     `);
 
@@ -417,55 +444,57 @@
       return value;
     }
 
-    async function getJson(url, field=null) {
+    async function getJson(url, field = null) {
       let result = await ky.get(url).json();
       result = deepCamelCaseKeys(result);
       if (field) {
-        console.log("Loaded field:", url, field, _.cloneDeep(result[field]));
+        console.log(`getJson ${url}.${field}`, _.cloneDeep(result[field]));
         return result[field];
       }
-      console.log("Loaded result:", url, _.cloneDeep(result));
+      console.log(`getJson ${url}`, _.cloneDeep(result));
       return result;
     }
 
-    async function postJsonContent(url, json) {
-      let result = await ky.post(url, { json , timeout: 600000}).json();
+    async function postJson(url, json) {
+      let result = await ky.post(url, { json, timeout: 600000 }).json();
       result = deepCamelCaseKeys(result);
-      console.log("Loaded result.content:", url);
+      console.log(`postJson ${url}:`, _.cloneDeep(result.content));
       return result.content;
     }
 
     const { createApp, ref, onMounted } = Vue;
 
     function setup() {
+
       // State
-      const evalNames = ref([]);
-      const allEvaluators = ref([]);
-      const selectedEvalName = ref("");
-      const newEvalName = ref("");
-      const testConfig = ref({
-        systemPromptRef: "",
+      const runNames = ref([]);
+      const dropdown = ref({ evaluators: [] });
+      const selectedRunName = ref("");
+      const newRunName = ref("");
+      const config = ref({
+        promptRef: "",
+        queryRef: "",
         prompt: "",
-        expectedAnswer: "",
+        output: "",
         repeat: 1,
         model: "",
         evaluators: [],
       });
-      const evalResult = ref({});
+      const runResult = ref({});
       const isEvaluating = ref(false);
-      const sampleModelResponse = ref("");
+      const sampleOutput = ref("");
 
-      const systemPrompts = ref([]);
-      const selectedSystemPromptName = ref("");
-      const newSystemPromptName = ref("");
-      const systemPrompt = ref("");
-
+      const promptRefs = ref([]);
+      const selectedPromptRef = ref("");
+      const newPromptRef = ref("");
+      const selectedPrompt = ref("");
       const isSavingPrompt = ref(false);
 
-      const queries = ref([]);
-      const query = ref({prompt: "", expectedAnswer: ""});
-      const selectedQueryName = ref("");
-      const newQueryName = ref("");
+      const queryRefs = ref([]);
+      const selectedQueryRef = ref("");
+      const newQueryRef = ref("");
+      const selectedQuery = ref({ input: "", output: "" });
+      const isSavingQuery = ref(false);
 
       const notifications = ref([]);
 
@@ -483,77 +512,88 @@
       }
 
       onMounted(async () => {
-        await loadEvalNames();
-        await loadSystemPrompts();
+        await loadRuns();
+        await loadPrompts();
         await loadQueries();
-        allEvaluators.value = await getJson("/evaluators", "evaluators");
-        await chooseEval(evalNames.value[0]);
+        dropdown.value.evaluators = await getJson("/evaluators", "evaluators");
+        await chooseRun(runNames.value[0]);
       });
 
       // Methods
-      async function loadEvalNames() {
-        evalNames.value = await getJson("/evals", "values");
+      async function loadRuns() {
+        runNames.value = await getJson("/runs", "values");
       }
 
-      async function loadSystemPrompts() {
-        systemPrompts.value = await getJson("/system-prompts", "values");
+      async function loadPrompts() {
+        promptRefs.value = await getJson("/prompts", "values");
       }
 
       async function loadQueries() {
-        queries.value = await getJson("/queries", "values");
+        queryRefs.value = await getJson("/queries", "values");
       }
 
-      async function chooseEval(evalName) {
-        selectedEvalName.value = evalName;
-        systemPrompt.value = "";
-        await Promise.all([loadTestConfig(evalName), loadEvalResult(evalName)]);
+      async function chooseRun(runName) {
+        selectedRunName.value = runName;
+        selectedPrompt.value = "";
+        await loadRunConfig(runName);
+        await loadRunResult(runName);
       }
 
-      async function loadTestConfig(evalName) {
-        testConfig.value = await postJsonContent("/eval", { basename: evalName });
-        console.log("Loaded test config:", _.cloneDeep(testConfig.value));
-        query.value.prompt = testConfig.value.prompt;
-        query.value.expectedAnswer = testConfig.value.expectedAnswer;
-        if (testConfig.value.systemPromptRef) {
-          await loadSystemPrompt();
-        }
+      async function loadRunConfig(runName) {
+        config.value = await postJson("/run", { basename: runName });
+        await choosePromptOfRun(config.value.promptRef);
+        await chooseQueryOfRun(config.value.queryRef);
       }
 
-      async function loadEvalResult(evalName) {
-        evalResult.value = {};
-        sampleModelResponse.value = "";
-        const content = await postJsonContent("/result", { basename: evalName });
-        if (content) {
-          evalResult.value = content.evaluations || [];
+      async function choosePromptOfRun(promptRef) {
+        config.value.promptRef = promptRef;
+        config.value.prompt = await postJson("/prompt", {
+          basename: config.value.promptRef,
+        })
+        await chooseSelectedPrompt( promptRef)
+      }
+
+      async function chooseQueryOfRun(queryRef) {
+        config.value.queryRef = queryRef;
+        const content = await postJson("/query", {
+          basename: config.value.queryRef,
+        });
+        config.value.input = _.get(content, 'input');
+        config.value.output = _.get(content, 'output');
+        await chooseSelectedQuery(queryRef);
+      }
+
+      async function loadRunResult(runName) {
+        runResult.value = {};
+        sampleOutput.value = "";
+        try {
+          const content = await postJson("/result", {
+            basename: runName,
+          });
+          runResult.value = content.evaluations || [];
           const responseTexts = content.texts || [];
-          sampleModelResponse.value = responseTexts[0] || "";
-        }
-      }
-
-      async function loadSystemPrompt() {
-        if (testConfig.value.systemPromptRef) {
-          systemPrompt.value = await postJsonContent("/system-prompt", { basename: testConfig.value.systemPromptRef });
-          selectedSystemPromptName.value = testConfig.value.systemPromptRef;
-          selectedQueryName.value = testConfig.value.queryRef;
+          sampleOutput.value = responseTexts[0] || "";
+        } catch (error) {
+          console.error("Failed to load run result:", error);
         }
       }
 
       async function runEval() {
-        if (!selectedEvalName.value) return;
+        if (!selectedRunName.value) return;
 
         isEvaluating.value = true;
-        evalResult.value = {};
-        sampleModelResponse.value = "";
+        runResult.value = {};
+        sampleOutput.value = "";
         showNotification("Starting evaluation...", "info");
 
         try {
-          console.log("Running evaluation with config:", testConfig.value);
-          await postJsonContent(`/evaluate`, {
-            basename: selectedEvalName.value,
-            config: deepSnakeCaseKeys(testConfig.value),
+          console.log("Running evaluation with config:", config.value);
+          await postJson(`/evaluate`, {
+            basename: selectedRunName.value,
+            content: deepSnakeCaseKeys(config.value),
           });
 
-          await loadEvalResult(selectedEvalName.value);
+          await loadRunResult(selectedRunName.value);
           showNotification("Evaluation completed successfully!", "success");
         } catch (error) {
           console.error("Failed to run evaluation:", error);
@@ -566,41 +606,127 @@
         }
       }
 
-      async function createEval() {
-        if (!newEvalName.value) return;
+      async function createRun() {
+        if (!newRunName.value) return;
 
         try {
-          await postJsonContent("/create-eval", {
-            basename: newEvalName.value,
-          });
-
-          await loadEvalNames();
-          await chooseEval(newEvalName.value);
-          newEvalName.value = ""; // Clear the input field
+          await postJson("/create-run", { basename: newRunName.value, });
+          await loadRuns();
+          await chooseRun(newRunName.value);
+          newRunName.value = ""; // Clear the input field
           showNotification("Evaluation created successfully!");
         } catch (error) {
           console.error("Failed to create evaluation:", error);
           showNotification("Failed to create evaluation", "danger");
         }
 
-        closeBootstrapModal("createEvalModal");
+        closeBootstrapModal("create-run-modal");
       }
 
-      async function chooseSystemPrompt(promptName) {
-        selectedSystemPromptName.value = promptName;
-        systemPrompt.value = "";
-        systemPrompt.value = await postJsonContent("/system-prompt", { basename: promptName });
+      async function createPrompt() {
+        if (!newPromptRef.value) return;
+
+        try {
+          await postJson("/save-prompt", {
+            basename: newPromptRef.value,
+            content: "A sample prompt to deal with input",
+          });
+          await loadPrompts();
+          await chooseSelectedPrompt(newPromptRef.value);
+          newPromptRef.value = ""; // Clear the input field
+          showNotification("Prompt created successfully!");
+        } catch (error) {
+          console.error("Failed to create prompt:", error);
+          showNotification("Failed to create prompt", "danger");
+        }
+
+        closeBootstrapModal("create-prompt-modal");
       }
 
-      async function chooseQuery(queryName) {
-        selectedQueryName.value = queryName;
-        query.value = "";
-        query.value = await postJsonContent("/query", { basename: queryName });
+      async function createQuery() {
+        if (!newQueryRef.value) return;
+        try {
+          await postJson("/save-query", {
+            basename: newQueryRef.value,
+            content: { input: "Sample input", output: "Expected output" },
+          });
+          await loadQueries();
+          await chooseSelectedQuery(newQueryRef.value);
+          newQueryRef.value = ""; // Clear the input field
+          showNotification("Query created successfully!");
+        } catch (error) {
+          console.error("Failed to create query:", error);
+          showNotification("Failed to create query", "danger");
+        }
+
+        closeBootstrapModal("create-query-modal");
       }
 
-      function saveQuery() {}
+      async function chooseSelectedPrompt(promptName) {
+        selectedPromptRef.value = promptName;
+        selectedPrompt.value = "";
+        selectedPrompt.value = await postJson("/prompt", {
+          basename: promptName,
+        });
+      }
 
-      function createQuery() {}
+      async function chooseSelectedQuery(queryName) {
+        selectedQueryRef.value = queryName;
+        selectedQuery.value = "";
+        selectedQuery.value = await postJson("/query", { basename: queryName });
+      }
+
+      async function saveQuery() {
+        if (!selectedQueryRef.value) return;
+
+        isSavingQuery.value = true;
+
+        try {
+          await ky.post("/save-query", {
+            json: {
+              basename: selectedQueryRef.value,
+              content: selectedQuery.value,
+            },
+          });
+
+          await loadQueries();
+          showNotification("Query saved successfully!");
+        } catch (error) {
+          console.error("Failed to save query:", error);
+          showNotification("Failed to save query", "danger");
+        } finally {
+          isSavingQuery.value = false;
+        }
+      }
+
+      async function savePrompt() {
+        if (!selectedPromptRef.value) return;
+
+        isSavingPrompt.value = true;
+
+        try {
+          await ky.post("/save-prompt", {
+            json: {
+              basename: selectedPromptRef.value,
+              content: selectedPrompt.value,
+            },
+          });
+
+          await loadPrompts();
+          showNotification("System prompt saved successfully!");
+        } catch (error) {
+          showNotification("Failed to save system prompt", "danger");
+        } finally {
+          isSavingPrompt.value = false;
+        }
+      }
+
+      function closeBootstrapModal(modalId) {
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById(modalId),
+        );
+        if (modal) modal.hide();
+      }
 
       function showNotification(message, type = "success") {
         const id = Date.now();
@@ -638,88 +764,38 @@
         }
       }
 
-      async function saveSystemPrompt() {
-        if (!selectedSystemPromptName.value) return;
-
-        isSavingPrompt.value = true;
-
-        try {
-          await ky.post("/save-system-prompt", {
-            json: {
-              basename: selectedSystemPromptName.value,
-              content: systemPrompt.value,
-            },
-          });
-
-          await loadSystemPrompts();
-          showNotification("System prompt saved successfully!");
-        } catch (error) {
-          showNotification("Failed to save system prompt", "danger");
-        } finally {
-          isSavingPrompt.value = false;
-        }
-      }
-
-      function closeBootstrapModal(modalId) {
-        const modal = bootstrap.Modal.getInstance(
-          document.getElementById(modalId),
-        );
-        if (modal) modal.hide();
-      }
-      async function createSystemPrompt() {
-        if (!newSystemPromptName.value) return;
-
-        try {
-          await ky.post("/create-system-prompt", {
-            json: {
-              basename: newSystemPromptName.value,
-              content: "",
-            },
-          });
-
-          await loadSystemPrompts();
-          await chooseSystemPrompt(newSystemPromptName.value);
-          newSystemPromptName.value = ""; // Clear the input field
-          showNotification("System prompt created successfully!");
-        } catch (error) {
-          console.error("Failed to create system prompt:", error);
-          showNotification("Failed to create system prompt", "danger");
-        }
-
-        closeBootstrapModal("create-system-prompt-modal");
-      }
-
       // Expose methods and state to template
       return {
         // State
-        evalNames,
-        allEvaluators,
-        selectedEvalName,
-        newEvalName,
-        testConfig,
-        evalResult,
+        runNames,
+        dropdown,
+        selectedRunName,
+        newRunName,
+        config,
+        runResult,
         isEvaluating,
-        sampleModelResponse,
-        systemPrompts,
-        selectedSystemPromptName,
-        newSystemPromptName,
-        systemPrompt,
+        sampleOutput,
+        promptRefs,
+        selectedPromptRef,
+        newPromptRef,
+        selectedPrompt,
         isSavingPrompt,
-        queries,
-        selectedQueryName,
-        newQueryName,
-        query,
+        queryRefs,
+        selectedQueryRef,
+        newQueryRef,
+        selectedQuery,
         notifications,
 
         // Methods
-        chooseEval,
-        createEval,
+        chooseRun,
+        createRun,
         runEval,
-        loadSystemPrompt,
-        chooseSystemPrompt,
-        saveSystemPrompt,
-        createSystemPrompt,
-        chooseQuery,
+        chooseQueryOfRun,
+        choosePromptOfRun,
+        chooseSelectedPrompt,
+        savePrompt,
+        createPrompt,
+        chooseSelectedQuery,
         saveQuery,
         createQuery,
         closeBootstrapModal,

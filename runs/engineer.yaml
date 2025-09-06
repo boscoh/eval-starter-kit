@@ -1,7 +1,7 @@
 ---
 file_path: runs/engineer.yaml
 query_ref: engineer
-system_prompt_ref: candidate-skills
+prompt_ref: candidate-skills
 service: ollama
 model: llama3.2
 repeat: 5

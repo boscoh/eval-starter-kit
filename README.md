@@ -77,7 +77,7 @@ Evaluation configurations are defined in YAML files in the `jobs/` directory.
 ```yaml
 # jobs/engineer.yaml
 name: "Engineering Candidate Evaluation"
-system_prompt: |
+prompt: |
   You are an experienced engineering manager evaluating a candidate's technical skills.
   Analyze the following resume and provide a detailed assessment.
 
@@ -123,7 +123,7 @@ evaluators:
 .
 ├── jobs/                  # YAML job configurations
 ├── results/               # Evaluation results
-├── system-prompts/        # Reusable system prompts
+├── prompts/        # Reusable system prompts
 ├── chat_client.py         # Client for interacting with the API
 ├── evaluator.py           # Core evaluation logic
 ├── runner.py              # CLI for running evaluations
