@@ -299,7 +299,7 @@
                       @click="saveQuery" :disabled="isSavingPrompt"
                     )
                       span.spinner-border.spinner-border-sm(Z
-                        v-if="isSavingPrompt" role="status" aria-hidden="true"
+                      v-if="isSavingPrompt" role="status" aria-hidden="true"
                       )
                       | {{ isSavingPrompt ? ' saving...' : 'save' }}
 
@@ -465,7 +465,6 @@
     const { createApp, ref, onMounted } = Vue;
 
     function setup() {
-
       // State
       const runNames = ref([]);
       const dropdown = ref({ evaluators: [] });
@@ -549,8 +548,8 @@
         config.value.promptRef = promptRef;
         config.value.prompt = await postJson("/prompt", {
           basename: config.value.promptRef,
-        })
-        await chooseSelectedPrompt( promptRef)
+        });
+        await chooseSelectedPrompt(promptRef);
       }
 
       async function chooseQueryOfRun(queryRef) {
@@ -558,8 +557,8 @@
         const content = await postJson("/query", {
           basename: config.value.queryRef,
         });
-        config.value.input = _.get(content, 'input');
-        config.value.output = _.get(content, 'output');
+        config.value.input = _.get(content, "input");
+        config.value.output = _.get(content, "output");
         await chooseSelectedQuery(queryRef);
       }
 
@@ -610,7 +609,7 @@
         if (!newRunName.value) return;
 
         try {
-          await postJson("/create-run", { basename: newRunName.value, });
+          await postJson("/create-run", { basename: newRunName.value });
           await loadRuns();
           await chooseRun(newRunName.value);
           newRunName.value = ""; // Clear the input field

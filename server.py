@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
 from rich.logging import RichHandler
-from rich.pretty import pretty_repr
 
 from evaluator import EvaluationRunner
 from runner import Runner
@@ -37,7 +36,6 @@ logging.basicConfig(
     ],
     force=True,
 )
-
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -117,7 +115,6 @@ async def get_basenames_of_directory(this_dir: Path, ext: str = ".txt"):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-
 async def save_content_to_dir(request: Request, dir: Path, ext: str):
     try:
         data = await get_json_from_request(request)
@@ -142,7 +139,6 @@ async def save_content_to_dir(request: Request, dir: Path, ext: str):
     except Exception as ex:
         logger.error(f"Error saving {dir}: {ex}")
         raise HTTPException(status_code=500, detail=f"Error saving {dir}: {ex}")
-
 
 
 app = FastAPI()
@@ -217,9 +213,7 @@ async def create_run(request: Request):
             )
         RunConfig().save(file_path)
         logger.info(f"Run '{file_path}' created successfully at {file_path}")
-        return {
-            "message": f"Run '{file_path}' created successfully at {file_path}"
-        }
+        return {"message": f"Run '{file_path}' created successfully at {file_path}"}
     except Exception as ex:
         logger.error(f"Error creating eval: {ex}")
         raise HTTPException(status_code=500, detail=f"Error creating eval: {ex}")
@@ -232,8 +226,7 @@ async def get_run(request: Request):
     Response: { "content": object }
     """
     basename = await get_json_field_from_request(request, "basename")
-    return {"content": read_text_or_yaml(RUNS_DIR / basename, '.yaml')}
-
+    return {"content": read_text_or_yaml(RUNS_DIR / basename, ".yaml")}
 
 
 @app.get("/queries")
@@ -308,9 +301,7 @@ async def evaluate(request: Request):
         run_config = RunConfig(**config)
         run_config.save(config_path)
         job_runner = Runner(config_path)
-        logger.info(
-            f"Running evaluation with config '{config_path}'"
-        )
+        logger.info(f"Running evaluation with config '{config_path}'")
         await job_runner.save_results()
         return {
             "success": True,
@@ -334,7 +325,6 @@ async def result(request: Request):
     """
     basename = await get_json_field_from_request(request, "basename")
     return {"content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml")}
-
 
 
 if __name__ == "__main__":

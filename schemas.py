@@ -4,7 +4,6 @@ from typing import List, Optional
 
 from path import Path
 from pydantic import BaseModel, Field
-from rich.pretty import pretty_repr
 
 from util import load_yaml, save_yaml
 
@@ -74,7 +73,6 @@ class RunConfig(BaseModel):
         del save_config["prompt"]
         save_yaml(save_config, file_path)
         logger.info(f"Saved test config to '{file_path}'")
-
 
 
 class RunResult(BaseModel):
