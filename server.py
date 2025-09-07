@@ -1,39 +1,28 @@
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
+from pydantic import BaseModel
 
 from evaluator import EvaluationRunner
-from setup_logger import setup_logging_with_rich_logger
 from runner import Runner
-from schemas import PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, RunConfig
+from schemas import (
+    PROMPTS_DIR,
+    QUERIES_DIR,
+    RESULTS_DIR,
+    RUNS_DIR,
+    RunConfig,
+)
+from setup_logger import setup_logging_with_rich_logger
 from util import load_yaml, save_yaml
 
-setup_logging_with_rich_logger()
 logger = logging.getLogger(__name__)
+setup_logging_with_rich_logger()
 logger.info("Logging configured with Rich handler")
-
-
-
-dir_from_table = {
-    "result": RESULTS_DIR,
-    "run": RUNS_DIR,
-    "prompt": PROMPTS_DIR,
-    "query": QUERIES_DIR,
-}
-
-ext_from_table = {
-    "result": ".yaml",
-    "run": ".yaml",
-    "prompt": ".txt",
-    "query": ".yaml",
-}
-
-
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -105,35 +94,31 @@ def list_evaluators():
     """
     Response: { "content": object }
     """
-    try:
-        return {
-            "content": {
-                "evaluators": EvaluationRunner.evaluators(),
-                "run_config": {
-                    "promptRef": "",
-                    "queryRef": "",
-                    "prompt": "",
-                    "input": "",
-                    "output": "",
-                    "service": "ollama",
-                    "model": "llama3.2",
-                    "repeat": 1,
-                    "evaluators": ["CoherenceEvaluator"],
-                },
-            }
+    return {
+        "content": {
+            "evaluators": EvaluationRunner.evaluators(),
+            "run_config": {
+                "promptRef": "",
+                "queryRef": "",
+                "prompt": "",
+                "input": "",
+                "output": "",
+                "service": "ollama",
+                "model": "llama3.2",
+                "repeat": 1,
+                "evaluators": ["CoherenceEvaluator"],
+            },
         }
-    except Exception as ex:
-        logger.error(f"Error listing evaluators: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error listing evaluators: {ex}")
+    }
 
 
 @app.get("/list/{table}")
 async def list_objects(table):
     """Response: { "content": ["string"] }"""
-    table_dir = dir_from_table[table]
-    ext = ext_from_table[table]
-    logger.info(f"Listing basenames in directory: {table_dir}")
     try:
+        table_dir = dir_from_table[table]
+        ext = ext_from_table[table]
+        logger.info(f"Listing basenames in directory: {table_dir}")
         basenames = [f.stem for f in table_dir.iterdir() if f.suffix == ext]
         logger.info(f"Found basenames: {', '.join(basenames) or 'none'}")
         return {"content": basenames}
@@ -142,92 +127,120 @@ async def list_objects(table):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-@app.post("/fetch")
-async def fetch_object(request: Request):
-    """
-    Request Body: { "table": string, "basename": "string" }
-    Response: { "content": ["string"] }
-    Note: we post because basename is not guaranteed to be a valid URL parameter
-    """
+dir_from_table = {
+    "result": RESULTS_DIR,
+    "run": RUNS_DIR,
+    "prompt": PROMPTS_DIR,
+    "query": QUERIES_DIR,
+}
+
+ext_from_table = {
+    "result": ".yaml",
+    "run": ".yaml",
+    "prompt": ".txt",
+    "query": ".yaml",
+}
+
+
+TableType = Literal["result", "run", "prompt", "query"]
+
+
+class FetchObjectRequest(BaseModel):
+    table: TableType
+    basename: str
+
+
+class ContentResponse(BaseModel):
+    content: Any
+
+
+@app.post("/fetch", response_model=ContentResponse)
+async def fetch_object(request: FetchObjectRequest):
     try:
-        data = await get_json_from_request(request)
-        for field in ["table", "basename"]:
-            if not data.get(field):
-                logger.error(f"Missing '{field}' save request")
-                raise HTTPException(status_code=400, detail=f"{field} is required")
-        basename = data.get("basename")
-        table = data.get("table")
+        logger.info(
+            f"Request to fetch {request.table} for basename: {request.basename}"
+        )
 
-        logger.info(f"Request to fetch {table} for basename: {basename}")
-
-        table_dir = dir_from_table[table]
-        ext = ext_from_table[table]
-        file_path = (table_dir / basename).with_suffix(ext)
+        table_dir = dir_from_table[request.table]
+        ext = ext_from_table[request.table]
+        file_path = (table_dir / request.basename).with_suffix(ext)
 
         content = read_content(file_path)
-
         logger.info(f"Successfully loaded '{file_path}'")
-        return {"content": content}
+
+        return ContentResponse(content=content)
+
+    except KeyError as ke:
+        error_msg = f"Invalid table or basename: {ke}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+    except FileNotFoundError as fnf:
+        error_msg = f"File not found: {fnf}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
     except Exception as ex:
-        logger.error(f"Error reading object: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error reading: {ex}")
+        error_msg = f"Error reading object: {ex}"
+        logger.error(error_msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
 
 
-@app.post("/save")
-async def save_object(request: Request):
-    """
-    Request Body: { "table": string, "basename": "string", "content": object }
-    Response: { "message": "string" }
-    """
+class SaveObjectRequest(BaseModel):
+    table: TableType
+    basename: str
+    content: Any
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+@app.post("/save", response_model=MessageResponse)
+async def save_object(request: SaveObjectRequest):
     try:
-        data = await get_json_from_request(request)
-        for field in ["table", "basename", "content"]:
-            if not data.get(field):
-                logger.error(f"Missing '{field}' save request")
-                raise HTTPException(status_code=400, detail=f"{field} is required")
-        basename = data.get("basename")
-        table = data.get("table")
-        content = data.get("content")
-
-        logger.info(f"Request to save {table} for basename: {basename}")
-        parent_dir = dir_from_table[table]
+        logger.info(f"Request to save {request.table}/{request.basename}")
+        table = request.table
+        table_dir = dir_from_table[table]
         ext = ext_from_table[table]
-        file_path = (parent_dir / basename).with_suffix(ext)
+        file_path = (table_dir / request.basename).with_suffix(ext)
+        save_content(request.content, file_path)
+        logger.info(f"Successfully saved to '{file_path}'")
+        return MessageResponse(
+            message=f"Successfully saved {request.table}/{request.basename}"
+        )
 
-        save_content(content, file_path)
-
-        msg = f"{dir} '{basename}' saved successfully at {file_path}"
-        logger.info(msg)
-        return {"message": msg}
+    except KeyError as ke:
+        error_msg = f"Invalid table: {ke}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
     except Exception as ex:
-        logger.error(f"Error saving {dir}: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error saving {dir}: {ex}")
+        error_msg = f"Error saving object: {ex}"
+        logger.error(error_msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
 
 
-@app.post("/evaluate")
-async def evaluate(request: Request):
+class EvaluateRequest(BaseModel):
+    basename: str
+    content: Any
+
+
+@app.post("/evaluate", response_model=MessageResponse)
+async def evaluate(request: EvaluateRequest):
     """
-    Request Body: { "basename": "string", "content": object }
     Response: { "success": true }
     """
     try:
-        data = await get_json_from_request(request)
-        basename = data.get("basename")
-        if not basename:
-            raise HTTPException(status_code=400, detail="basename is required")
-
-        config = data.get("content")
-        if not config:
-            raise HTTPException(status_code=400, detail="config is required")
-
-        config_path = (RUNS_DIR / basename).with_suffix(".yaml")
+        basename = request.basename
+        config = request.content
+        config_path = (dir_from_table["run"] / basename).with_suffix(".yaml")
         logger.info(f"Running evaluation with config '{config_path}'")
         run_config = RunConfig(**config)
         run_config.save(config_path)
         await Runner(config_path).run()
-        return {
-            "success": True,
-        }
+        return MessageResponse(message=f"Successfully evaluated {request.basename}")
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
     except HTTPException:
@@ -241,10 +254,11 @@ async def evaluate(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "server:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_config=None,  # Disable uvicorn's default logging config
+        log_config=None,
     )

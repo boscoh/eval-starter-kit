@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from path import Path
 from pydantic import BaseModel, Field
@@ -18,6 +18,9 @@ RUNS_DIR.makedirs_p()
 PROMPTS_DIR.makedirs_p()
 QUERIES_DIR.makedirs_p()
 RESULTS_DIR.makedirs_p()
+
+
+TableType = Literal["result", "run", "prompt", "query"]
 
 
 class RunConfig(BaseModel):

@@ -33,12 +33,20 @@ def setup_logging_with_rich_logger(
     logging.getLogger("uvicorn.access").propagate = True
     logging.getLogger("uvicorn.error").handlers = []
     logging.getLogger("uvicorn.error").propagate = True
-    logging.getLogger("h11").setLevel(logging.WARNING)
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
-    
+
     # Suppress HTTP client logs
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("openai").setLevel(logging.WARNING)
     logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
     logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+
+    # Suppress h11 and server logs
+    logging.getLogger("h11").setLevel(logging.WARNING)
+    logging.getLogger("h11._impl").setLevel(logging.WARNING)
+    logging.getLogger("h11_impl").setLevel(logging.WARNING)
+
+    # Suppress server logs
+    logging.getLogger("uvicorn.server").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)

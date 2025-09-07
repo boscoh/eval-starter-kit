@@ -2,10 +2,8 @@ import asyncio
 import logging
 import sys
 from statistics import mean, stdev
-from typing import List
 
 from path import Path
-from rich.logging import RichHandler
 
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
@@ -78,8 +76,6 @@ class Runner:
 
 
 if __name__ == "__main__":
-    from setup_logger import setup_logging_with_rich_logger
-    setup_logging_with_rich_logger()
     if len(sys.argv) == 1:
         logger.info("Usage: python runner.py <config_file_path>")
         logger.info("No file path provided, run all in `./runs/*.yaml`")

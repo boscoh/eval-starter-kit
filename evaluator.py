@@ -1,7 +1,7 @@
 import logging
 import re
 import textwrap
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from schemas import RunConfig
 
@@ -26,7 +26,7 @@ class EvaluationRunner:
         self.evaluators = {
             "coherence": CoherenceEvaluator(chat_client, run_config),
             "equivalence": EquivalenceEvaluator(chat_client, run_config),
-            "word_count": WordCountEvaluator(run_config)
+            "word_count": WordCountEvaluator(run_config),
         }
 
     @staticmethod
