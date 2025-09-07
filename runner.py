@@ -101,6 +101,6 @@ if __name__ == "__main__":
     else:
         file_paths = [Path(sys.argv[1])]
 
-    for file_path in file_paths:
-        logger.info(f"Running job: {file_path}")
-        asyncio.run(Runner(file_path).save_results())
+    for run_config in file_paths:
+        logger.info(f"Running job: {run_config}")
+        asyncio.run(Runner(run_config).save_results())

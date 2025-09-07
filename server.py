@@ -38,6 +38,21 @@ logging.basicConfig(
 )
 
 
+dir_from_table = {
+    "result": RESULTS_DIR,
+    "run": RUNS_DIR,
+    "prompt": PROMPTS_DIR,
+    "query": QUERIES_DIR,
+}
+
+ext_from_table = {
+    "result": ".yaml",
+    "run": ".yaml",
+    "prompt": ".txt",
+    "query": ".yaml",
+}
+
+
 async def get_json_from_request(request) -> Dict[str, Any]:
     """Returns parsed json from request"""
     return (
@@ -47,98 +62,23 @@ async def get_json_from_request(request) -> Dict[str, Any]:
     )
 
 
-def read_text_or_yaml(path: Path, ext: str):
-    """
-    Read a file with a given extension, or a YAML file if no extension is provided.
-    If yaml file is read, will return a dictionary.
-    Will raise HTTPException if the file is not found.
-    """
-    if ext:
-        file_path = path.with_suffix(ext)
+def read_content(file_path: str):
+    """ Returns a JSON object for ext='.yaml', or a string if ext='.txt" """
+    file_path = Path(file_path)
+    ext = file_path.suffix
+    if ext == ".yaml":
+        content = load_yaml(file_path)
+    else:  # assume text file
+        content = file_path.read_text(encoding="utf-8")
+    return content
+
+
+def save_content(content, file_path):
+    ext = file_path.suffix
+    if ext == ".yaml":
+        save_yaml(content, file_path)
     else:
-        file_path = path
-    if not file_path.exists():
-        logger.error(f"{path} '{file_path}' not found")
-        raise HTTPException(
-            status_code=404,
-            detail=f"{path} '{file_path}' not found",
-        )
-    if file_path.suffix == ".yaml":
-        try:
-            result = load_yaml(file_path)
-        except Exception as ex:
-            logger.error(f"Error loading YAML: {ex}")
-            raise HTTPException(status_code=500, detail=f"Error loading YAML: {ex}")
-    else:  # assume is a text file
-        try:
-            result = file_path.read_text(encoding="utf-8")
-        except Exception as ex:
-            logger.error(f"Error reading path: {ex}")
-            raise HTTPException(status_code=500, detail=f"Error reading path: {ex}")
-
-    logger.info(f"Successfully loaded '{file_path}'")
-    return result
-
-
-async def get_json_field_from_request(request: Request, key: str):
-    """
-    Read a field from a JSON request body.
-    Will raise HTTPException if the field is not found.
-    """
-    try:
-        data = await get_json_from_request(request)
-        value = data.get(key)
-        if not value:
-            logger.error(f"Missing '{key}' parameter in request")
-            raise HTTPException(status_code=400, detail=f"{key} parameter is required")
-        return value
-    except Exception as ex:
-        logger.error(f"Error getting {key} from request: {ex}")
-        raise HTTPException(
-            status_code=500, detail=f"Error getting {key} from request: {ex}"
-        )
-
-
-async def get_basenames_of_directory(this_dir: Path, ext: str = ".txt"):
-    """
-    Lists all basenames in a directory.
-    Raises HTTPException if the directory is not found.
-    """
-    logger.info(f"Listing basenames in directory: {this_dir}")
-    this_dir = Path(this_dir)
-    try:
-        basenames = [f.stem for f in this_dir.iterdir() if f.suffix == ext]
-        logger.debug(f"Found basenames: {', '.join(basenames) or 'none'}")
-        return basenames
-    except Exception as ex:
-        logger.error(f"Error listing basenames: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
-
-
-async def save_content_to_dir(request: Request, dir: Path, ext: str):
-    try:
-        data = await get_json_from_request(request)
-        basename = data.get("basename")
-        content = data.get("content")
-        if not basename:
-            logger.error("Missing 'basename' parameter in save request")
-            raise HTTPException(
-                status_code=400, detail="basename parameter is required"
-            )
-        if content is None:
-            logger.error("Missing 'content' parameter in save request")
-            raise HTTPException(status_code=400, detail="content parameter is required")
-        logger.info(f"Request to save {dir} for basename: {basename}")
-        file_path = (dir / basename).with_suffix(ext)
-        if ext == ".yaml":
-            save_yaml(content, file_path)
-        else:
-            file_path.write_text(content)
-        logger.info(f"{dir} '{basename}' saved successfully at {file_path}")
-        return {"message": f"{dir} '{file_path}' saved successfully"}
-    except Exception as ex:
-        logger.error(f"Error saving {dir}: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error saving {dir}: {ex}")
+        file_path.write_text(content)
 
 
 app = FastAPI()
@@ -177,7 +117,7 @@ def serve_index():
         raise HTTPException(status_code=500, detail=f"Error serving index.html: {ex}")
 
 
-@app.get("/evaluators")
+@app.get("/defaults")
 def list_evaluators():
     """
     Response: { "evaluators": ["string"] }
@@ -185,100 +125,99 @@ def list_evaluators():
     try:
         allowed_evaluators = EvaluationRunner.allowed_evaluators()
         logger.info(f"Available evaluators: {', '.join(allowed_evaluators)}")
-        return {"evaluators": allowed_evaluators}
+        return {
+            "content": {
+                "evaluators": allowed_evaluators,
+                "run_config": {
+                    "promptRef": "",
+                    "queryRef": "",
+                    "prompt": "",
+                    "input": "",
+                    "output": "",
+                    "service": "ollama",
+                    "model": "llama3.2",
+                    "repeat": 1,
+                    "evaluators": ["CoherenceEvaluator"],
+                },
+            }
+        }
     except Exception as ex:
         logger.error(f"Error listing evaluators: {ex}")
         raise HTTPException(status_code=500, detail=f"Error listing evaluators: {ex}")
 
 
-@app.get("/runs")
-async def list_runs():
-    """Response: { "values": ["string"] }"""
-    return {"values": await get_basenames_of_directory(RUNS_DIR, ".yaml")}
+@app.get("/list/{table}")
+async def list_objects(table):
+    """Response: { "content": ["string"] }"""
+    table_dir = dir_from_table[table]
+    ext = ext_from_table[table]
+    logger.info(f"Listing basenames in directory: {table_dir}")
+    try:
+        basenames = [f.stem for f in table_dir.iterdir() if f.suffix == ext]
+        logger.info(f"Found basenames: {', '.join(basenames) or 'none'}")
+        return {"content": basenames}
+    except Exception as ex:
+        logger.error(f"Error listing basenames: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-@app.post("/create-run")
-async def create_run(request: Request):
+@app.post("/fetch")
+async def fetch_object(request: Request):
     """
-    Request Body: { "basename": "string", "content": object }
+    Request Body: { "table": string, "basename": "string" }
+    Response: { "content": ["string"] }
+    Note: we post because basename is not guaranteed to be a valid URL parameter
+    """
+    try:
+        data = await get_json_from_request(request)
+        for field in ["table", "basename"]:
+            if not data.get(field):
+                logger.error(f"Missing '{field}' save request")
+                raise HTTPException(status_code=400, detail=f"{field} is required")
+        basename = data.get("basename")
+        table = data.get("table")
+        logger.info(f"Request to fetch {table} for basename: {basename}")
+        table_dir = dir_from_table[table]
+        ext = ext_from_table[table]
+        file_path = (table_dir / basename).with_suffix(ext)
+        logger.info(f"Reading {file_path} to fetch {table} for basename: {basename}")
+        content = read_content(file_path)
+        logger.info(f"Successfully loaded '{file_path}'")
+        return {"content": content}
+    except Exception as ex:
+        logger.error(f"Error reading object: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error reading: {ex}")
+
+
+@app.post("/save")
+async def save_object(request: Request):
+    """
+    Request Body: { "table": string, "basename": "string", "content": object }
     Response: { "message": "string" }
     """
     try:
-        basename = await get_json_field_from_request(request, "basename")
-        file_path = (RUNS_DIR / basename).with_suffix(".yaml")
-        if file_path.exists():
-            logger.error(f"Eval '{file_path}' already exists")
-            raise HTTPException(
-                status_code=400, detail=f"Eval '{file_path}' already exists"
-            )
-        RunConfig().save(file_path)
-        logger.info(f"Run '{file_path}' created successfully at {file_path}")
-        return {"message": f"Run '{file_path}' created successfully at {file_path}"}
+        data = await get_json_from_request(request)
+        for field in ["table", "basename", "content"]:
+            if not data.get(field):
+                logger.error(f"Missing '{field}' save request")
+                raise HTTPException(status_code=400, detail=f"{field} is required")
+        basename = data.get("basename")
+        table = data.get("table")
+        content = data.get("content")
+
+        logger.info(f"Request to save {table} for basename: {basename}")
+        parent_dir = dir_from_table[table]
+        ext = ext_from_table[table]
+        file_path = (parent_dir / basename).with_suffix(ext)
+
+        save_content(content, file_path)
+
+        msg = f"{dir} '{basename}' saved successfully at {file_path}"
+        logger.info(msg)
+        return {"message": msg}
     except Exception as ex:
-        logger.error(f"Error creating eval: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error creating eval: {ex}")
-
-
-@app.post("/run")
-async def get_run(request: Request):
-    """
-    Request Body: { "basename": "string" }
-    Response: { "content": object }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {"content": read_text_or_yaml(RUNS_DIR / basename, ".yaml")}
-
-
-@app.get("/queries")
-async def list_queries():
-    """Response: { "values": ["string"] }"""
-    return {"values": await get_basenames_of_directory(QUERIES_DIR, ".yaml")}
-
-
-@app.post("/query")
-async def get_query(request: Request):
-    """
-    Request Body: { "basename": "string" }
-    Response: { "content": object }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {"content": read_text_or_yaml(QUERIES_DIR / basename, ".yaml")}
-
-
-@app.get("/prompts")
-async def list_system_prompts():
-    """Response: { "values": ["string"] }"""
-    return {"values": await get_basenames_of_directory(PROMPTS_DIR, ".txt")}
-
-
-@app.post("/prompt")
-async def get_system_prompt(request: Request):
-    """
-    Request Body: { "basename": "string" }
-    Response: { "content": "string" }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {
-        "content": read_text_or_yaml(PROMPTS_DIR / basename, ".txt"),
-    }
-
-
-@app.post("/save-prompt")
-async def save_system_prompt(request: Request):
-    """
-    Request Body: { "basename": "string", "content": "string" }
-    Response: { "message": "string" }
-    """
-    return await save_content_to_dir(request, PROMPTS_DIR, ".txt")
-
-
-@app.post("/save-query")
-async def save_query(request: Request):
-    """
-    Request Body: { "basename": "string", "content": "string" }
-    Response: { "message": "string" }
-    """
-    return await save_content_to_dir(request, QUERIES_DIR, ".yaml")
+        logger.error(f"Error saving {dir}: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error saving {dir}: {ex}")
 
 
 @app.post("/evaluate")
@@ -315,16 +254,6 @@ async def evaluate(request: Request):
         raise HTTPException(
             status_code=500, detail=f"Error during evaluation: {str(e)}"
         )
-
-
-@app.post("/result")
-async def result(request: Request):
-    """
-    Request Body: { "basename": "string" }
-    Response: { "content": object }
-    """
-    basename = await get_json_field_from_request(request, "basename")
-    return {"content": read_text_or_yaml(RESULTS_DIR / basename, ".yaml")}
 
 
 if __name__ == "__main__":

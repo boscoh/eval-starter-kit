@@ -161,28 +161,28 @@
                     .form-group
                       input#repeat.form-control(
                         type="number"
-                        v-model="config.repeat"
+                        v-model="runConfig.repeat"
                         placeholder="1"
                         min="1"
                       )
 
                     h5.mt-3 Service
                     .form-group
-                      input#name.form-control(type="text" v-model="config.service" placeholder="query")
+                      input#name.form-control(type="text" v-model="runConfig.service" placeholder="query")
 
                       h5.mt-3 Model
                     .form-group
-                      input#name.form-control(type="text" v-model="config.model" placeholder="query")
+                      input#name.form-control(type="text" v-model="runConfig.model" placeholder="query")
 
                     h5.mt-4 Evaluators
                     .form-group
-                      div(v-for="evaluator in dropdown.evaluators" :key="evaluator")
+                      div(v-for="evaluator in defaults.evaluators" :key="evaluator")
                         .form-check
                           input.form-check-input(
                             type="checkbox"
                             :id="'evaluator-' + evaluator"
                             :value="evaluator"
-                            v-model="config.evaluators"
+                            v-model="runConfig.evaluators"
                           )
                           label.form-check-label(:for="'evaluator-' + evaluator")
                             | {{ evaluator }}
@@ -217,7 +217,7 @@
                     .d-flex.flex-row.align-items-end
                       h5.mt-3 Prompt:
                       .ms-2.form-group
-                        select.form-select(v-model="config.promptRef" @change="e => choosePromptOfRun(e.target.value)")
+                        select.form-select(v-model="runConfig.promptRef" @change="e => choosePromptOfRun(e.target.value)")
                           option(value="" disabled)
                             | Select a prompt
                           option(v-for="promptName in promptRefs" :key="promptName" :value="promptName")
@@ -226,7 +226,7 @@
                     .form-group
                       textarea.form-control(
                         rows="8"
-                        v-model="config.prompt"
+                        v-model="runConfig.prompt"
                         placeholder="Please summarize the skills of this candidate."
                         readonly
                       )
@@ -234,7 +234,7 @@
                     .d-flex.flex-row.align-items-end
                       h5.mt-4 Query:
                       .ms-2.form-group
-                      select.form-select(v-model="config.queryRef" @change="e => chooseQueryOfRun(e.target.value)")
+                      select.form-select(v-model="runConfig.queryRef" @change="e => chooseQueryOfRun(e.target.value)")
                         option(value="" disabled)
                           | Select a query
                         option(v-for="queryName in queryRefs" :key="queryName" :value="queryName")
@@ -244,7 +244,7 @@
                     .form-group
                       textarea#input.form-control(
                         rows="8"
-                        v-model="config.input"
+                        v-model="runConfig.input"
                         placeholder="A humble query"
                         readonly
                       )
@@ -253,7 +253,7 @@
                     .form-group
                       textarea#expected.form-control(
                         rows="8"
-                        v-model="config.output"
+                        v-model="runConfig.output"
                         placeholder="expected"
                         readonly
                       )
@@ -444,55 +444,65 @@
       return value;
     }
 
-    async function getJson(url, field = null) {
+    async function getJson(url) {
       let result = await ky.get(url).json();
       result = deepCamelCaseKeys(result);
-      if (field) {
-        console.log(`getJson ${url}.${field}`, _.cloneDeep(result[field]));
-        return result[field];
-      }
-      console.log(`getJson ${url}`, _.cloneDeep(result));
-      return result;
+      const content = result.content;
+      console.log(`getJson ${url}`, _.cloneDeep(content));
+      return content;
     }
 
-    async function postJson(url, json) {
-      let result = await ky.post(url, { json, timeout: 600000 }).json();
+    async function fetchObject(table, basename) {
+      let result = await ky.post(`/fetch`, {
+        json: {
+          table,
+          basename,
+        },
+      }).json();
       result = deepCamelCaseKeys(result);
-      console.log(`postJson ${url}:`, _.cloneDeep(result.content));
-      return result.content;
+      const content = result.content;
+      console.log(`fetchObject`, _.cloneDeep(content));
+      return content;
+    }
+
+    async function saveObject(table, basename, content) {
+      let result = await ky.post(`/save`, {
+        json: {
+          table,
+          basename,
+          content,
+        },
+      }).json();
+      result = deepCamelCaseKeys(result);
+      const message = result.message;
+      console.log(`saveObject`, _.cloneDeep(message));
+      return message;
     }
 
     const { createApp, ref, onMounted } = Vue;
 
     function setup() {
       // State
+      const defaults = ref({});
+
       const runNames = ref([]);
-      const dropdown = ref({ evaluators: [] });
+      const runConfig = ref({});
+      const runResult = ref({});
       const selectedRunName = ref("");
       const newRunName = ref("");
-      const config = ref({
-        promptRef: "",
-        queryRef: "",
-        prompt: "",
-        output: "",
-        repeat: 1,
-        model: "",
-        evaluators: [],
-      });
-      const runResult = ref({});
       const isEvaluating = ref(false);
       const sampleOutput = ref("");
 
       const promptRefs = ref([]);
       const selectedPromptRef = ref("");
-      const newPromptRef = ref("");
       const selectedPrompt = ref("");
+      const newPromptRef = ref("");
       const isSavingPrompt = ref(false);
 
       const queryRefs = ref([]);
       const selectedQueryRef = ref("");
-      const newQueryRef = ref("");
       const selectedQuery = ref({ input: "", output: "" });
+      const newQueryRef = ref("");
       const isSavingQuery = ref(false);
 
       const notifications = ref([]);
@@ -511,24 +521,24 @@
       }
 
       onMounted(async () => {
-        await loadRuns();
-        await loadPrompts();
-        await loadQueries();
-        dropdown.value.evaluators = await getJson("/evaluators", "evaluators");
+        await loadRunNames();
+        await loadPromptRefs();
+        await loadQueryRefs();
+        defaults.value = await getJson("/defaults");
         await chooseRun(runNames.value[0]);
       });
 
       // Methods
-      async function loadRuns() {
-        runNames.value = await getJson("/runs", "values");
+      async function loadRunNames() {
+        runNames.value = await getJson("/list/run");
       }
 
-      async function loadPrompts() {
-        promptRefs.value = await getJson("/prompts", "values");
+      async function loadPromptRefs() {
+        promptRefs.value = await getJson("/list/prompt");
       }
 
-      async function loadQueries() {
-        queryRefs.value = await getJson("/queries", "values");
+      async function loadQueryRefs() {
+        queryRefs.value = await getJson("/list/query");
       }
 
       async function chooseRun(runName) {
@@ -539,36 +549,43 @@
       }
 
       async function loadRunConfig(runName) {
-        config.value = await postJson("/run", { basename: runName });
-        await choosePromptOfRun(config.value.promptRef);
-        await chooseQueryOfRun(config.value.queryRef);
+        runConfig.value = await fetchObject("run", runName);
+        await choosePromptOfRun(runConfig.value.promptRef);
+        if (runConfig.value.queryRef) {
+          await chooseQueryOfRun(runConfig.value.queryRef);
+        }
       }
 
       async function choosePromptOfRun(promptRef) {
-        config.value.promptRef = promptRef;
-        config.value.prompt = await postJson("/prompt", {
-          basename: config.value.promptRef,
-        });
-        await chooseSelectedPrompt(promptRef);
+        if (!promptRef) {
+          runConfig.value.promptRef = "";
+          runConfig.value.prompt = "";
+        } else {
+          runConfig.value.promptRef = promptRef;
+          runConfig.value.prompt = await fetchObject("prompt", runConfig.value.promptRef);
+          await chooseSelectedPrompt(promptRef);
+        }
       }
 
       async function chooseQueryOfRun(queryRef) {
-        config.value.queryRef = queryRef;
-        const content = await postJson("/query", {
-          basename: config.value.queryRef,
-        });
-        config.value.input = _.get(content, "input");
-        config.value.output = _.get(content, "output");
-        await chooseSelectedQuery(queryRef);
+        if (!queryRef) {
+          runConfig.value.queryRef = "";
+          runConfig.value.input = "";
+          runConfig.value.output = "";
+        } else {
+          runConfig.value.queryRef = queryRef;
+          const content = await fetchObject("query", runConfig.value.queryRef);
+          runConfig.value.input = _.get(content, "input");
+          runConfig.value.output = _.get(content, "output");
+          await chooseSelectedQuery(queryRef);
+        }
       }
 
       async function loadRunResult(runName) {
         runResult.value = {};
         sampleOutput.value = "";
         try {
-          const content = await postJson("/result", {
-            basename: runName,
-          });
+          const content = await fetchObject("result", runName);
           runResult.value = content.evaluations || [];
           const responseTexts = content.texts || [];
           sampleOutput.value = responseTexts[0] || "";
@@ -586,12 +603,14 @@
         showNotification("Starting evaluation...", "info");
 
         try {
-          console.log("Running evaluation with config:", config.value);
-          await postJson(`/evaluate`, {
-            basename: selectedRunName.value,
-            content: deepSnakeCaseKeys(config.value),
+          console.log("Running evaluation with config:", runConfig.value);
+          await ky.post(`/evaluate`, {
+            json: {
+              basename: selectedRunName.value,
+              content: deepSnakeCaseKeys(runConfig.value),
+            },
+            timeout: 600000,
           });
-
           await loadRunResult(selectedRunName.value);
           showNotification("Evaluation completed successfully!", "success");
         } catch (error) {
@@ -609,8 +628,14 @@
         if (!newRunName.value) return;
 
         try {
-          await postJson("/create-run", { basename: newRunName.value });
-          await loadRuns();
+          await ky.post("/save", {
+            json: {
+              table: "run",
+              basename: newRunName.value,
+              content: defaults.value.runConfig,
+            },
+          });
+          await loadRunNames();
           await chooseRun(newRunName.value);
           newRunName.value = ""; // Clear the input field
           showNotification("Evaluation created successfully!");
@@ -626,11 +651,8 @@
         if (!newPromptRef.value) return;
 
         try {
-          await postJson("/save-prompt", {
-            basename: newPromptRef.value,
-            content: "A sample prompt to deal with input",
-          });
-          await loadPrompts();
+          await saveObject("prompt", newPromptRef.value, "A sample prompt to deal with input");
+          await loadPromptRefs();
           await chooseSelectedPrompt(newPromptRef.value);
           newPromptRef.value = ""; // Clear the input field
           showNotification("Prompt created successfully!");
@@ -645,11 +667,8 @@
       async function createQuery() {
         if (!newQueryRef.value) return;
         try {
-          await postJson("/save-query", {
-            basename: newQueryRef.value,
-            content: { input: "Sample input", output: "Expected output" },
-          });
-          await loadQueries();
+          await saveObject("query", newQueryRef.value, { input: "Sample input", output: "Expected output" });
+          await loadQueryRefs();
           await chooseSelectedQuery(newQueryRef.value);
           newQueryRef.value = ""; // Clear the input field
           showNotification("Query created successfully!");
@@ -664,15 +683,13 @@
       async function chooseSelectedPrompt(promptName) {
         selectedPromptRef.value = promptName;
         selectedPrompt.value = "";
-        selectedPrompt.value = await postJson("/prompt", {
-          basename: promptName,
-        });
+        selectedPrompt.value = await fetchObject("prompt", promptName);
       }
 
       async function chooseSelectedQuery(queryName) {
         selectedQueryRef.value = queryName;
         selectedQuery.value = "";
-        selectedQuery.value = await postJson("/query", { basename: queryName });
+        selectedQuery.value = await fetchObject("query", queryName);
       }
 
       async function saveQuery() {
@@ -681,14 +698,8 @@
         isSavingQuery.value = true;
 
         try {
-          await ky.post("/save-query", {
-            json: {
-              basename: selectedQueryRef.value,
-              content: selectedQuery.value,
-            },
-          });
-
-          await loadQueries();
+          await saveObject("query", selectedQueryRef.value, selectedQuery.value);
+          await loadQueryRefs();
           showNotification("Query saved successfully!");
         } catch (error) {
           console.error("Failed to save query:", error);
@@ -704,14 +715,8 @@
         isSavingPrompt.value = true;
 
         try {
-          await ky.post("/save-prompt", {
-            json: {
-              basename: selectedPromptRef.value,
-              content: selectedPrompt.value,
-            },
-          });
-
-          await loadPrompts();
+          await saveObject("prompt", selectedPromptRef.value, selectedPrompt.value);
+          await loadPromptRefs();
           showNotification("System prompt saved successfully!");
         } catch (error) {
           showNotification("Failed to save system prompt", "danger");
@@ -767,10 +772,10 @@
       return {
         // State
         runNames,
-        dropdown,
+        defaults,
         selectedRunName,
         newRunName,
-        config,
+        runConfig,
         runResult,
         isEvaluating,
         sampleOutput,
