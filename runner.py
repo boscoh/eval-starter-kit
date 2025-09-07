@@ -25,7 +25,7 @@ class Runner:
         self._evaluation_runner = EvaluationRunner(self._chat_client, self._config)
         RESULTS_DIR.makedirs_p()
 
-    async def run_evaluations(self) -> List[RunResult]:
+    async def run(self):
         fields = self._config.evaluators + ["elapsed_seconds", "token_count", "cost"]
         eval_results_dict = {f: RunResult(name=f) for f in fields}
 
@@ -69,31 +69,17 @@ class Runner:
                 )
 
         evaluations = [result.model_dump() for result in eval_results_dict.values()]
-        return {"texts": response_texts, "evaluations": evaluations}
 
-    async def save_results(self):
-        eval_results = await self.run_evaluations()
-        stem = Path(self._config.file_path).stem
-        results_path = RESULTS_DIR / f"{stem}.yaml"
+        eval_results = {"texts": response_texts, "evaluations": evaluations}
+        results_path = (RESULTS_DIR / self._config.file_path).with_suffix(".yaml")
         save_yaml(eval_results, results_path)
+
         logger.info(f"Results saved to: {results_path}")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        handlers=[
-            RichHandler(
-                rich_tracebacks=True,
-                show_time=False,
-                show_path=True,
-                markup=True,
-                log_time_format="[%X]",
-            )
-        ],
-        force=True,
-    )
+    from setup_logger import setup_logging_with_rich_logger
+    setup_logging_with_rich_logger()
     if len(sys.argv) == 1:
         logger.info("Usage: python runner.py <config_file_path>")
         logger.info("No file path provided, run all in `./runs/*.yaml`")
@@ -103,4 +89,4 @@ if __name__ == "__main__":
 
     for run_config in file_paths:
         logger.info(f"Running job: {run_config}")
-        asyncio.run(Runner(run_config).save_results())
+        asyncio.run(Runner(run_config).run())

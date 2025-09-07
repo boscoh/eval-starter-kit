@@ -148,7 +148,7 @@
                     h3.mt-3 Run config: {{selectedRunName}}
 
                     .mt-4
-                    button.btn.btn-success(@click="runEval" :disabled="isEvaluating")
+                    button.btn.btn-success(@click="runEvaluation" :disabled="isEvaluating")
                       span.spinner-border.spinner-border-sm(
                         v-if="isEvaluating"
                         role="status"
@@ -601,7 +601,7 @@
         }
       }
 
-      async function runEval() {
+      async function runEvaluation() {
         if (!selectedRunName.value) return;
 
         isEvaluating.value = true;
@@ -809,7 +809,7 @@
         // Methods
         chooseRun,
         createRun,
-        runEval,
+        runEvaluation,
         chooseQueryOfRun,
         choosePromptOfRun,
         chooseSelectedPrompt,

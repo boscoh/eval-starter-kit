@@ -1,41 +1,22 @@
 import json
 import logging
-import os
 from typing import Any, Dict
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
-from rich.logging import RichHandler
 
 from evaluator import EvaluationRunner
+from setup_logger import setup_logging_with_rich_logger
 from runner import Runner
 from schemas import PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, RunConfig
 from util import load_yaml, save_yaml
 
+setup_logging_with_rich_logger()
 logger = logging.getLogger(__name__)
+logger.info("Logging configured with Rich handler")
 
-uvicorn_access = logging.getLogger("uvicorn.access")
-uvicorn_access.handlers = []
-uvicorn_access.propagate = False
-logging.getLogger("h11").setLevel(logging.WARNING)
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    handlers=[
-        RichHandler(
-            rich_tracebacks=True,
-            show_time=True,
-            show_path=True,
-            markup=True,
-            log_time_format="[%X]",
-        )
-    ],
-    force=True,
-)
 
 
 dir_from_table = {
@@ -51,6 +32,8 @@ ext_from_table = {
     "prompt": ".txt",
     "query": ".yaml",
 }
+
+
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -120,14 +103,12 @@ def serve_index():
 @app.get("/defaults")
 def list_evaluators():
     """
-    Response: { "evaluators": ["string"] }
+    Response: { "content": object }
     """
     try:
-        allowed_evaluators = EvaluationRunner.allowed_evaluators()
-        logger.info(f"Available evaluators: {', '.join(allowed_evaluators)}")
         return {
             "content": {
-                "evaluators": allowed_evaluators,
+                "evaluators": EvaluationRunner.evaluators(),
                 "run_config": {
                     "promptRef": "",
                     "queryRef": "",
@@ -240,11 +221,10 @@ async def evaluate(request: Request):
             raise HTTPException(status_code=400, detail="config is required")
 
         config_path = (RUNS_DIR / basename).with_suffix(".yaml")
+        logger.info(f"Running evaluation with config '{config_path}'")
         run_config = RunConfig(**config)
         run_config.save(config_path)
-        job_runner = Runner(config_path)
-        logger.info(f"Running evaluation with config '{config_path}'")
-        await job_runner.save_results()
+        await Runner(config_path).run()
         return {
             "success": True,
         }
@@ -260,4 +240,11 @@ async def evaluate(request: Request):
 
 
 if __name__ == "__main__":
-    os.system("uvicorn server:app --host 0.0.0.0 --port 8000 --reload")
+    import uvicorn
+    uvicorn.run(
+        "server:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_config=None,  # Disable uvicorn's default logging config
+    )
