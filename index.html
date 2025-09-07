@@ -453,12 +453,14 @@
     }
 
     async function fetchObject(table, basename) {
-      let result = await ky.post(`/fetch`, {
-        json: {
-          table,
-          basename,
-        },
-      }).json();
+      let result = await ky
+        .post(`/fetch`, {
+          json: {
+            table,
+            basename,
+          },
+        })
+        .json();
       result = deepCamelCaseKeys(result);
       const content = result.content;
       console.log(`fetchObject`, _.cloneDeep(content));
@@ -466,13 +468,15 @@
     }
 
     async function saveObject(table, basename, content) {
-      let result = await ky.post(`/save`, {
-        json: {
-          table,
-          basename,
-          content,
-        },
-      }).json();
+      let result = await ky
+        .post(`/save`, {
+          json: {
+            table,
+            basename,
+            content,
+          },
+        })
+        .json();
       result = deepCamelCaseKeys(result);
       const message = result.message;
       console.log(`saveObject`, _.cloneDeep(message));
@@ -562,7 +566,10 @@
           runConfig.value.prompt = "";
         } else {
           runConfig.value.promptRef = promptRef;
-          runConfig.value.prompt = await fetchObject("prompt", runConfig.value.promptRef);
+          runConfig.value.prompt = await fetchObject(
+            "prompt",
+            runConfig.value.promptRef,
+          );
           await chooseSelectedPrompt(promptRef);
         }
       }
@@ -628,13 +635,7 @@
         if (!newRunName.value) return;
 
         try {
-          await ky.post("/save", {
-            json: {
-              table: "run",
-              basename: newRunName.value,
-              content: defaults.value.runConfig,
-            },
-          });
+          await saveObject("run", newRunName.value, defaults.value.runConfig);
           await loadRunNames();
           await chooseRun(newRunName.value);
           newRunName.value = ""; // Clear the input field
@@ -651,7 +652,11 @@
         if (!newPromptRef.value) return;
 
         try {
-          await saveObject("prompt", newPromptRef.value, "A sample prompt to deal with input");
+          await saveObject(
+            "prompt",
+            newPromptRef.value,
+            "A sample prompt to deal with input",
+          );
           await loadPromptRefs();
           await chooseSelectedPrompt(newPromptRef.value);
           newPromptRef.value = ""; // Clear the input field
@@ -667,7 +672,10 @@
       async function createQuery() {
         if (!newQueryRef.value) return;
         try {
-          await saveObject("query", newQueryRef.value, { input: "Sample input", output: "Expected output" });
+          await saveObject("query", newQueryRef.value, {
+            input: "Sample input",
+            output: "Expected output",
+          });
           await loadQueryRefs();
           await chooseSelectedQuery(newQueryRef.value);
           newQueryRef.value = ""; // Clear the input field
@@ -698,7 +706,11 @@
         isSavingQuery.value = true;
 
         try {
-          await saveObject("query", selectedQueryRef.value, selectedQuery.value);
+          await saveObject(
+            "query",
+            selectedQueryRef.value,
+            selectedQuery.value,
+          );
           await loadQueryRefs();
           showNotification("Query saved successfully!");
         } catch (error) {
@@ -715,7 +727,11 @@
         isSavingPrompt.value = true;
 
         try {
-          await saveObject("prompt", selectedPromptRef.value, selectedPrompt.value);
+          await saveObject(
+            "prompt",
+            selectedPromptRef.value,
+            selectedPrompt.value,
+          );
           await loadPromptRefs();
           showNotification("System prompt saved successfully!");
         } catch (error) {

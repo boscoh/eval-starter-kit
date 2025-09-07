@@ -63,7 +63,7 @@ async def get_json_from_request(request) -> Dict[str, Any]:
 
 
 def read_content(file_path: str):
-    """ Returns a JSON object for ext='.yaml', or a string if ext='.txt" """
+    """Returns a JSON object for ext='.yaml', or a string if ext='.txt" """
     file_path = Path(file_path)
     ext = file_path.suffix
     if ext == ".yaml":
@@ -176,12 +176,15 @@ async def fetch_object(request: Request):
                 raise HTTPException(status_code=400, detail=f"{field} is required")
         basename = data.get("basename")
         table = data.get("table")
+
         logger.info(f"Request to fetch {table} for basename: {basename}")
+
         table_dir = dir_from_table[table]
         ext = ext_from_table[table]
         file_path = (table_dir / basename).with_suffix(ext)
-        logger.info(f"Reading {file_path} to fetch {table} for basename: {basename}")
+
         content = read_content(file_path)
+
         logger.info(f"Successfully loaded '{file_path}'")
         return {"content": content}
     except Exception as ex:

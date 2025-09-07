@@ -1,7 +1,7 @@
 import logging
 import re
 import textwrap
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from schemas import RunConfig
 
@@ -20,16 +20,17 @@ def parse_score_text(score_text: str) -> float:
 
 
 class EvaluationRunner:
-    @staticmethod
-    def allowed_evaluators() -> list:
-        return ["coherence", "equivalence", "word_count"]
-
     def __init__(self, chat_client, run_config: RunConfig):
         self.chat_client = chat_client
         self.run_config = run_config
-        self.coherence_evaluator = CoherenceEvaluator(chat_client)
-        self.equivalence_evaluator = EquivalenceEvaluator(chat_client)
-        self.word_count_evaluator = WordCountEvaluator()
+        self.evaluators = {
+            "coherence": CoherenceEvaluator(chat_client, run_config),
+            "equivalence": EquivalenceEvaluator(chat_client, run_config),
+            "word_count": WordCountEvaluator(run_config),
+        }
+
+    def allowed_evaluators(self) -> list:
+        return list(self.evaluators.keys())
 
     async def evaluate_response(self, response: Any) -> Dict[str, dict]:
         """
@@ -40,49 +41,21 @@ class EvaluationRunner:
 
         Returns:
             Dict[str, dict]: A dictionary mapping evaluator names to their result dictionaries.
-
-            Each result dictionary contains:
-                - score (float): The evaluation score
-                - text (str): The full response text from the chat client (if applicable)
-                - elapsed_ms (int): Time taken for evaluation in milliseconds (if applicable)
-                - token_count (int): Number of tokens used in evaluation (if applicable)
         """
         results = {}
+        response_text = response.get("text", "")
 
         for evaluator_name in self.run_config.evaluators:
+            evaluator_name = evaluator_name.lower()
             try:
-                if evaluator_name.lower() == "coherence":
-                    result = await self.coherence_evaluator.evaluate_coherence(
-                        question=self.run_config.input or "", answer=response["text"]
-                    )
-                    results[evaluator_name] = result
-                elif evaluator_name.lower() == "equivalence":
-                    if not self.run_config.output:
-                        logging.warning("No answer provided for equivalence evaluation")
-                        results[evaluator_name] = {
-                            "score": None,
-                            "text": "",
-                            "elapsed_ms": 0,
-                            "token_count": 0,
-                        }
-                    else:
-                        result = await self.equivalence_evaluator.evaluate_equivalence(
-                            answer=self.run_config.output,
-                            actual_answer=response["text"],
-                        )
-                        results[evaluator_name] = result
-                elif evaluator_name.lower() == "word_count":
-                    result = await self.word_count_evaluator.evaluate_word_count(
-                        response["text"],
-                        min_words=getattr(self.run_config, "min_words", None),
-                        max_words=getattr(self.run_config, "max_words", None),
-                        target_words=getattr(self.run_config, "target_words", None),
-                    )
+                if evaluator_name in self.evaluators:
+                    evaluator = self.evaluators[evaluator_name]
+                    result = await evaluator.evaluate(response_text)
                     results[evaluator_name] = result
                 else:
                     results[evaluator_name] = {
                         "score": 1.0,
-                        "text": "",
+                        "text": f"Unknown evaluator: {evaluator_name}",
                         "elapsed_ms": 0,
                         "token_count": 0,
                     }
@@ -101,20 +74,23 @@ class EvaluationRunner:
 
 
 class CoherenceEvaluator:
-    def __init__(self, chat_client):
+    def __init__(self, chat_client, run_config: RunConfig):
         self.chat_client = chat_client
+        self.run_config = run_config
 
-    async def evaluate_coherence(self, question: str, answer: str) -> dict:
+    async def evaluate(self, response_text: str) -> Dict[str, Any]:
         """
-        Evaluate coherence using a simple prompt-based approach with any ChatClient
-        Since ragas requires specific setup, we'll use a direct coherence evaluation
+        Evaluate the coherence of the response text against the input question.
+
+        Args:
+            response_text: The text to evaluate for coherence
 
         Returns:
-            dict: A dictionary containing:
-                - score (float): The coherence score between 0.0 and 1.0
-                - text (str): The full response text from the chat client
-                - elapsed_ms (int): Time taken for the evaluation in milliseconds
-                - token_count (int): Number of tokens used in the evaluation
+            dict: Evaluation result with:
+                - score (float): Coherence score between 0.0 and 1.0
+                - text (str): Detailed evaluation text
+                - elapsed_ms (int): Evaluation time in milliseconds
+                - token_count (int): Number of tokens used in evaluation
         """
         result = {
             "score": 0.5,
@@ -123,21 +99,28 @@ class CoherenceEvaluator:
             "token_count": 0,
         }
 
+        if not response_text.strip():
+            result["score"] = 0.0
+            result["text"] = "Empty response text provided"
+            return result
+
+        question = self.run_config.input or ""
+
         try:
-            coherence_prompt = f"""
-            Evaluate the coherence of the following answer to the given question on a scale of 0.0 to 1.0.
-            
-            Coherence means:
-            - The answer is logically structured
-            - Ideas flow naturally from one to another
-            - The response is internally consistent
-            - The language is clear and well-organized
-            
-            Question: {question}
-            Answer: {answer}
-            
-            Please respond with only a number between 0.0 and 1.0 representing the coherence score.
-            """
+            coherence_prompt = textwrap.dedent(f"""
+                Evaluate the coherence of the following answer to the given question on a scale of 0.0 to 1.0.
+                
+                Coherence means:
+                - The answer is logically structured
+                - Ideas flow naturally from one to another
+                - The response is internally consistent
+                - The language is clear and well-organized
+                
+                Question: {question}
+                Answer: {response_text}
+                
+                Please respond with only a number between 0.0 and 1.0 representing the coherence score.
+                """).strip()
 
             messages = [
                 {
@@ -167,19 +150,23 @@ class CoherenceEvaluator:
 
 
 class EquivalenceEvaluator:
-    def __init__(self, chat_client):
+    def __init__(self, chat_client, run_config: RunConfig):
         self.chat_client = chat_client
+        self.run_config = run_config
 
-    async def evaluate_equivalence(self, answer: str, actual_answer: str) -> dict:
+    async def evaluate(self, response_text: str) -> Dict[str, Any]:
         """
-        Evaluate how well the actual answer matches the expected answer.
+        Evaluate how well the response matches the expected answer.
+
+        Args:
+            response_text: The text to evaluate against the expected answer
 
         Returns:
-            dict: A dictionary containing:
-                - score (float): A score between 0.0 (completely different) and 1.0 (perfect match)
-                - text (str): The full response text from the chat client (empty if not using chat client)
-                - elapsed_ms (int): Time taken for the evaluation in milliseconds
-                - token_count (int): Number of tokens used in the evaluation
+            dict: Evaluation result with:
+                - score (float): Similarity score between 0.0 and 1.0
+                - text (str): Detailed evaluation text
+                - elapsed_ms (int): Evaluation time in milliseconds
+                - token_count (int): Number of tokens used in evaluation
         """
         result = {
             "score": 0.5,
@@ -188,37 +175,51 @@ class EquivalenceEvaluator:
             "token_count": 0,
         }
 
-        if not answer.strip() or not actual_answer.strip():
+        if not response_text.strip():
             result["score"] = 0.0
+            result["text"] = "Empty response text provided"
             return result
 
-        if answer.strip().lower() == actual_answer.strip().lower():
+        if not self.run_config.output:
+            result["score"] = 0.0
+            result["text"] = "No expected answer provided for comparison"
+            return result
+
+        answer = self.run_config.output
+
+        if not answer.strip() or not response_text.strip():
+            result["score"] = 0.0
+            result["text"] = "Empty answer or response text"
+            return result
+
+        if answer.strip().lower() == response_text.strip().lower():
             result["score"] = 1.0
+            result["text"] = "Response exactly matches expected answer"
             return result
 
         try:
-            prompt = f"""
-            Compare the following two answers and determine how semantically equivalent they are.
-            Consider the meaning and key information, not just exact wording.
-            
-            Expected Answer: {answer}
-            
-            Actual Answer: {actual_answer}
-            
-            Rate the semantic equivalence on a scale from 0.0 to 1.0, where:
-            - 1.0 means the answers are completely equivalent in meaning
-            - 0.5 means the answers are somewhat related but differ in important ways
-            - 0.0 means the answers are completely different or contradictory
-            
-            Respond with only a number between 0.0 and 1.0, nothing else.
-            """
+            prompt = textwrap.dedent(f"""
+                Compare the following two answers and determine how semantically equivalent they are.
+                Consider the meaning and key information, not just exact wording.
+                
+                Expected Answer: {answer}
+                
+                Actual Answer: {response_text}
+                
+                Rate the semantic equivalence on a scale from 0.0 to 1.0, where:
+                - 1.0 means the answers are completely equivalent in meaning
+                - 0.5 means the answers are somewhat related but differ in important ways
+                - 0.0 means the answers are completely different or contradictory
+                
+                Respond with only a number between 0.0 and 1.0, nothing else.
+                """).strip()
 
             messages = [
                 {
                     "role": "system",
                     "content": "You are a helpful evaluation assistant.",
                 },
-                {"role": "user", "content": textwrap.dedent(prompt.strip())},
+                {"role": "user", "content": prompt},
             ]
 
             response = await self.chat_client.get_completion(messages)
@@ -241,33 +242,26 @@ class EquivalenceEvaluator:
 
 
 class WordCountEvaluator:
-    """
-    Evaluates if the response meets word count requirements.
+    """Evaluates if the response meets word count requirements.
     Can check against minimum words, maximum words, or target word count.
     """
 
-    async def evaluate_word_count(
-        self,
-        text: str,
-        min_words: Optional[int] = None,
-        max_words: Optional[int] = None,
-        target_words: Optional[int] = None,
-    ) -> dict:
+    def __init__(self, run_config: RunConfig):
+        self.run_config = run_config
+
+    async def evaluate(self, response_text: str) -> Dict[str, Any]:
         """
-        Evaluate if the text meets word count requirements.
+        Evaluate if the response meets word count requirements.
 
         Args:
-            text: The text to evaluate
-            min_words: Minimum required words (inclusive)
-            max_words: Maximum allowed words (inclusive)
-            target_words: Target number of words (scores higher the closer to target)
+            response_text: The text to evaluate for word count
 
         Returns:
-            dict: A dictionary containing:
-                - score (float): Score between 0.0 and 1.0 indicating how well the word count matches requirements
-                - text (str): Empty string (no chat client used)
-                - elapsed_ms (int): 0 (no chat client used)
-                - token_count (int): 0 (no chat client used)
+            dict: Evaluation result with:
+                - score (float): Score between 0.0 and 1.0
+                - text (str): Evaluation details
+                - elapsed_ms (int): Always 0 (synchronous operation)
+                - token_count (int): Always 0 (no tokens used)
         """
         result = {
             "score": 1.0,
@@ -276,8 +270,17 @@ class WordCountEvaluator:
             "token_count": 0,
         }
 
+        if not response_text.strip():
+            result["score"] = 0.0
+            result["text"] = "Empty response text provided"
+            return result
+
+        min_words = getattr(self.run_config, "min_words", None)
+        max_words = getattr(self.run_config, "max_words", None)
+        target_words = getattr(self.run_config, "target_words", None)
+
         try:
-            word_count = len(text.split())
+            word_count = len(response_text.split())
 
             if target_words is not None:
                 if word_count == 0:
