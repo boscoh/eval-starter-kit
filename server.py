@@ -112,6 +112,10 @@ def get_defaults():
     }
 
 
+class ContentResponse(BaseModel):
+    content: Any
+
+
 @app.get("/list/{table}")
 async def list_objects(table):
     """Response: { "content": ["string"] }"""
@@ -121,7 +125,7 @@ async def list_objects(table):
         logger.info(f"Request for names in: {table_dir}")
         basenames = [f.stem for f in table_dir.iterdir() if f.suffix == ext]
         logger.info(f"Found: {len(basenames)} names in {table_dir} with {ext}")
-        return {"content": basenames}
+        return ContentResponse(content=basenames)
     except Exception as ex:
         logger.error(f"Error listing basenames: {ex}")
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
@@ -148,10 +152,6 @@ TableType = Literal["result", "run", "prompt", "query"]
 class FetchObjectRequest(BaseModel):
     table: TableType
     basename: str
-
-
-class ContentResponse(BaseModel):
-    content: Any
 
 
 @app.post("/fetch", response_model=ContentResponse)
@@ -224,9 +224,6 @@ class EvaluateRequest(BaseModel):
 
 @app.post("/evaluate", response_model=MessageResponse)
 async def evaluate(request: EvaluateRequest):
-    """
-    Response: { "success": true }
-    """
     try:
         basename = request.basename
         config = request.content
@@ -251,10 +248,4 @@ async def evaluate(request: EvaluateRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_config=None,
-    )
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, log_config=None)
