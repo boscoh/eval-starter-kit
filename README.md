@@ -53,10 +53,11 @@ A ready-to-use toolkit for setting up and running evaluations of AI model respon
 1. **Using Ollama (Local Models)**
    ```bash
    # Start Ollama server (if not already running)
+   ollama pull llama3.2
    ollama serve
    
    # Run an evaluation
-   uv run runner.py jobs/engineer.yaml
+   uv run runner.py queries/engineer.yaml
    ```
 
 2. **Using OpenAI**
@@ -65,43 +66,28 @@ A ready-to-use toolkit for setting up and running evaluations of AI model respon
    echo "OPENAI_API_KEY=your-api-key-here" > .env
    
    # Run an evaluation with OpenAI
-   uv run runner.py jobs/engineer.yaml --service openai --model gpt-4
+   uv run runner.py queries/engineer.yaml --service openai --model gpt-4
    ```
 
 ## Configuration
 
-Evaluation configurations are defined in YAML files in the `jobs/` directory.
+Evaluation configurations are defined in YAML files in the `queries/` directory.
 
 ### Example Configuration
 
 ```yaml
-# jobs/engineer.yaml
+# queries/engineer.yaml
 name: "Engineering Candidate Evaluation"
-prompt: |
-  You are an experienced engineering manager evaluating a candidate's technical skills.
-  Analyze the following resume and provide a detailed assessment.
-
-prompt: |
-  Candidate Name: John Doe
-  Position: Senior Software Engineer
-  
-  Experience:
-  - 5 years at TechCorp as Full Stack Developer
-  - Worked with Python, JavaScript, and AWS
-  - Led team of 4 developers
-  
-  Skills: Python, React, AWS, Docker, CI/CD
-
-model: "llama3.2"  # or "gpt-4", etc.
-service: "ollama"  # or "openai"
-temperature: 0.7
-max_tokens: 1000
-
+file_path: runs/consultant.yaml
+query_ref: consultant
+prompt_ref: candidate-summary
+service: ollama
+model: llama3.2
+repeat: 2
 evaluators:
-  - type: coherence
-  - type: word_count
-    min_words: 200
-    max_words: 500
+- word_count
+- coherence
+- equivalence
 ```
 
 ## Available Evaluators
@@ -121,35 +107,18 @@ evaluators:
 
 ```
 .
-├── jobs/                  # YAML job configurations
+├── queries/               # YAML query configurations
+├── runs/                  # Run configurations and results
 ├── results/               # Evaluation results
-├── prompts/        # Reusable system prompts
+├── prompts/               # Reusable system prompts
 ├── chat_client.py         # Client for interacting with the API
 ├── evaluator.py           # Core evaluation logic
 ├── runner.py              # CLI for running evaluations
 ├── schemas.py             # Pydantic models
 ├── server.py              # Web server and API
+├── setup_logger.py        # Logging configuration
 └── util.py                # Utility functions
 ```
-
-## Contributing
-
-1. Fork the repository
-2. Create a new branch for your feature
-3. Commit your changes
-4. Push to the branch
-5. Open a pull request
-
-## License
-
-MIT
-
-## Sample Evals
-
-The `SampleEvals` directory contains example configurations:
-
-- `engineer.yaml`: Evaluates engineering candidate summaries
-- `consultant.yaml`: Evaluates consulting-style responses
 
 ## Development
 
@@ -158,12 +127,4 @@ The `SampleEvals` directory contains example configurations:
 1. Create a new class in `evaluator.py` that implements the evaluation logic
 2. Update the `allowed_evaluators()` method in `EvaluationRunner`
 3. Add your evaluator to the YAML configuration file
-
-## License
-
-MIT
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
 
