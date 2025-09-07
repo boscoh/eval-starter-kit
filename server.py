@@ -90,7 +90,7 @@ def serve_index():
 
 
 @app.get("/defaults")
-def list_evaluators():
+def get_defaults():
     """
     Response: { "content": object }
     """
@@ -118,9 +118,9 @@ async def list_objects(table):
     try:
         table_dir = dir_from_table[table]
         ext = ext_from_table[table]
-        logger.info(f"Listing basenames in directory: {table_dir}")
+        logger.info(f"Request for names in: {table_dir}")
         basenames = [f.stem for f in table_dir.iterdir() if f.suffix == ext]
-        logger.info(f"Found basenames: {', '.join(basenames) or 'none'}")
+        logger.info(f"Found: {len(basenames)} names in {table_dir} with {ext}")
         return {"content": basenames}
     except Exception as ex:
         logger.error(f"Error listing basenames: {ex}")
@@ -157,17 +157,12 @@ class ContentResponse(BaseModel):
 @app.post("/fetch", response_model=ContentResponse)
 async def fetch_object(request: FetchObjectRequest):
     try:
-        logger.info(
-            f"Request to fetch {request.table} for basename: {request.basename}"
-        )
-
+        logger.info(f"Request to fetch {request.table}/{request.basename}")
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
         file_path = (table_dir / request.basename).with_suffix(ext)
-
         content = read_content(file_path)
         logger.info(f"Successfully loaded '{file_path}'")
-
         return ContentResponse(content=content)
 
     except KeyError as ke:
@@ -236,11 +231,12 @@ async def evaluate(request: EvaluateRequest):
         basename = request.basename
         config = request.content
         config_path = (dir_from_table["run"] / basename).with_suffix(".yaml")
-        logger.info(f"Running evaluation with config '{config_path}'")
+        logger.info(f"Running evaluation of runs/{basename}")
         run_config = RunConfig(**config)
         run_config.save(config_path)
         await Runner(config_path).run()
         return MessageResponse(message=f"Successfully evaluated {request.basename}")
+
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
     except HTTPException:

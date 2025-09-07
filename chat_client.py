@@ -56,10 +56,7 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
 
 
 def parse_response_as_json_list(response):
-    """Parse JSON from text response, extracting from markdown blocks if needed.
-
-    Returns transactions list if found in dict, otherwise the parsed data.
-    """
+    """Parse JSON from text response, extracting from markdown or .transactions if needed."""
     import re
 
     # Extract text from response
