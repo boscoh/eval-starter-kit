@@ -24,54 +24,58 @@ class Runner:
         RESULTS_DIR.makedirs_p()
 
     async def run(self):
-        fields = self._config.evaluators + ["elapsed_seconds", "token_count", "cost"]
-        eval_results_dict = {f: RunResult(name=f) for f in fields}
+        await self._chat_client.connect()
+        try:
+            fields = self._config.evaluators + ["elapsed_seconds", "token_count", "cost"]
+            eval_results_dict = {f: RunResult(name=f) for f in fields}
 
-        response_texts = []
-        for i in range(self._config.repeat):
-            logger.info(f">>> Evaluate iteration {i + 1}/{self._config.repeat}")
+            response_texts = []
+            for i in range(self._config.repeat):
+                logger.info(f">>> Evaluate iteration {i + 1}/{self._config.repeat}")
 
-            response = await self._chat_client.get_completion(
-                messages=[
-                    {"role": "system", "content": self._config.prompt},
-                    {"role": "user", "content": self._config.input},
-                ]
-            )
-
-            response_texts.append(response["text"])
-
-            elapsed_seconds = response["metadata"]["usage"]["elapsed_seconds"]
-            logger.debug(f"ElapsedSeconds: {elapsed_seconds}")
-
-            token_count = response["metadata"]["usage"].get("total_tokens", 0)
-            cost_value = (
-                token_count * self._cost_per_token if token_count is not None else None
-            )
-            logger.debug(f"TokenCount: {token_count}")
-
-            eval_results_dict["elapsed_seconds"].values.append(elapsed_seconds)
-            eval_results_dict["token_count"].values.append(token_count)
-            eval_results_dict["cost"].values.append(cost_value)
-
-            results = await self._evaluation_runner.evaluate_response(response)
-            for evaluator_name, value in results.items():
-                eval_results_dict[evaluator_name].values.append(value["score"])
-
-        for eval_result in eval_results_dict.values():
-            valid_values = [v for v in eval_result.values if v is not None]
-            if valid_values:
-                eval_result.average = mean(valid_values)
-                eval_result.standard_deviation = (
-                    stdev(valid_values) if len(valid_values) > 1 else 0.0
+                response = await self._chat_client.get_completion(
+                    messages=[
+                        {"role": "system", "content": self._config.prompt},
+                        {"role": "user", "content": self._config.input},
+                    ]
                 )
 
-        evaluations = [result.model_dump() for result in eval_results_dict.values()]
+                response_texts.append(response["text"])
 
-        eval_results = {"texts": response_texts, "evaluations": evaluations}
-        results_path = (RESULTS_DIR / self._config.file_path).with_suffix(".yaml")
-        save_yaml(eval_results, results_path)
+                elapsed_seconds = response["metadata"]["usage"]["elapsed_seconds"]
+                logger.debug(f"ElapsedSeconds: {elapsed_seconds}")
 
-        logger.info(f"Results saved to: {results_path}")
+                token_count = response["metadata"]["usage"].get("total_tokens", 0)
+                cost_value = (
+                    token_count * self._cost_per_token if token_count is not None else None
+                )
+                logger.debug(f"TokenCount: {token_count}")
+
+                eval_results_dict["elapsed_seconds"].values.append(elapsed_seconds)
+                eval_results_dict["token_count"].values.append(token_count)
+                eval_results_dict["cost"].values.append(cost_value)
+
+                results = await self._evaluation_runner.evaluate_response(response)
+                for evaluator_name, value in results.items():
+                    eval_results_dict[evaluator_name].values.append(value["score"])
+
+            for eval_result in eval_results_dict.values():
+                valid_values = [v for v in eval_result.values if v is not None]
+                if valid_values:
+                    eval_result.average = mean(valid_values)
+                    eval_result.standard_deviation = (
+                        stdev(valid_values) if len(valid_values) > 1 else 0.0
+                    )
+
+            evaluations = [result.model_dump() for result in eval_results_dict.values()]
+
+            eval_results = {"texts": response_texts, "evaluations": evaluations}
+            results_path = (RESULTS_DIR / Path(self._config.file_path).name).with_suffix(".yaml")
+            save_yaml(eval_results, results_path)
+
+            logger.info(f"Results saved to: {results_path}")
+        finally:
+            await self._chat_client.close()
 
 
 if __name__ == "__main__":

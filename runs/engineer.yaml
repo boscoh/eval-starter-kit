@@ -1,9 +1,9 @@
 ---
 file_path: runs/engineer.yaml
 query_ref: engineer
-prompt_ref: candidate-skills
-service: ollama
-model: llama3.2
+prompt_ref: candidate-summary
+service: bedrock
+model: anthropic.claude-3-sonnet-20240229-v1:0
 repeat: 3
 evaluators:
 - equivalence

@@ -27,4 +27,5 @@ async def main(service):
         print(f"\nResponse: {result.get("text", "")}")
 
 if __name__ == "__main__":
-    asyncio.run(main("ollama"))
+    service = "bedrock" # "ollama" or "openai"
+    asyncio.run(main(service)) 

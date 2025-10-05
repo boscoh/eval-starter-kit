@@ -587,7 +587,7 @@ def get_aws_config():
 class BedrockChatClient(IChatClient):
     def __init__(
         self,
-        model: str = "amazon.titan-text-express-v1",
+        model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
         embedding_model: str = "amazon.titan-embed-text-v2:0",
         region_name: str = "us-east-1",  # Update if you're in a different region
     ):
