@@ -16,6 +16,7 @@ from botocore.exceptions import ClientError, ProfileNotFound
 from dotenv import load_dotenv
 import ollama
 import openai
+from openai import AsyncOpenAI
 from rich.pretty import pretty_repr
 
 load_dotenv()
@@ -181,12 +182,19 @@ class IChatClient(ABC):
         pass
 
     async def connect(self):
-        """Connect to the chat client."""
+        """Needed for async initialization"""
         pass
 
     async def close(self):
-        """Close the chat client."""
         pass
+
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
 
 
 class OllamaChatClient(IChatClient):
@@ -202,7 +210,7 @@ class OllamaChatClient(IChatClient):
         self.model = model
         self.client = None
 
-    def load_client(self):
+    async def connect(self):
         if self.client:
             return
 
@@ -268,7 +276,7 @@ class OllamaChatClient(IChatClient):
                 }
             }
         """
-        self.load_client()
+        await self.connect()
 
         start_time = time.time()
 
@@ -343,9 +351,10 @@ class OpenAIChatClient(IChatClient):
         """
         self.model = model
         self.client = None
+        self._closed = True
 
-    def load_client(self):
-        if self.client:
+    async def connect(self):
+        if self.client and not self._closed:
             return
 
         api_key = os.getenv("OPENAI_API_KEY")
@@ -355,10 +364,11 @@ class OpenAIChatClient(IChatClient):
                 "Please set OPENAI_API_KEY in your .env file or environment variables."
             )
 
-        self.client = openai.OpenAI(api_key=api_key)
+        self.client = AsyncOpenAI(api_key=api_key)
+        self._closed = False
 
         try:
-            self.client.models.retrieve(self.model)
+            await self.client.models.retrieve(self.model)
         except openai.AuthenticationError as e:
             raise RuntimeError(
                 "Invalid OpenAI API key. Please check your API key and try again."
@@ -370,6 +380,13 @@ class OpenAIChatClient(IChatClient):
             ) from e
         except Exception as e:
             raise RuntimeError(f"Failed to connect to OpenAI API: {str(e)}") from e
+
+    async def close(self):
+        """Close the OpenAI client and release resources."""
+        if self.client is not None and not self._closed:
+            await self.client.close()
+            self.client = None
+            self._closed = True
 
     async def get_completion(
         self,
@@ -424,23 +441,18 @@ class OpenAIChatClient(IChatClient):
                 }
             }
         """
-        self.load_client()
+        await self.connect()
 
         start_time = time.time()
 
-        def sync_call():
-            """Synchronous wrapper for get_completion."""
-            return self.client.chat.completions.create(
+        try:
+            completion = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 tools=tools,
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
-
-        try:
-            loop = asyncio.get_event_loop()
-            completion = await loop.run_in_executor(None, sync_call)
             elapsed_seconds = time.time() - start_time
 
             text = completion.choices[0].message.content if completion.choices else ""
@@ -623,13 +635,6 @@ class BedrockChatClient(IChatClient):
             await self.client.__aexit__(None, None, None)
             self.client = None
             self._closed = True
-
-    async def __aenter__(self):
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
 
     async def get_completion(
         self,
