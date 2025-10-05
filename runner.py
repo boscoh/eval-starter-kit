@@ -57,7 +57,6 @@ class Runner:
             for evaluator_name, value in results.items():
                 eval_results_dict[evaluator_name].values.append(value["score"])
 
-        # Take averages and standard deviation for every eval_result
         for eval_result in eval_results_dict.values():
             valid_values = [v for v in eval_result.values if v is not None]
             if valid_values:

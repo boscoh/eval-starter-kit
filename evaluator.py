@@ -133,7 +133,6 @@ class CoherenceEvaluator:
 
             response = await self.chat_client.get_completion(messages)
 
-            # Update result with response details
             result.update(
                 {
                     "text": response.get("text", ""),

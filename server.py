@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,11 +11,10 @@ from pydantic import BaseModel
 from evaluator import EvaluationRunner
 from runner import Runner
 from schemas import (
-    PROMPTS_DIR,
-    QUERIES_DIR,
-    RESULTS_DIR,
-    RUNS_DIR,
     RunConfig,
+    TableType,
+    dir_from_table,
+    ext_from_table,
 )
 from setup_logger import setup_logging_with_rich_logger
 from util import load_yaml, save_yaml
@@ -40,7 +39,7 @@ def read_content(file_path: str):
     ext = file_path.suffix
     if ext == ".yaml":
         content = load_yaml(file_path)
-    else:  # assume text file
+    else:
         content = file_path.read_text(encoding="utf-8")
     return content
 
@@ -56,7 +55,6 @@ def save_content(content, file_path):
 app = FastAPI()
 
 
-# Allow CORS for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -68,7 +66,6 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    # Only log non-asset requests
     if not any(
         ext in str(request.url) for ext in [".js", ".css", ".ico", ".png", ".jpg"]
     ):
@@ -131,24 +128,6 @@ async def list_objects(table):
         raise HTTPException(status_code=500, detail=f"Error listing basenames: {ex}")
 
 
-dir_from_table = {
-    "result": RESULTS_DIR,
-    "run": RUNS_DIR,
-    "prompt": PROMPTS_DIR,
-    "query": QUERIES_DIR,
-}
-
-ext_from_table = {
-    "result": ".yaml",
-    "run": ".yaml",
-    "prompt": ".txt",
-    "query": ".yaml",
-}
-
-
-TableType = Literal["result", "run", "prompt", "query"]
-
-
 class FetchObjectRequest(BaseModel):
     table: TableType
     basename: str
@@ -205,10 +184,6 @@ async def save_object(request: SaveObjectRequest):
             message=f"Successfully saved {request.table}/{request.basename}"
         )
 
-    except KeyError as ke:
-        error_msg = f"Invalid table: {ke}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
     except Exception as ex:
         error_msg = f"Error saving object: {ex}"
         logger.error(error_msg)
@@ -234,10 +209,6 @@ async def evaluate(request: EvaluateRequest):
         await Runner(config_path).run()
         return MessageResponse(message=f"Successfully evaluated {request.basename}")
 
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error in evaluation: {str(e)}", exc_info=True)
         raise HTTPException(

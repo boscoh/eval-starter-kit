@@ -14,13 +14,24 @@ QUERIES_DIR = Path("queries")
 RESULTS_DIR = Path("results")
 RUNS_DIR = Path("runs")
 
-RUNS_DIR.makedirs_p()
-PROMPTS_DIR.makedirs_p()
-QUERIES_DIR.makedirs_p()
-RESULTS_DIR.makedirs_p()
+dir_from_table = {
+    "result": RESULTS_DIR,
+    "run": RUNS_DIR,
+    "prompt": PROMPTS_DIR,
+    "query": QUERIES_DIR,
+}
 
+ext_from_table = {
+    "result": ".yaml",
+    "run": ".yaml",
+    "prompt": ".txt",
+    "query": ".yaml",
+}
 
 TableType = Literal["result", "run", "prompt", "query"]
+
+for d in dir_from_table.values():
+    d.makedirs_p()
 
 
 class RunConfig(BaseModel):
@@ -42,7 +53,6 @@ class RunConfig(BaseModel):
         result.file_path = file_path
         logger.info(f"Loaded run config from '{file_path}'")
 
-        # Get system prompt from PROMPTS_DIR
         system_prompt_path = PROMPTS_DIR / f"{result.prompt_ref}.txt"
         if system_prompt_path.exists():
             result.prompt = system_prompt_path.read_text()
@@ -50,7 +60,6 @@ class RunConfig(BaseModel):
         else:
             logger.warning(f"System prompt file not found: {system_prompt_path}")
 
-        # Get input/output from QUERIES_DIR
         query_path = QUERIES_DIR / f"{result.query_ref}.yaml"
         try:
             query = load_yaml(query_path)

@@ -5,11 +5,18 @@ import os
 import subprocess
 import time
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
+
+import aioboto3
+import boto3
+from botocore.exceptions import ClientError, ProfileNotFound
+from dotenv import load_dotenv
 import ollama
 import openai
-from dotenv import load_dotenv
+from rich.pretty import pretty_repr
 
 load_dotenv()
 
@@ -52,6 +59,8 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
         return OpenAIChatClient(**kwargs)
     if client_type == "ollama":
         return OllamaChatClient(**kwargs)
+    if client_type == "bedrock":
+        return BedrockChatClient(**kwargs)
     raise ValueError(f"Unknown chat client type: {client_type}")
 
 
@@ -59,7 +68,6 @@ def parse_response_as_json_list(response):
     """Parse JSON from text response, extracting from markdown or .transactions if needed."""
     import re
 
-    # Extract text from response
     if isinstance(response, dict):
         response_text = response.get("text", "")
     elif isinstance(response, str):
@@ -86,17 +94,15 @@ def parse_response_as_json_list(response):
                 return transactions
         return data
 
-    # Try direct parsing
     parsed = try_parse(response_text)
     if parsed is not None:
         return extract_transactions(parsed)
 
-    # Try markdown code blocks
     patterns = [
-        r"```(?:json|python)?\s*([\s\S]*?)\s*```",  # Any code block
-        r"```(?:json)?\s*({[\s\S]*})\s*```",  # JSON object in block
-        r"\{[\s\S]*\}",  # Any JSON object
-        r"({[\s\S]*})",  # Last resort: any braces
+        r"```(?:json|python)?\s*([\s\S]*?)\s*```",
+        r"```(?:json)?\s*({[\s\S]*})\s*```",
+        r"\{[\s\S]*\}",
+        r"({[\s\S]*})",
     ]
 
     for pattern in patterns:
@@ -174,6 +180,14 @@ class IChatClient(ABC):
         """
         pass
 
+    async def connect(self):
+        """Connect to the chat client."""
+        pass
+
+    async def close(self):
+        """Close the chat client."""
+        pass
+
 
 class OllamaChatClient(IChatClient):
     def __init__(self, model: str = "llama3.2"):
@@ -192,7 +206,6 @@ class OllamaChatClient(IChatClient):
         if self.client:
             return
 
-        # Check if Ollama is running
         try:
             subprocess.run(["ollama", "--version"], capture_output=True, check=True)
         except (subprocess.SubprocessError, FileNotFoundError):
@@ -201,10 +214,8 @@ class OllamaChatClient(IChatClient):
                 "Please start the Ollama service and try again."
             )
 
-        # Initialize the client and check if model is available
         self.client = ollama.AsyncClient()
         try:
-            # This will raise an exception if the model is not found
             ollama.show(self.model)
         except Exception as e:
             raise RuntimeError(
@@ -346,9 +357,7 @@ class OpenAIChatClient(IChatClient):
 
         self.client = openai.OpenAI(api_key=api_key)
 
-        # Verify API key and model availability
         try:
-            # Make a lightweight request to check the API key and model
             self.client.models.retrieve(self.model)
         except openai.AuthenticationError as e:
             raise RuntimeError(
@@ -487,3 +496,344 @@ class OpenAIChatClient(IChatClient):
             "gpt-3.5-turbo": 0.0005,  # $0.0005 per 1K tokens
         }
         return pricing.get(self.model.lower(), 0.0)
+
+
+@lru_cache(maxsize=None)
+def get_aws_config():
+    """
+    Prepare AWS configuration for boto3 client initialization.
+    
+    This function searches for AWS profiles and saved credentials to build a 
+    configuration dictionary that can be used to initialize boto3 clients and 
+    sessions. It validates the discovered credentials to ensure they are properly 
+    configured and not expired.
+    
+    Credential Discovery Process:
+    1. Looks for AWS_PROFILE environment variable to determine profile name
+    2. Searches for saved credentials in ~/.aws/credentials file
+    3. Creates a boto3 session using the discovered profile (or default)
+    4. Validates credentials contain required access_key and secret_key
+    5. Tests credential validity with an STS GetCallerIdentity call
+    6. Checks for token expiration on temporary/session credentials
+    
+    Environment Variables:
+        AWS_PROFILE (str, optional): Name of the AWS profile to use from 
+                                   ~/.aws/credentials. If not set, uses the 
+                                   default profile.
+    
+    Returns:
+        dict: AWS configuration dictionary for boto3 client initialization:
+            - profile_name (str, optional): The AWS profile name to pass to 
+                                          boto3.client() or boto3.Session()
+    
+    Note:
+        This function is cached to avoid repeated credential discovery and 
+        validation. The returned configuration can be unpacked directly into 
+        boto3 client constructors. All validation errors are logged but do not 
+        raise exceptions - returns gracefully with empty config on failure.
+        
+    Examples:
+        >>> aws_config = get_aws_config()
+        >>> s3_client = boto3.client('s3', **aws_config)
+        >>> 
+        >>> # Or with session
+        >>> session = boto3.Session(**aws_config)
+        >>> dynamodb = session.client('dynamodb')
+    """
+    aws_config = {}
+
+    profile_name = os.getenv("AWS_PROFILE")
+    if profile_name:
+        logger.info(f"Authenticate with AWS_PROFILE={profile_name}")
+        aws_config["profile_name"] = profile_name
+
+    try:
+        aws_credentials_path = os.path.expanduser("~/.aws/credentials")
+        if not os.path.exists(aws_credentials_path):
+            logger.info("No AWS credentials file at ~/.aws/credentials")
+            return aws_config
+
+        session = boto3.Session(profile_name=profile_name) if profile_name else boto3.Session()
+        credentials = session.get_credentials()
+        
+        if not credentials or not credentials.access_key or not credentials.secret_key:
+            logger.warning("AWS credentials not properly configured")
+            return aws_config
+
+        sts = session.client("sts")
+        identity = sts.get_caller_identity()
+
+        if hasattr(credentials, "token"):
+            creds = credentials.get_frozen_credentials()
+            if hasattr(creds, "expiry_time") and creds.expiry_time < datetime.now(timezone.utc):
+                logger.warning(f"AWS credentials expired on {creds.expiry_time}")
+                return aws_config
+
+        logger.info(f"Valid AWS credentials found for '{identity['Arn']}'")
+
+    except ProfileNotFound:
+        logger.warning(f"AWS profile '{profile_name}' not found")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ExpiredToken":
+            logger.warning("AWS credentials have expired")
+        else:
+            logger.warning(f"Error validating AWS credentials: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error checking AWS credentials: {str(e)}")
+
+    return aws_config
+
+
+class BedrockChatClient(IChatClient):
+    def __init__(
+        self,
+        model: str = "amazon.titan-text-express-v1",
+        embedding_model: str = "amazon.titan-embed-text-v2:0",
+        region_name: str = "us-east-1",  # Update if you're in a different region
+    ):
+        """
+        Initialize Bedrock chat client.
+
+        Args:
+            model: Text generation model ID for Bedrock.
+            embedding_model: Text embedding model ID for Bedrock.
+            region_name: AWS region name.
+        """
+        self.model = model
+        self.embedding_model = embedding_model
+        self.region_name = region_name
+        self.client = None
+        self._session = None
+        self._closed = True
+
+    async def connect(self):
+        """Initialize the async client session and client."""
+        if self.client is not None and not self._closed:
+            return
+
+        logger.info(f"Initializing Bedrock client for model {self.model}")
+        self._session = aioboto3.Session(**get_aws_config())
+        self.client = await self._session.client("bedrock-runtime").__aenter__()
+        logger.info(f"Initialized Bedrock client")
+        self._closed = False
+
+    async def close(self):
+        """Close the client and release resources."""
+        if self.client is not None and not self._closed:
+            await self.client.__aexit__(None, None, None)
+            self.client = None
+            self._closed = True
+
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def get_completion(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.0,
+    ) -> Dict[str, Any]:
+        """
+        Get a chat completion from the Bedrock model.
+
+        Handles both Claude models (using Converse API) and other models (using invoke_model).
+
+        Args:
+            messages: List of message dictionaries with 'role' and 'content' keys
+            tools: Optional list of tool definitions for function calling
+            max_tokens: Maximum number of tokens to generate
+            temperature: Sampling temperature (0.0 to 1.0)
+
+        Returns:
+            Dictionary with 'text' response and 'metadata' including usage info
+        """
+        await self.connect()
+        start_time = time.time()
+
+        try:
+            system_parts = []
+            formatted_messages = []
+
+            for msg in messages:
+                role = msg["role"]
+                content = msg.get("content", "")
+
+                if role == "system":
+                    system_parts.append(content)
+                else:
+                    role = "user" if role == "user" else "assistant"
+                    formatted_messages.append(
+                        {"role": role, "content": [{"text": content}]}
+                    )
+
+            system_blocks = (
+                [{"text": "\n\n".join(system_parts)}] if system_parts else []
+            )
+
+            formatted_tools = None
+            if tools:
+                formatted_tools = [
+                    {
+                        "toolSpec": {
+                            "name": tool["function"]["name"],
+                            "description": tool["function"].get("description", ""),
+                            "inputSchema": {
+                                "json": tool["function"].get("parameters", {})
+                            },
+                        }
+                    }
+                    for tool in tools
+                ]
+
+            try:
+                request_kwargs = {
+                    "modelId": self.model,
+                    "messages": formatted_messages,
+                    "system": system_blocks,
+                    "inferenceConfig": {
+                        "temperature": temperature,
+                        "maxTokens": max_tokens or 1024,
+                    },
+                }
+
+                if tools:
+                    request_kwargs["toolConfig"] = {"tools": formatted_tools}
+
+                logger.info(f"Request kwargs: {pretty_repr(request_kwargs)}")
+
+                response = await self.client.converse(**request_kwargs)
+
+                logger.info(f"Response: {pretty_repr(response)}")
+
+                text_parts = []
+                tool_calls = []
+
+                if isinstance(response, str):
+                    text_parts.append(response)
+                    usage = {}
+                    stop_reason = "stop"
+                else:
+                    output = response.get("output", {})
+                    if isinstance(output, dict) and "message" in output:
+                        message = output["message"]
+                        for content in message.get("content", []):
+                            if "text" in content:
+                                text_parts.append(content["text"])
+                            elif "toolUse" in content:
+                                tool_use = content["toolUse"]
+                                tool_calls.append(
+                                    {
+                                        "function": {
+                                            "name": tool_use["name"],
+                                            "arguments": json.dumps(
+                                                tool_use.get("input", {})
+                                            ),
+                                            "tool_call_id": tool_use.get(
+                                                "toolUseId", ""
+                                            ),
+                                        }
+                                    }
+                                )
+
+                    usage = response.get("usage", {})
+                    stop_reason = response.get("stopReason", "unknown")
+
+                return {
+                    "text": "\n".join(text_parts).strip(),
+                    "metadata": {
+                        "usage": {
+                            "prompt_tokens": usage.get("inputTokens", 0),
+                            "completion_tokens": usage.get("outputTokens", 0),
+                            "total_tokens": usage.get("inputTokens", 0)
+                            + usage.get("outputTokens", 0),
+                            "elapsed_seconds": time.time() - start_time,
+                        },
+                        "model": self.model,
+                        "finish_reason": stop_reason,
+                    },
+                    "tool_calls": tool_calls if tool_calls else None,
+                }
+            except Exception as e:
+                logger.error(f"Error in Converse API call: {str(e)}")
+                raise
+
+        except Exception as e:
+            logger.error(f"Error in get_completion: {e}")
+            return {
+                "text": f"Error: {str(e)}",
+                "metadata": {
+                    "usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0,
+                        "elapsed_seconds": time.time() - start_time,
+                    },
+                    "model": self.model,
+                    "error": str(e),
+                },
+            }
+
+    async def embed(self, input: str) -> List[float]:
+        """
+        Generate an embedding using Bedrock's embedding model.
+
+        Args:
+            input: The input text to generate embeddings for
+
+        Returns:
+            List of floats representing the embedding vector
+
+        Raises:
+            RuntimeError: If there's an error generating the embedding
+        """
+        try:
+            await self.connect()
+
+            if hasattr(self.client, "embed"):
+                response = await self.client.embed(
+                    modelId=self.embedding_model, inputText=input
+                )
+                return response["embedding"]
+            else:
+                response = await self.client.invoke_model(
+                    modelId=self.embedding_model,
+                    contentType="application/json",
+                    accept="application/json",
+                    body=json.dumps({"inputText": input}),
+                )
+                raw_body = await response["body"].read()
+                body = json.loads(raw_body.decode("utf-8"))
+                return body["embedding"]
+
+        except Exception as e:
+            logger.error(f"Error calling Bedrock embed: {e}")
+            raise RuntimeError(f"Error generating embedding: {str(e)}")
+
+    def get_token_cost(self) -> float:
+        """
+        Get the cost per 1K tokens for the model.
+
+        Returns:
+            float: Cost in USD per 1K tokens
+
+        Note:
+            - Claude 3 Opus: $15.00/1M input, $75.00/1M output
+            - Claude 3 Sonnet: $3.00/1M input, $15.00/1M output
+            - Claude 3 Haiku: $0.25/1M input, $1.25/1M output
+            - Other models default to 0.0
+        """
+        model_lower = self.model.lower()
+
+        if "opus" in model_lower:
+            return 0.015  # $15 per 1M tokens = $0.015 per 1K tokens
+        elif "sonnet" in model_lower:
+            return 0.003  # $3 per 1M tokens = $0.003 per 1K tokens
+        elif "haiku" in model_lower:
+            return 0.00025  # $0.25 per 1M tokens = $0.00025 per 1K tokens
+
+        return 0.0  # Default for other models
