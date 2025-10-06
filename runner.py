@@ -47,7 +47,7 @@ class Runner:
 
                 token_count = response["metadata"]["usage"].get("total_tokens", 0)
                 cost_value = (
-                    token_count * self._cost_per_token if token_count is not None else None
+                    token_count * self._cost_per_token / 1000 if token_count is not None else None
                 )
                 logger.debug(f"TokenCount: {token_count}")
 

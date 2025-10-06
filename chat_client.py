@@ -136,56 +136,131 @@ class IChatClient(ABC):
     ) -> Dict[str, Any]:
         """Get a chat completion from the model.
 
+        This is the primary method for generating text completions from chat models.
+        It provides a standardized interface across different model providers while
+        maintaining consistent input/output formats.
+
         Args:
-            messages: List of message dictionaries, where each dict has structure:
-                {
-                    'role': 'user' | 'assistant' | 'system',  # Message role
-                    'content': str,  # The message content
-                    'name': str  # Optional: Name of the message sender
-                }
-            tools: Optional list of tool definitions, where each dict has structure:
-                {
-                    'type': str,  # Type of tool (e.g., 'function')
+            messages: List of message dictionaries representing the conversation history.
+                Each message dict must contain:
+                - 'role': str - One of 'user', 'assistant', or 'system'
+                - 'content': str - The message content/text
+                - 'name': str (optional) - Name of the message sender
+                
+                Example:
+                [
+                    {'role': 'system', 'content': 'You are a helpful assistant.'},
+                    {'role': 'user', 'content': 'Hello, how are you?'}
+                ]
+                
+            tools: Optional list of tool/function definitions for function calling.
+                Each tool dict should contain:
+                - 'type': str - Tool type (typically 'function')
+                - 'function': dict - Function specification with:
+                  - 'name': str - Function name
+                  - 'description': str - Function description
+                  - 'parameters': dict - JSON Schema defining parameters
+                  
+                Example:
+                [{
+                    'type': 'function',
                     'function': {
-                        'name': str,  # Function name
-                        'description': str,  # Optional: Function description
-                        'parameters': dict  # JSON Schema for parameters
+                        'name': 'get_weather',
+                        'description': 'Get current weather',
+                        'parameters': {
+                            'type': 'object',
+                            'properties': {
+                                'location': {'type': 'string'}
+                            }
+                        }
                     }
-                }
-            max_tokens: Maximum number of tokens to generate (None for model default)
-            temperature: Sampling temperature (0.0 to 1.0)
+                }]
+                
+            max_tokens: Maximum number of tokens to generate in the completion.
+                If None, uses the model's default limit. Different models have
+                different default and maximum token limits.
+                
+            temperature: Controls randomness in generation (0.0 to 1.0).
+                - 0.0: Deterministic, always picks most likely token
+                - 1.0: Maximum randomness
+                - Values between 0.1-0.7 are typically good for most use cases
 
         Returns:
+            Dict[str, Any]: Standardized response dictionary containing:
             {
-                'text': str,  # Generated response content
+                'text': str,  # The generated response text content
+                'metadata': {  # Metadata about the completion
+                    'usage': {  # Token usage statistics
+                        'prompt_tokens': int,     # Tokens in input prompt
+                        'completion_tokens': int, # Tokens in generated response
+                        'total_tokens': int,      # Total tokens used
+                        'elapsed_seconds': float  # Time taken for completion
+                    },
+                    'model': str,           # Model identifier used
+                    'finish_reason': str    # Why generation stopped:
+                                           # 'stop' - natural completion
+                                           # 'length' - hit token limit
+                                           # 'tool_calls' - function call made
+                                           # 'content_filter' - filtered content
+                },
+                'tool_calls': [  # Function calls if tools were used (None if no tools)
+                    {
+                        'function': {
+                            'name': str,        # Function name to call
+                            'arguments': str,   # JSON string of function arguments
+                            'tool_call_id': str # Unique identifier for this call
+                        }
+                    }
+                ] | None
+            }
+            
+            On error, returns:
+            {
+                'text': 'Error: <error_message>',
                 'metadata': {
                     'usage': {
-                        'prompt_tokens': int,  # Tokens in prompt
-                        'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int,  # Total tokens used
-                        'elapsed_seconds': float  # Time taken for completion in seconds
+                        'prompt_tokens': 0,
+                        'completion_tokens': 0,
+                        'total_tokens': 0,
+                        'elapsed_seconds': float  # Time until error occurred
                     },
-                    'model': str,  # Model used
-                    'finish_reason': str  # Reason generation stopped
+                    'model': str,     # Model that was attempted
+                    'error': str      # Detailed error message
                 }
             }
+
+        Raises:
+            RuntimeError: If the model provider is unavailable or misconfigured
+            ValueError: If input parameters are invalid
+            Exception: Provider-specific errors (wrapped in error response)
+            
+        Note:
+            - All implementations should handle errors gracefully by returning
+              the standardized error format rather than raising exceptions
+            - Tool/function calling support varies by provider
+            - Token counting methods may vary between providers
         """
         pass
 
     @abstractmethod
     def get_token_cost(self) -> float:
-        """Get the cost per 1K tokens for the model.
-
+        """Get the cost per 1K tokens for the model in AUD.
+        
+        This method returns the pricing information for the model in Australian dollars, 
+        which can be used to calculate the cost of API calls based on token usage.
+        
         Returns:
-            float: Cost in USD per 1K tokens
+            float: Cost per 1K tokens in AUD
         """
         pass
 
+
     async def connect(self):
-        """Needed for async initialization"""
+        """Initialize async resources. Override in subclasses as needed."""
         pass
 
     async def close(self):
+        """Clean up async resources. Override in subclasses as needed."""
         pass
 
     async def __aenter__(self):
@@ -238,44 +313,7 @@ class OllamaChatClient(IChatClient):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """Get a chat completion from the Ollama model.
-
-        Args:
-            messages: List of message dicts with format:
-                [{"role": "user"|"assistant"|"system", "content": str}, ...]
-            tools: Not currently supported in Ollama implementation
-            max_tokens: Optional maximum number of tokens to generate
-            temperature: Sampling temperature (0.0 to 1.0)
-
-        Returns:
-            Dict with structure:
-            {
-                'text': str,  # Generated response content
-                'metadata': {
-                    'usage': {
-                        'prompt_tokens': int,  # Tokens in prompt
-                        'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int,  # Total tokens used
-                        'elapsed_seconds': float  # Time taken for completion in seconds
-                    },
-                    'model': str,  # Model used
-                    'finish_reason': str  # Reason generation stopped
-                }
-            }
-
-            On error, returns:
-            {
-                'text': f"Error: {error_message}",
-                'metadata': {
-                    'usage': {
-                        'prompt_tokens': 0,
-                        'completion_tokens': 0,
-                        'total_tokens': 0,
-                        'elapsed_seconds': 0.0
-                    }
-                }
-            }
-        """
+        """Ollama implementation of get_completion. Tools not supported."""
         await self.connect()
 
         start_time = time.time()
@@ -324,14 +362,22 @@ class OllamaChatClient(IChatClient):
                 },
             }
 
+    async def embed(self, input: str) -> List[float]:
+        """Generate text embeddings using Ollama's embedding capabilities."""
+        await self.connect()
+        
+        try:
+            response = await self.client.embeddings(
+                model=self.model,
+                prompt=input
+            )
+            return response["embedding"]
+        except Exception as e:
+            logger.error(f"Error calling Ollama embed: {e}")
+            raise RuntimeError(f"Error generating embedding: {str(e)}")
+
     def get_token_cost(self) -> float:
-        """Get the cost per 1K tokens for the Ollama model.
-
-        Since Ollama runs locally, the cost is always 0.
-
-        Returns:
-            float: Always returns 0.0 (no cost for local models)
-        """
+        """Returns 0.0 AUD since Ollama runs locally with no API costs."""
         return 0.0
 
 
@@ -395,52 +441,7 @@ class OpenAIChatClient(IChatClient):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """Get a chat completion from the OpenAI model.
-
-        Args:
-            messages: List of message dicts with format:
-                [{"role": "user"|"assistant"|"system", "content": str}, ...]
-            tools: Optional list of tool definitions with format:
-                [{
-                    'type': 'function',
-                    'function': {
-                        'name': str,
-                        'description': str,
-                        'parameters': dict
-                    }
-                }, ...]
-            max_tokens: Optional maximum number of tokens to generate
-            temperature: Sampling temperature (0.0 to 1.0)
-
-        Returns:
-            Dict with structure:
-            {
-                'text': str,  # Generated response content
-                'metadata': {
-                    'usage': {
-                        'prompt_tokens': int,  # Tokens in prompt
-                        'completion_tokens': int,  # Tokens in completion
-                        'total_tokens': int,  # Total tokens used
-                        'elapsed_seconds': float  # Time taken for completion in seconds
-                    },
-                    'model': str,  # Model used
-                    'finish_reason': str  # Reason generation stopped
-                }
-            }
-
-            On error, returns:
-            {
-                'text': f"Error: {error_message}",
-                'metadata': {
-                    'usage': {
-                        'prompt_tokens': 0,
-                        'completion_tokens': 0,
-                        'total_tokens': 0,
-                        'elapsed_seconds': 0.0
-                    }
-                }
-            }
-        """
+        """OpenAI implementation of get_completion with full tool support."""
         await self.connect()
 
         start_time = time.time()
@@ -486,28 +487,47 @@ class OpenAIChatClient(IChatClient):
             logger.error(f"Error calling OpenAI: {e}")
             return {
                 "text": f"Error: {str(e)}",
-                "metadata": {"Usage": {"TotalTokenCount": 0}},
+                "metadata": {
+                    "usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0,
+                        "elapsed_seconds": time.time() - start_time,
+                    },
+                    "model": self.model,
+                    "error": str(e),
+                },
             }
 
+    async def embed(self, input: str) -> List[float]:
+        """Generate text embeddings using OpenAI's embedding model."""
+        await self.connect()
+        
+        try:
+            # Use text-embedding-3-small as default embedding model
+            response = await self.client.embeddings.create(
+                model="text-embedding-3-small",
+                input=input
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            logger.error(f"Error calling OpenAI embed: {e}")
+            raise RuntimeError(f"Error generating embedding: {str(e)}")
+
     def get_token_cost(self) -> float:
-        """Get the cost per 1K tokens for the OpenAI model.
-
-        Returns:
-            float: Cost in USD per 1K tokens based on the model
-
-        Note:
-            - gpt-4o: $0.005/1K tokens
-            - gpt-4-turbo: $0.01/1K tokens
-            - gpt-4: $0.03/1K tokens
-            - gpt-3.5-turbo: $0.0005/1K tokens
-        """
+        """Returns OpenAI model pricing per 1K tokens in AUD."""
+        # USD prices converted to AUD (using ~1.5 exchange rate)
         pricing = {
-            "gpt-4": 0.03,  # $0.03 per 1K tokens
-            "gpt-4o": 0.005,  # $0.005 per 1K tokens
-            "gpt-4-turbo": 0.01,  # $0.01 per 1K tokens
-            "gpt-3.5-turbo": 0.0005,  # $0.0005 per 1K tokens
+            "gpt-4": 0.045,  # $0.03 USD = ~$0.045 AUD per 1K tokens
+            "gpt-4o": 0.00375,  # $2.50 per 1M USD = ~$3.75 per 1M AUD = $0.00375 per 1K tokens (input)
+            "gpt-4o-mini": 0.000225,  # $0.15 per 1M USD = ~$0.225 per 1M AUD = $0.000225 per 1K tokens (input)
+            "gpt-4-turbo": 0.015,  # $0.01 USD = ~$0.015 AUD per 1K tokens
+            "gpt-3.5-turbo": 0.00075,  # $0.0005 USD = ~$0.00075 AUD per 1K tokens
         }
-        return pricing.get(self.model.lower(), 0.0)
+        model_key = self.model.lower()
+        if model_key not in pricing:
+            logger.warning(f"Unknown OpenAI model '{self.model}', using default cost of 0.0 AUD")
+        return pricing.get(model_key, 0.0)
 
 
 @lru_cache(maxsize=None)
@@ -606,10 +626,16 @@ class BedrockChatClient(IChatClient):
         """
         Initialize Bedrock chat client.
 
+        This implementation exclusively uses the Bedrock Converse API to enable
+        tool/function calling support. As a result, only Claude models are supported
+        since they are the primary models that work well with the Converse API for
+        tool usage. Other Bedrock models may not support tools through this API.
+
         Args:
-            model: Text generation model ID for Bedrock.
-            embedding_model: Text embedding model ID for Bedrock.
-            region_name: AWS region name.
+            model: Claude model ID for Bedrock (e.g., "anthropic.claude-3-sonnet-20240229-v1:0").
+                  Only Claude models are supported due to Converse API tool requirements.
+            embedding_model: Text embedding model ID for Bedrock (e.g., "amazon.titan-embed-text-v2:0").
+            region_name: AWS region name where Bedrock is available.
         """
         self.model = model
         self.embedding_model = embedding_model
@@ -643,20 +669,7 @@ class BedrockChatClient(IChatClient):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """
-        Get a chat completion from the Bedrock model.
-
-        Handles both Claude models (using Converse API) and other models (using invoke_model).
-
-        Args:
-            messages: List of message dictionaries with 'role' and 'content' keys
-            tools: Optional list of tool definitions for function calling
-            max_tokens: Maximum number of tokens to generate
-            temperature: Sampling temperature (0.0 to 1.0)
-
-        Returns:
-            Dictionary with 'text' response and 'metadata' including usage info
-        """
+        """Bedrock implementation using Converse API with tool support."""
         await self.connect()
         start_time = time.time()
 
@@ -784,61 +797,38 @@ class BedrockChatClient(IChatClient):
             }
 
     async def embed(self, input: str) -> List[float]:
-        """
-        Generate an embedding using Bedrock's embedding model.
-
-        Args:
-            input: The input text to generate embeddings for
-
-        Returns:
-            List of floats representing the embedding vector
-
-        Raises:
-            RuntimeError: If there's an error generating the embedding
-        """
+        """Generate text embeddings using Bedrock's embedding model."""
         try:
             await self.connect()
 
-            if hasattr(self.client, "embed"):
-                response = await self.client.embed(
-                    modelId=self.embedding_model, inputText=input
-                )
-                return response["embedding"]
-            else:
-                response = await self.client.invoke_model(
-                    modelId=self.embedding_model,
-                    contentType="application/json",
-                    accept="application/json",
-                    body=json.dumps({"inputText": input}),
-                )
-                raw_body = await response["body"].read()
-                body = json.loads(raw_body.decode("utf-8"))
-                return body["embedding"]
+            # Use invoke_model for embedding generation
+            response = await self.client.invoke_model(
+                modelId=self.embedding_model,
+                contentType="application/json",
+                accept="application/json",
+                body=json.dumps({"inputText": input}),
+            )
+            
+            # Parse the response
+            raw_body = await response["body"].read()
+            body = json.loads(raw_body.decode("utf-8"))
+            return body["embedding"]
 
         except Exception as e:
             logger.error(f"Error calling Bedrock embed: {e}")
             raise RuntimeError(f"Error generating embedding: {str(e)}")
 
     def get_token_cost(self) -> float:
-        """
-        Get the cost per 1K tokens for the model.
-
-        Returns:
-            float: Cost in USD per 1K tokens
-
-        Note:
-            - Claude 3 Opus: $15.00/1M input, $75.00/1M output
-            - Claude 3 Sonnet: $3.00/1M input, $15.00/1M output
-            - Claude 3 Haiku: $0.25/1M input, $1.25/1M output
-            - Other models default to 0.0
-        """
+        """Returns Bedrock model pricing per 1K tokens in AUD based on model type."""
         model_lower = self.model.lower()
 
+        # USD prices converted to AUD (using ~1.5 exchange rate)
         if "opus" in model_lower:
-            return 0.015  # $15 per 1M tokens = $0.015 per 1K tokens
+            return 0.0225  # $15 per 1M USD = ~$22.50 per 1M AUD = $0.0225 per 1K tokens
         elif "sonnet" in model_lower:
-            return 0.003  # $3 per 1M tokens = $0.003 per 1K tokens
+            return 0.0045  # $3 per 1M USD = ~$4.50 per 1M AUD = $0.0045 per 1K tokens
         elif "haiku" in model_lower:
-            return 0.00025  # $0.25 per 1M tokens = $0.00025 per 1K tokens
-
-        return 0.0  # Default for other models
+            return 0.000375  # $0.25 per 1M USD = ~$0.375 per 1M AUD = $0.000375 per 1K tokens
+        else:
+            logger.warning(f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD")
+            return 0.0  # Default for other models
