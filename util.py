@@ -41,10 +41,3 @@ def save_yaml(data: dict, file_path: str):
             default_style=None,
             explicit_start=True,
         )
-
-
-def write_text(text: str, file_path: str):
-    file_path = Path(file_path)
-    if file_path.parent:
-        file_path.parent.makedirs_p()
-    file_path.write_text(text)

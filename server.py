@@ -45,6 +45,8 @@ def read_content(file_path: str):
 
 
 def save_content(content, file_path):
+    if file_path.parent:
+        file_path.parent.makedirs_p()
     ext = file_path.suffix
     if ext == ".yaml":
         save_yaml(content, file_path)
