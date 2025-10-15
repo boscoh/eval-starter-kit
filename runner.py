@@ -24,9 +24,19 @@ class Runner:
         RESULTS_DIR.makedirs_p()
 
     async def run(self):
-        await self._chat_client.connect()
         try:
-            fields = self._config.evaluators + ["elapsed_seconds", "token_count", "cost"]
+            await self._chat_client.connect()
+            logger.info(f"Connected to chat client: {self._chat_client}")
+        except Exception as e:
+            logger.error(f"Error connecting to chat client: {e}")
+            return
+
+        try:
+            fields = self._config.evaluators + [
+                "elapsed_seconds",
+                "token_count",
+                "cost",
+            ]
             eval_results_dict = {f: RunResult(name=f) for f in fields}
 
             response_texts = []
@@ -47,7 +57,9 @@ class Runner:
 
                 token_count = response["metadata"]["usage"].get("total_tokens", 0)
                 cost_value = (
-                    token_count * self._cost_per_token / 1000 if token_count is not None else None
+                    token_count * self._cost_per_token / 1000
+                    if token_count is not None
+                    else None
                 )
                 logger.debug(f"TokenCount: {token_count}")
 
@@ -70,13 +82,19 @@ class Runner:
             evaluations = [result.model_dump() for result in eval_results_dict.values()]
 
             eval_results = {"texts": response_texts, "evaluations": evaluations}
-            results_path = (RESULTS_DIR / Path(self._config.file_path).name).with_suffix(".yaml")
+            results_path = (
+                RESULTS_DIR / Path(self._config.file_path).name
+            ).with_suffix(".yaml")
             save_yaml(eval_results, results_path)
 
             logger.info(f"Results saved to: {results_path}")
         finally:
             await self._chat_client.close()
 
+async def run_all(file_paths):
+    for run_config in file_paths:
+        logger.info(f"Running job: {run_config}")
+        await Runner(run_config).run()
 
 if __name__ == "__main__":
     from setup_logger import setup_logging_with_rich_logger
@@ -89,6 +107,4 @@ if __name__ == "__main__":
     else:
         file_paths = [Path(sys.argv[1])]
 
-    for run_config in file_paths:
-        logger.info(f"Running job: {run_config}")
-        asyncio.run(Runner(run_config).run())
+    asyncio.run(run_all(file_paths))
