@@ -5,6 +5,7 @@ import asyncio
 
 from chat_client import get_chat_client
 
+
 async def main(service):
     client = get_chat_client(service)
     await client.connect()
@@ -17,12 +18,13 @@ async def main(service):
                 break
             messages = [{"role": "user", "content": user_input}]
             result = await client.get_completion(messages)
-            print(f"\nResponse: {result.get("text", "")}")
+            print(f"\nResponse: {result.get('text', '')}")
     except Exception as ex:
         print(f"Error: {ex}")
     finally:
         await client.close()
 
+
 if __name__ == "__main__":
-    service = "bedrock" # "bedrock" "ollama" or "openai"
-    asyncio.run(main(service)) 
+    service = "bedrock"  # "bedrock" "ollama" or "openai"
+    asyncio.run(main(service))
