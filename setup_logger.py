@@ -109,28 +109,25 @@ def setup_logging_with_rich_logger(
         ("database", logging.INFO, True),
         ("aws_auth", logging.INFO, True),
         ("resources", logging.INFO, True),
-
         # AWS/Boto3 loggers - CRITICAL: capture these at INFO level to see credential errors
         # These loggers often contain important error messages about AWS authentication
         # that would otherwise be missed, especially during application startup
         ("boto3", logging.INFO, True),
         ("botocore", logging.INFO, True),
         ("botocore.credentials", logging.INFO, True),  # SSO token expiration errors
-        ("botocore.auth", logging.INFO, True),         # Authentication errors
-        ("urllib3", logging.WARNING, True),            # Keep HTTP noise down
-
+        ("botocore.auth", logging.INFO, True),  # Authentication errors
+        ("urllib3", logging.WARNING, True),  # Keep HTTP noise down
         # HTTP and other third-party loggers - reduce noise but keep errors
         ("httpx", logging.WARNING, True),
         ("httpcore", logging.WARNING, True),
         ("openai", logging.WARNING, True),
         ("h11", logging.WARNING, True),
-
         # Uvicorn loggers - keep these at INFO to capture startup messages
         # These are important for debugging server startup issues
         ("uvicorn", logging.INFO, True),
-        ("uvicorn.access", logging.WARNING, True),     # Reduce HTTP access log noise
-        ("uvicorn.error", logging.INFO, True),         # Capture server errors
-        ("uvicorn.server", logging.INFO, True),        # Capture server lifecycle events
+        ("uvicorn.access", logging.WARNING, True),  # Reduce HTTP access log noise
+        ("uvicorn.error", logging.INFO, True),  # Capture server errors
+        ("uvicorn.server", logging.INFO, True),  # Capture server lifecycle events
     ]
 
     for name, lvl, propagate in logger_configs:
