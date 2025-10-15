@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -9,15 +8,12 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
-
 import aioboto3
 import boto3
-from botocore.exceptions import ClientError, ProfileNotFound
-from dotenv import load_dotenv
 import ollama
 import openai
-from openai import AsyncOpenAI
-from rich.pretty import pretty_repr
+from botocore.exceptions import ClientError, ProfileNotFound
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -26,34 +22,12 @@ logger = logging.getLogger(__name__)
 
 def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     """
-    Factory function to create a chat client instance based on the specified type.
-
-    This is the main entry point for creating chat clients in the application.
-    It supports creating instances of different chat model providers while
-    maintaining a consistent interface through the ChatClient abstract base class.
+    Gets a chat client that satisfies IChatClient interface.
 
     Args:
-        client_type: Type of chat client to create. Supported types:
-            - "openai": Creates an OpenAIChatClient instance
-            - "ollama": Creates an OllamaChatClient instance
+        client_type: "openai", "ollama", or "bedrock"
         **kwargs: Additional keyword arguments specific to the chat client type:
-            - For OpenAI: model (str)
-            - For Ollama: model (str)
-
-    Returns:
-        ChatClient: An instance of the requested chat client type
-
-    Raises:
-        ValueError: If an unsupported client_type is provided
-
-    Example:
-        ```python
-        # Create an OpenAI chat client
-        openai_client = get_chat_client("openai", model="gpt-4")
-
-        # Create an Ollama chat client
-        ollama_client = get_chat_client("ollama", model="llama3.2")
-        ```
+            - model: str
     """
     client_type = client_type.lower()
     if client_type == "openai":
@@ -65,66 +39,8 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     raise ValueError(f"Unknown chat client type: {client_type}")
 
 
-def parse_response_as_json_list(response):
-    """Parse JSON from text response, extracting from markdown or .transactions if needed."""
-    import re
-
-    if isinstance(response, dict):
-        response_text = response.get("text", "")
-    elif isinstance(response, str):
-        response_text = response
-    else:
-        return None
-
-    if not response_text:
-        return None
-
-    def try_parse(text):
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            return None
-
-    def extract_transactions(data):
-        """Extract transactions list from dict if present"""
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict) and "transactions" in data:
-            transactions = data["transactions"]
-            if isinstance(transactions, list):
-                return transactions
-        return data
-
-    parsed = try_parse(response_text)
-    if parsed is not None:
-        return extract_transactions(parsed)
-
-    patterns = [
-        r"```(?:json|python)?\s*([\s\S]*?)\s*```",
-        r"```(?:json)?\s*({[\s\S]*})\s*```",
-        r"\{[\s\S]*\}",
-        r"({[\s\S]*})",
-    ]
-
-    for pattern in patterns:
-        matches = re.findall(pattern, response_text, re.IGNORECASE)
-        for match in matches:
-            parsed = try_parse(match)
-            if parsed is not None:
-                return extract_transactions(parsed)
-
-    return None
-
-
 class IChatClient(ABC):
-    """
-    Abstract base class for chat client implementations.
-
-    This interface defines a standardized way to interact with various chat
-    model providers (like OpenAI, Ollama, etc.) using a consistent API.
-    All chat clients should implement this interface to ensure compatibility
-    across different model providers.
-    """
+    """Abstract base class for IChatClient, an API for LLM with async interface"""
 
     @abstractmethod
     async def get_completion(
@@ -134,11 +50,14 @@ class IChatClient(ABC):
         max_tokens: Optional[int] = None,
         temperature: float = 0.0,
     ) -> Dict[str, Any]:
-        """Get a chat completion from the model.
+        """
+        Get a chat completion from the model.
 
-        This is the primary method for generating text completions from chat models.
-        It provides a standardized interface across different model providers while
-        maintaining consistent input/output formats.
+        Note:
+            - All implementations should handle errors gracefully by returning
+              the standardized error format rather than raising exceptions
+            - Tool/function calling support varies by provider
+            - Token counting methods may vary between providers
 
         Args:
             messages: List of message dictionaries representing the conversation history.
@@ -146,13 +65,13 @@ class IChatClient(ABC):
                 - 'role': str - One of 'user', 'assistant', or 'system'
                 - 'content': str - The message content/text
                 - 'name': str (optional) - Name of the message sender
-                
+
                 Example:
                 [
                     {'role': 'system', 'content': 'You are a helpful assistant.'},
                     {'role': 'user', 'content': 'Hello, how are you?'}
                 ]
-                
+
             tools: Optional list of tool/function definitions for function calling.
                 Each tool dict should contain:
                 - 'type': str - Tool type (typically 'function')
@@ -160,7 +79,7 @@ class IChatClient(ABC):
                   - 'name': str - Function name
                   - 'description': str - Function description
                   - 'parameters': dict - JSON Schema defining parameters
-                  
+
                 Example:
                 [{
                     'type': 'function',
@@ -175,11 +94,11 @@ class IChatClient(ABC):
                         }
                     }
                 }]
-                
+
             max_tokens: Maximum number of tokens to generate in the completion.
                 If None, uses the model's default limit. Different models have
                 different default and maximum token limits.
-                
+
             temperature: Controls randomness in generation (0.0 to 1.0).
                 - 0.0: Deterministic, always picks most likely token
                 - 1.0: Maximum randomness
@@ -213,7 +132,7 @@ class IChatClient(ABC):
                     }
                 ] | None
             }
-            
+
             On error, returns:
             {
                 'text': 'Error: <error_message>',
@@ -229,31 +148,13 @@ class IChatClient(ABC):
                 }
             }
 
-        Raises:
-            RuntimeError: If the model provider is unavailable or misconfigured
-            ValueError: If input parameters are invalid
-            Exception: Provider-specific errors (wrapped in error response)
-            
-        Note:
-            - All implementations should handle errors gracefully by returning
-              the standardized error format rather than raising exceptions
-            - Tool/function calling support varies by provider
-            - Token counting methods may vary between providers
         """
         pass
 
     @abstractmethod
     def get_token_cost(self) -> float:
-        """Get the cost per 1K tokens for the model in AUD.
-        
-        This method returns the pricing information for the model in Australian dollars, 
-        which can be used to calculate the cost of API calls based on token usage.
-        
-        Returns:
-            float: Cost per 1K tokens in AUD
-        """
+        """Get the cost per 1K tokens for the model in AUD."""
         pass
-
 
     async def connect(self):
         """Initialize async resources. Override in subclasses as needed."""
@@ -270,6 +171,46 @@ class IChatClient(ABC):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
+
+def parse_response_as_json_list(response):
+    """Parse JSON from text response, extracting from markdown or .transactions if needed."""
+    import re
+
+    if isinstance(response, dict):
+        response_text = response.get("text", "")
+    elif isinstance(response, str):
+        response_text = response
+    else:
+        return None
+
+    if not response_text:
+        return None
+
+    def try_parse(text):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return None
+
+    parsed = try_parse(response_text)
+    if parsed:
+        return parsed
+
+    patterns = [
+        r"```(?:json|python)?\s*([\s\S]*?)\s*```",
+        r"```(?:json)?\s*({[\s\S]*})\s*```",
+        r"\{[\s\S]*\}",
+        r"({[\s\S]*})",
+    ]
+
+    for pattern in patterns:
+        matches = re.findall(pattern, response_text, re.IGNORECASE)
+        for match in matches:
+            parsed = try_parse(match)
+            if parsed:
+                return parsed
+
+    return None
 
 
 class OllamaChatClient(IChatClient):
@@ -365,12 +306,9 @@ class OllamaChatClient(IChatClient):
     async def embed(self, input: str) -> List[float]:
         """Generate text embeddings using Ollama's embedding capabilities."""
         await self.connect()
-        
+
         try:
-            response = await self.client.embeddings(
-                model=self.model,
-                prompt=input
-            )
+            response = await self.client.embeddings(model=self.model, prompt=input)
             return response["embedding"]
         except Exception as e:
             logger.error(f"Error calling Ollama embed: {e}")
@@ -410,7 +348,7 @@ class OpenAIChatClient(IChatClient):
                 "Please set OPENAI_API_KEY in your .env file or environment variables."
             )
 
-        self.client = AsyncOpenAI(api_key=api_key)
+        self.client = openai.AsyncOpenAI(api_key=api_key)
         self._closed = False
 
         try:
@@ -502,12 +440,11 @@ class OpenAIChatClient(IChatClient):
     async def embed(self, input: str) -> List[float]:
         """Generate text embeddings using OpenAI's embedding model."""
         await self.connect()
-        
+
         try:
             # Use text-embedding-3-small as default embedding model
             response = await self.client.embeddings.create(
-                model="text-embedding-3-small",
-                input=input
+                model="text-embedding-3-small", input=input
             )
             return response.data[0].embedding
         except Exception as e:
@@ -526,20 +463,22 @@ class OpenAIChatClient(IChatClient):
         }
         model_key = self.model.lower()
         if model_key not in pricing:
-            logger.warning(f"Unknown OpenAI model '{self.model}', using default cost of 0.0 AUD")
+            logger.warning(
+                f"Unknown OpenAI model '{self.model}', using default cost of 0.0 AUD"
+            )
         return pricing.get(model_key, 0.0)
 
 
 @lru_cache(maxsize=None)
-def get_aws_config():
+def get_aws_config(is_raise_exception: bool = True):
     """
-    Prepare AWS configuration for boto3 client initialization.
-    
-    This function searches for AWS profiles and saved credentials to build a 
-    configuration dictionary that can be used to initialize boto3 clients and 
-    sessions. It validates the discovered credentials to ensure they are properly 
+    Returns AWS configuration for boto3 client initialization.
+
+    This function searches for AWS profiles and saved credentials to build a
+    configuration dictionary that can be used to initialize boto3 clients and
+    sessions. It validates the discovered credentials to ensure they are properly
     configured and not expired.
-    
+
     Credential Discovery Process:
     1. Looks for AWS_PROFILE environment variable to determine profile name
     2. Searches for saved credentials in ~/.aws/credentials file
@@ -547,27 +486,27 @@ def get_aws_config():
     4. Validates credentials contain required access_key and secret_key
     5. Tests credential validity with an STS GetCallerIdentity call
     6. Checks for token expiration on temporary/session credentials
-    
+
     Environment Variables:
-        AWS_PROFILE (str, optional): Name of the AWS profile to use from 
-                                   ~/.aws/credentials. If not set, uses the 
+        AWS_PROFILE (str, optional): Name of the AWS profile to use from
+                                   ~/.aws/credentials. If not set, uses the
                                    default profile.
-    
+
     Returns:
         dict: AWS configuration dictionary for boto3 client initialization:
-            - profile_name (str, optional): The AWS profile name to pass to 
+            - profile_name (str, optional): The AWS profile name to pass to
                                           boto3.client() or boto3.Session()
-    
+
     Note:
-        This function is cached to avoid repeated credential discovery and 
-        validation. The returned configuration can be unpacked directly into 
-        boto3 client constructors. All validation errors are logged but do not 
+        This function is cached to avoid repeated credential discovery and
+        validation. The returned configuration can be unpacked directly into
+        boto3 client constructors. All validation errors are logged but do not
         raise exceptions - returns gracefully with empty config on failure.
-        
+
     Examples:
         >>> aws_config = get_aws_config()
         >>> s3_client = boto3.client('s3', **aws_config)
-        >>> 
+        >>>
         >>> # Or with session
         >>> session = boto3.Session(**aws_config)
         >>> dynamodb = session.client('dynamodb')
@@ -585,9 +524,13 @@ def get_aws_config():
             logger.info("No AWS credentials file at ~/.aws/credentials")
             return aws_config
 
-        session = boto3.Session(profile_name=profile_name) if profile_name else boto3.Session()
+        session = (
+            boto3.Session(profile_name=profile_name)
+            if profile_name
+            else boto3.Session()
+        )
         credentials = session.get_credentials()
-        
+
         if not credentials or not credentials.access_key or not credentials.secret_key:
             logger.warning("AWS credentials not properly configured")
             return aws_config
@@ -597,20 +540,28 @@ def get_aws_config():
 
         if hasattr(credentials, "token"):
             creds = credentials.get_frozen_credentials()
-            if hasattr(creds, "expiry_time") and creds.expiry_time < datetime.now(timezone.utc):
+            if hasattr(creds, "expiry_time") and creds.expiry_time < datetime.now(
+                timezone.utc
+            ):
                 logger.warning(f"AWS credentials expired on {creds.expiry_time}")
                 return aws_config
 
         logger.info(f"Valid AWS credentials found for '{identity['Arn']}'")
 
     except ProfileNotFound:
+        if is_raise_exception:
+            raise
         logger.warning(f"AWS profile '{profile_name}' not found")
     except ClientError as e:
+        if is_raise_exception:
+            raise
         if e.response["Error"]["Code"] == "ExpiredToken":
             logger.warning("AWS credentials have expired")
         else:
             logger.warning(f"Error validating AWS credentials: {str(e)}")
     except Exception as e:
+        if is_raise_exception:
+            raise
         logger.error(f"Unexpected error checking AWS credentials: {str(e)}")
 
     return aws_config
@@ -621,7 +572,6 @@ class BedrockChatClient(IChatClient):
         self,
         model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
         embedding_model: str = "amazon.titan-embed-text-v2:0",
-        region_name: str = "us-east-1",  # Update if you're in a different region
     ):
         """
         Initialize Bedrock chat client.
@@ -635,11 +585,9 @@ class BedrockChatClient(IChatClient):
             model: Claude model ID for Bedrock (e.g., "anthropic.claude-3-sonnet-20240229-v1:0").
                   Only Claude models are supported due to Converse API tool requirements.
             embedding_model: Text embedding model ID for Bedrock (e.g., "amazon.titan-embed-text-v2:0").
-            region_name: AWS region name where Bedrock is available.
         """
         self.model = model
         self.embedding_model = embedding_model
-        self.region_name = region_name
         self.client = None
         self._session = None
         self._closed = True
@@ -652,7 +600,7 @@ class BedrockChatClient(IChatClient):
         logger.info(f"Initializing Bedrock client for model {self.model}")
         self._session = aioboto3.Session(**get_aws_config())
         self.client = await self._session.client("bedrock-runtime").__aenter__()
-        logger.info(f"Initialized Bedrock client")
+        logger.info("Initialized Bedrock client")
         self._closed = False
 
     async def close(self):
@@ -722,11 +670,7 @@ class BedrockChatClient(IChatClient):
                 if tools:
                     request_kwargs["toolConfig"] = {"tools": formatted_tools}
 
-                logger.info(f"Request kwargs: {pretty_repr(request_kwargs)}")
-
                 response = await self.client.converse(**request_kwargs)
-
-                logger.info(f"Response: {pretty_repr(response)}")
 
                 text_parts = []
                 tool_calls = []
@@ -808,7 +752,7 @@ class BedrockChatClient(IChatClient):
                 accept="application/json",
                 body=json.dumps({"inputText": input}),
             )
-            
+
             # Parse the response
             raw_body = await response["body"].read()
             body = json.loads(raw_body.decode("utf-8"))
@@ -830,5 +774,7 @@ class BedrockChatClient(IChatClient):
         elif "haiku" in model_lower:
             return 0.000375  # $0.25 per 1M USD = ~$0.375 per 1M AUD = $0.000375 per 1K tokens
         else:
-            logger.warning(f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD")
+            logger.warning(
+                f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD"
+            )
             return 0.0  # Default for other models
