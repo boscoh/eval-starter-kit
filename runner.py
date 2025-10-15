@@ -8,7 +8,7 @@ from path import Path
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
 from schemas import RESULTS_DIR, RunConfig, RunResult
-from util import save_yaml
+from yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
 

@@ -17,7 +17,7 @@ from schemas import (
     ext_from_table,
 )
 from setup_logger import setup_logging_with_rich_logger
-from util import load_yaml, save_yaml
+from yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 setup_logging_with_rich_logger()

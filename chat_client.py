@@ -532,7 +532,6 @@ def get_aws_config(is_raise_exception: bool = True):
         credentials = session.get_credentials()
 
         if not credentials or not credentials.access_key or not credentials.secret_key:
-            logger.warning("AWS credentials not properly configured")
             return aws_config
 
         sts = session.client("sts")

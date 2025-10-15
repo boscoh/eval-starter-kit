@@ -5,7 +5,7 @@ from typing import List, Literal, Optional
 from path import Path
 from pydantic import BaseModel, Field
 
-from util import load_yaml, save_yaml
+from yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 

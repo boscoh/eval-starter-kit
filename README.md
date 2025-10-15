@@ -4,16 +4,14 @@ A lightweight kit for quickly standing up LLM evals. It includes a simple web UI
 
 ## Quick Start
 
-### Prerequisites & Setup
-
-**Install:**
+### 1. Install
 
 Clone the repository
 ```bash
 git clone <repository-url>
 cd eval-starter-kit
 ```
-`
+
 Install uv if not already installed
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -23,9 +21,9 @@ Install dependencies and create virtual environment
 uv sync
 ```
 
-**Configure Your AI Service (choose one):**
+### 2. Configure Your AI Service 
 
-1. **Ollama (Local Models)**
+1. Ollama (Local Models)
 
    [Ollama](https://ollama.ai/) installed and running
    ```bash
@@ -44,16 +42,12 @@ uv sync
    - mistral, mixtral
    - Any model available through Ollama
 
-2. **OpenAI**
+2. OpenAI
 
    `OPENAI_API_KEY` set in your environment or `.env` file  
    
    ```bash
-   # Set your OpenAI API key
    echo "OPENAI_API_KEY=your-api-key-here" > .env
-   
-   # Test with OpenAI
-   uv run runner.py queries/engineer.yaml --service openai --model gpt-4
    ```
 
    Models:
@@ -62,7 +56,7 @@ uv sync
    - gpt-3.5-turbo
    - o1-preview, o1-mini
 
-3. **AWS Bedrock**
+3. AWS Bedrock
 
    AWS credentials configured (via AWS CLI, profile, or environment variables)
 
@@ -79,20 +73,14 @@ uv sync
    
    # Method 3: Use specific AWS profile
    export AWS_PROFILE=your-profile-name
-   
-   # Test with Bedrock (Claude models)
-   uv run runner.py queries/engineer.yaml --service bedrock --model anthropic.claude-3-sonnet-20240229-v1:0
    ```
 
-   Models:
+   Note: Bedrock implementation uses the Converse API and is configured for Claude models with tool-calling support:
+
    - anthropic.claude-3-sonnet-20240229-v1:0
-   - anthropic.claude-3-haiku-20240307-v1:0
-   - anthropic.claude-3-opus-20240229-v1:0
    - anthropic.claude-3-5-sonnet-20240620-v1:0
 
-   **Note**: Bedrock implementation uses the Converse API and is optimized for Claude models with tool/function calling support.
-
-### Running the Web Interface
+### 3. Run the Web Interface
 
 1. Start the web server:
    ```bash
@@ -101,7 +89,7 @@ uv sync
 
 2. Open your browser to http://localhost:8000
 
-### Running Evaluations via CLI
+### 4. Running Evaluations via CLI
 
 This will bulk run all configs in `runs`:
 
@@ -120,7 +108,7 @@ name: "Engineering Candidate Evaluation"
 query_ref: consultant
 prompt_ref: candidate-summary
 service: ollama  # or "openai" or "bedrock"
-model: llama3.2  # or "gpt-4" or "anthropic.claude-3-sonnet-20240229-v1:0"
+model: llama3.2
 repeat: 2
 evaluators:
 - word_count
@@ -138,32 +126,31 @@ Evaluators:
 - `equivalence`
    - Evaluates the semantic equivalence of the response
    - Configurable minimum and maximum semantic similarity scores
-
-To extend the base `Evaluator` class to create custom evaluation metrics
-    1. Create a new class in `evaluator.py` that implements the evaluation logic
-    2. Update the `allowed_evaluators()` method in `EvaluationRunner`
-    3. Add your evaluator to the YAML configuration file
+- to extend the base `Evaluator` class to create custom evaluation metrics:
+  - Create a new class in `evaluator.py` that implements the evaluation logic
+  - Update the `allowed_evaluators()` method in `EvaluationRunner`
+  - Add your evaluator to the YAML configuration file
 
 ## Project Structure
 
 ```
 .
 ├── README.md
+├── prompts/               # Reusable system prompts
+├── queries/               # Prompt/query YAMLs used by runs
+├── results/               # Example evaluation results
+├── runs/                  # Run configurations (what to evaluate)
 ├── chat_client.py         # Client for interacting with the API
 ├── evaluator.py           # Core evaluation logic
 ├── index.html             # Simple web UI for the server
-├── prompts/               # Reusable system prompts
-├── pyproject.toml         # Project metadata and dependencies
-├── queries/               # Prompt/query YAMLs used by runs
-├── results/               # Example evaluation results
 ├── runner.py              # CLI for running evaluations
-├── runs/                  # Run configurations (what to evaluate)
 ├── schemas.py             # Pydantic models
 ├── server.py              # Web server and API
 ├── setup_logger.py        # Logging configuration
+├── yaml_utils.py          # YAML utility functions
 ├── test_chat.py           # Basic API/chat tests
 ├── test_embed.py          # Embedding-related tests
-├── util.py                # Utility functions
+├── pyproject.toml         # Project metadata and dependencies
 └── uv.lock                # Locked dependency versions for uv
 ```
 
