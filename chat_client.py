@@ -152,6 +152,11 @@ class IChatClient(ABC):
         pass
 
     @abstractmethod
+    async def embed(self, input: str) -> List[float]:
+        """Generate a text embedding vector for the given input string."""
+        pass
+
+    @abstractmethod
     def get_token_cost(self) -> float:
         """Get the cost per 1K tokens for the model in AUD."""
         pass

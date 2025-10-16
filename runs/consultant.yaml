@@ -1,9 +1,9 @@
 ---
 file_path: runs/consultant.yaml
 query_ref: consultant
-prompt_ref: candidate-skills
-service: ollama
-model: llama3.2
+prompt_ref: candidate-summary
+service: bedrock
+model: anthropic.claude-3-sonnet-20240229-v1:0
 repeat: 2
 evaluators:
 - word_count
