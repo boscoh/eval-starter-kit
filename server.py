@@ -107,6 +107,12 @@ def get_defaults():
                 "repeat": 1,
                 "evaluators": ["CoherenceEvaluator"],
             },
+            "services": ["bedrock", "ollama", "openai"],
+            "models": {
+                "bedrock": ["anthropic.claude-3-sonnet-20240229-v1:0"],
+                "ollama": ["llama3.2"],
+                "openai": ["gpt-4o"],
+            }
         }
     }
 

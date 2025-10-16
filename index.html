@@ -168,11 +168,19 @@
 
                     h5.mt-3 Service
                     .form-group
-                      input#name.form-control(type="text" v-model="runConfig.service" placeholder="query")
+                      select.form-select(v-model="runConfig.service")
+                        option(value="" disabled)
+                          | Select a service
+                        option(v-for="(models, serviceName) in defaults.models" :key="serviceName" :value="serviceName")
+                          | {{ serviceName }}
 
                       h5.mt-3 Model
                     .form-group
-                      input#name.form-control(type="text" v-model="runConfig.model" placeholder="query")
+                      select.form-select(v-model="runConfig.model")
+                        option(value="" disabled)
+                          | Select a model
+                        option(v-for="m in filteredModels" :key="m" :value="m")
+                          | {{ m }}
 
                     h5.mt-4 Evaluators
                     .form-group
@@ -483,7 +491,7 @@
       return message;
     }
 
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, onMounted, computed, watch } = Vue;
 
     function setup() {
       // State
@@ -510,6 +518,24 @@
       const isSavingQuery = ref(false);
 
       const notifications = ref([]);
+
+      // Derived values
+      const filteredModels = computed(() => {
+        const svc = _.get(runConfig, 'value.service');
+        const modelsMap = _.get(defaults, 'value.models', {}) || {};
+        return svc && modelsMap[svc] ? modelsMap[svc] : [];
+      });
+
+      // Keep model consistent with selected service
+      watch(
+        () => _.get(runConfig, 'value.service'),
+        () => {
+          const current = _.get(runConfig, 'value.model');
+          if (!filteredModels.value.includes(current)) {
+            runConfig.value.model = "";
+          }
+        },
+      );
 
       // Lifecycle hooks
       // Initialize toast when a new notification is added
@@ -805,6 +831,7 @@
         newQueryRef,
         selectedQuery,
         notifications,
+        filteredModels,
 
         // Methods
         chooseRun,
