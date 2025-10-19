@@ -20,8 +20,8 @@ from setup_logger import setup_logging_with_rich_logger
 from yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
+
 setup_logging_with_rich_logger()
-logger.info("Logging configured with Rich handler")
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -112,7 +112,7 @@ def get_defaults():
                 "bedrock": ["anthropic.claude-3-sonnet-20240229-v1:0"],
                 "ollama": ["llama3.2"],
                 "openai": ["gpt-4o"],
-            }
+            },
         }
     }
 

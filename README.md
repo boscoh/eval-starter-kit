@@ -30,9 +30,6 @@ uv sync
    # Start Ollama server (if not already running)
    ollama pull llama3.2
    ollama serve
-   
-   # Test with a quick evaluation
-   uv run runner.py queries/engineer.yaml
    ```
 
    Models:

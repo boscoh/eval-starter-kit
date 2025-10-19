@@ -107,27 +107,23 @@ class IChatClient(ABC):
         Returns:
             Dict[str, Any]: Standardized response dictionary containing:
             {
-                'text': str,  # The generated response text content
-                'metadata': {  # Metadata about the completion
-                    'usage': {  # Token usage statistics
-                        'prompt_tokens': int,     # Tokens in input prompt
-                        'completion_tokens': int, # Tokens in generated response
-                        'total_tokens': int,      # Total tokens used
-                        'elapsed_seconds': float  # Time taken for completion
+                'text': str,
+                'metadata': {
+                    'usage': {
+                        'prompt_tokens': int,
+                        'completion_tokens': int,
+                        'total_tokens': int,
+                        'elapsed_seconds': float
                     },
-                    'model': str,           # Model identifier used
-                    'finish_reason': str    # Why generation stopped:
-                                           # 'stop' - natural completion
-                                           # 'length' - hit token limit
-                                           # 'tool_calls' - function call made
-                                           # 'content_filter' - filtered content
+                    'model': str,
+                    'finish_reason': str
                 },
-                'tool_calls': [  # Function calls if tools were used (None if no tools)
+                'tool_calls': [
                     {
                         'function': {
-                            'name': str,        # Function name to call
-                            'arguments': str,   # JSON string of function arguments
-                            'tool_call_id': str # Unique identifier for this call
+                            'name': str,
+                            'arguments': str,
+                            'tool_call_id': str
                         }
                     }
                 ] | None
@@ -141,10 +137,10 @@ class IChatClient(ABC):
                         'prompt_tokens': 0,
                         'completion_tokens': 0,
                         'total_tokens': 0,
-                        'elapsed_seconds': float  # Time until error occurred
+                        'elapsed_seconds': float
                     },
-                    'model': str,     # Model that was attempted
-                    'error': str      # Detailed error message
+                    'model': str,
+                    'error': str
                 }
             }
 
@@ -447,7 +443,6 @@ class OpenAIChatClient(IChatClient):
         await self.connect()
 
         try:
-            # Use text-embedding-3-small as default embedding model
             response = await self.client.embeddings.create(
                 model="text-embedding-3-small", input=input
             )
@@ -458,13 +453,12 @@ class OpenAIChatClient(IChatClient):
 
     def get_token_cost(self) -> float:
         """Returns OpenAI model pricing per 1K tokens in AUD."""
-        # USD prices converted to AUD (using ~1.5 exchange rate)
         pricing = {
-            "gpt-4": 0.045,  # $0.03 USD = ~$0.045 AUD per 1K tokens
-            "gpt-4o": 0.00375,  # $2.50 per 1M USD = ~$3.75 per 1M AUD = $0.00375 per 1K tokens (input)
-            "gpt-4o-mini": 0.000225,  # $0.15 per 1M USD = ~$0.225 per 1M AUD = $0.000225 per 1K tokens (input)
-            "gpt-4-turbo": 0.015,  # $0.01 USD = ~$0.015 AUD per 1K tokens
-            "gpt-3.5-turbo": 0.00075,  # $0.0005 USD = ~$0.00075 AUD per 1K tokens
+            "gpt-4": 0.045,
+            "gpt-4o": 0.00375,
+            "gpt-4o-mini": 0.000225,
+            "gpt-4-turbo": 0.015,
+            "gpt-3.5-turbo": 0.00075,
         }
         model_key = self.model.lower()
         if model_key not in pricing:
@@ -601,7 +595,7 @@ class BedrockChatClient(IChatClient):
         if self.client is not None and not self._closed:
             return
 
-        logger.info(f"Initializing Bedrock client for model {self.model}")
+        logger.info(f"Initializing Bedrock client for model '{self.model}'")
         self._session = aioboto3.Session(**get_aws_config())
         self.client = await self._session.client("bedrock-runtime").__aenter__()
         logger.info("Initialized Bedrock client")
@@ -749,7 +743,6 @@ class BedrockChatClient(IChatClient):
         try:
             await self.connect()
 
-            # Use invoke_model for embedding generation
             response = await self.client.invoke_model(
                 modelId=self.embedding_model,
                 contentType="application/json",
@@ -757,7 +750,6 @@ class BedrockChatClient(IChatClient):
                 body=json.dumps({"inputText": input}),
             )
 
-            # Parse the response
             raw_body = await response["body"].read()
             body = json.loads(raw_body.decode("utf-8"))
             return body["embedding"]
@@ -770,15 +762,14 @@ class BedrockChatClient(IChatClient):
         """Returns Bedrock model pricing per 1K tokens in AUD based on model type."""
         model_lower = self.model.lower()
 
-        # USD prices converted to AUD (using ~1.5 exchange rate)
         if "opus" in model_lower:
-            return 0.0225  # $15 per 1M USD = ~$22.50 per 1M AUD = $0.0225 per 1K tokens
+            return 0.0225
         elif "sonnet" in model_lower:
-            return 0.0045  # $3 per 1M USD = ~$4.50 per 1M AUD = $0.0045 per 1K tokens
+            return 0.0045
         elif "haiku" in model_lower:
-            return 0.000375  # $0.25 per 1M USD = ~$0.375 per 1M AUD = $0.000375 per 1K tokens
+            return 0.000375
         else:
             logger.warning(
                 f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD"
             )
-            return 0.0  # Default for other models
+            return 0.0

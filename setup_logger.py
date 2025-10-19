@@ -31,15 +31,7 @@ from rich.theme import Theme
 def setup_logging_with_rich_logger(
     level: Union[int, str] = logging.INFO,
 ) -> None:
-    """Set up logging with Rich formatter and comprehensive logger configuration.
-
-    This function configures the root logger and all relevant child loggers to ensure
-    that all important log messages are captured and formatted consistently. It's
-    particularly important for capturing AWS credential errors and startup messages
-    that might otherwise be missed.
-
-    Args:
-        level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', etc.)
+    """Set up logging with Rich formatter and switching off noisy modules.
 
     Note:
         This should be called as early as possible in the application startup,
@@ -49,7 +41,6 @@ def setup_logging_with_rich_logger(
     if isinstance(level, str):
         level = getattr(logging, level.upper())
 
-    # Create a custom theme for Rich
     custom_theme = Theme(
         {
             "logging.level.debug": "cyan",
@@ -60,25 +51,20 @@ def setup_logging_with_rich_logger(
         }
     )
 
-    # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 
-    # Remove all existing handlers
     for handler in root_logger.handlers[:]:
         handler.close()
         root_logger.removeHandler(handler)
 
-    # Create Rich handler with detailed configuration
     console = Console(theme=custom_theme, stderr=True, width=140)
 
-    # Create a clean formatter without duplicate log levels
     formatter = logging.Formatter(
-        "%(message)s",  # RichHandler will add the level/name/line info
+        "%(message)s",
         datefmt="%H:%M:%S",
     )
 
-    # Configure the Rich handler
     rich_handler = RichHandler(
         console=console,
         rich_tracebacks=False,
@@ -89,19 +75,15 @@ def setup_logging_with_rich_logger(
         markup=True,
         log_time_format="[%X]",
         keywords=[],
-        omit_repeated_times=False,
+        omit_repeated_times=True,
     )
 
-    # Apply the formatter
     rich_handler.setFormatter(formatter)
     rich_handler.setLevel(level)
 
     root_logger.addHandler(rich_handler)
 
-    # Configure specific loggers with proper level and propagation
-    # Format: (logger_name, level, propagate_to_parent)
     logger_configs = [
-        # Application loggers - capture all application-level messages
         ("__main__", logging.INFO, True),
         ("fastapi_server", logging.INFO, True),
         ("quest_mcp_client", logging.INFO, True),
@@ -109,30 +91,24 @@ def setup_logging_with_rich_logger(
         ("database", logging.INFO, True),
         ("aws_auth", logging.INFO, True),
         ("resources", logging.INFO, True),
-        # AWS/Boto3 loggers - CRITICAL: capture these at INFO level to see credential errors
-        # These loggers often contain important error messages about AWS authentication
-        # that would otherwise be missed, especially during application startup
         ("boto3", logging.INFO, True),
         ("botocore", logging.INFO, True),
-        ("botocore.credentials", logging.INFO, True),  # SSO token expiration errors
-        ("botocore.auth", logging.INFO, True),  # Authentication errors
-        ("urllib3", logging.WARNING, True),  # Keep HTTP noise down
-        # HTTP and other third-party loggers - reduce noise but keep errors
+        ("botocore.credentials", logging.WARNING, True),
+        ("botocore.auth", logging.INFO, True),
+        ("botocore.tokens", logging.WARNING, True),
+        ("urllib3", logging.WARNING, True),
         ("httpx", logging.WARNING, True),
         ("httpcore", logging.WARNING, True),
         ("openai", logging.WARNING, True),
         ("h11", logging.WARNING, True),
-        # Uvicorn loggers - keep these at INFO to capture startup messages
-        # These are important for debugging server startup issues
         ("uvicorn", logging.INFO, True),
-        ("uvicorn.access", logging.WARNING, True),  # Reduce HTTP access log noise
-        ("uvicorn.error", logging.INFO, True),  # Capture server errors
-        ("uvicorn.server", logging.INFO, True),  # Capture server lifecycle events
+        ("uvicorn.access", logging.WARNING, True),
+        ("uvicorn.error", logging.INFO, True),
+        ("uvicorn.server", logging.INFO, True),
     ]
 
     for name, lvl, propagate in logger_configs:
         logger = logging.getLogger(name)
-        # Don't remove handlers for root logger to avoid conflicts
         if name != "":
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)

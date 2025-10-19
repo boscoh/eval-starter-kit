@@ -15,7 +15,6 @@ from path import Path
 
 logger = logging.getLogger(__name__)
 
-# Maximum preferred line width used when emitting YAML
 MAX_LEN_LINE = 80
 
 
@@ -29,7 +28,6 @@ def folded_str_yaml_representer(dumper, data):
     )
 
 
-# Register the representer globally so all strings use the smarter emission
 yaml.add_representer(str, folded_str_yaml_representer)
 
 

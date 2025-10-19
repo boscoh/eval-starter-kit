@@ -91,10 +91,12 @@ class Runner:
         finally:
             await self._chat_client.close()
 
+
 async def run_all(file_paths):
     for run_config in file_paths:
         logger.info(f"Running job: {run_config}")
         await Runner(run_config).run()
+
 
 if __name__ == "__main__":
     from setup_logger import setup_logging_with_rich_logger

@@ -521,16 +521,16 @@
 
       // Derived values
       const filteredModels = computed(() => {
-        const svc = _.get(runConfig, 'value.service');
-        const modelsMap = _.get(defaults, 'value.models', {}) || {};
+        const svc = _.get(runConfig, "value.service");
+        const modelsMap = _.get(defaults, "value.models", {}) || {};
         return svc && modelsMap[svc] ? modelsMap[svc] : [];
       });
 
       // Keep model consistent with selected service
       watch(
-        () => _.get(runConfig, 'value.service'),
+        () => _.get(runConfig, "value.service"),
         () => {
-          const current = _.get(runConfig, 'value.model');
+          const current = _.get(runConfig, "value.model");
           if (!filteredModels.value.includes(current)) {
             runConfig.value.model = "";
           }
