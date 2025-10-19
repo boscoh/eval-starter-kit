@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 data_dir = Path(__file__).parent / "data"
 
+
 class RAGService:
     """Service class for Retrieval-Augmented Generation functionality."""
-    
+
     def __init__(self, llm_service: Optional[str] = None):
         self.llm_service = llm_service or os.getenv("LLM_SERVICE", "openai").lower()
         if self.llm_service == "openai":
@@ -32,10 +33,10 @@ class RAGService:
             model = "amazon.titan-embed-text-v2:0"
         else:
             raise ValueError(f"Unsupported service: {self.llm_service}")
-       
+
         self.embed_client = get_chat_client(self.llm_service, model=model)
         self.embed_json = data_dir / f"embeddings-{py_.kebab_case(model)}.json"
-    
+
         # to be created in ainit
         self.speakers: Optional[List[dict]] = None
         self.clean_speakers: Optional[List[dict]] = None
@@ -45,11 +46,15 @@ class RAGService:
             return
         elif self.is_exists(self.embed_json):
             self.speakers = json.loads(self.read_text_file(self.embed_json))
-            self.clean_speakers = [self._strip_embeddings(speaker) for speaker in self.speakers]
+            self.clean_speakers = [
+                self._strip_embeddings(speaker) for speaker in self.speakers
+            ]
         else:
             self.speakers = await self._generate_speaker_embeddings()
             self.save_text_file(json.dumps(self.speakers, indent=2), self.embed_json)
-            self.clean_speakers = [self._strip_embeddings(speaker) for speaker in self.speakers]
+            self.clean_speakers = [
+                self._strip_embeddings(speaker) for speaker in self.speakers
+            ]
             logger.info(f"Embeddings saved to '{self.embed_json}'")
 
     @staticmethod
@@ -59,17 +64,19 @@ class RAGService:
     @staticmethod
     def read_text_file(file_path: Path) -> str:
         return file_path.read_text()
-    
+
     @staticmethod
     def save_text_file(text: str, file_path: Path):
         file_path.write_text(text)
-    
+
     async def _generate_speaker_embeddings(self) -> List[dict]:
         csv_text = self.read_text_file(data_dir / "2025-09-02-speaker-bio.csv")
         csv_reader = csv.DictReader(StringIO(csv_text))
         speakers = [dict(row) for row in csv_reader]
 
-        logger.info(f"Generating embeddings for '{self.llm_service}:{self.embed_client.model}'")
+        logger.info(
+            f"Generating embeddings for '{self.llm_service}:{self.embed_client.model}'"
+        )
         result = []
         for speaker in speakers:
             speaker = py_.map_keys(speaker, lambda v, k: py_.snake_case(k))
@@ -111,17 +118,19 @@ class RAGService:
 
         cosine_similarity = dot_product / (norm_a * norm_b)
         return 1.0 - cosine_similarity
-    
+
     @staticmethod
     def _strip_embeddings(speaker: dict) -> dict:
         clean_speaker = copy.deepcopy(speaker)
         for key in ["abstract_embedding", "bio_embedding"]:
             clean_speaker.pop(key, None)
         return clean_speaker
-    
-    async def get_best_speaker(self, query: str, speakers: Optional[List[dict]] = None) -> Optional[dict]:
+
+    async def get_best_speaker(
+        self, query: str, speakers: Optional[List[dict]] = None
+    ) -> Optional[dict]:
         await self.ainit()
-       
+
         query_embedding = await self.embed_client.embed(query)
 
         speaker_pairs = []
@@ -135,17 +144,18 @@ class RAGService:
                 abstract_distance = self.cosine_distance(
                     query_embedding, speaker["abstract_embedding"]
                 )
-                bio_distance = self.cosine_distance(query_embedding, speaker["bio_embedding"])
+                bio_distance = self.cosine_distance(
+                    query_embedding, speaker["bio_embedding"]
+                )
                 distance = (abstract_distance + bio_distance) / 2
             speaker_pairs.append((i, distance))
-        
+
         best_pair = min(speaker_pairs, key=lambda x: x[1])
         best_index = best_pair[0]
-    
+
         return self.clean_speakers[best_index]
-    
+
     async def get_speakers(self) -> List[dict]:
-        """Get speaker storage, generating if not found."""
         await self.ainit()
         return self.clean_speakers
 

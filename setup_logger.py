@@ -85,17 +85,16 @@ def setup_logging_with_rich_logger(
 
     logger_configs = [
         ("__main__", logging.INFO, True),
-        ("fastapi_server", logging.INFO, True),
-        ("quest_mcp_client", logging.INFO, True),
-        ("mcp_client", logging.INFO, True),
-        ("database", logging.INFO, True),
-        ("aws_auth", logging.INFO, True),
-        ("resources", logging.INFO, True),
         ("boto3", logging.INFO, True),
         ("botocore", logging.INFO, True),
         ("botocore.credentials", logging.WARNING, True),
         ("botocore.auth", logging.INFO, True),
         ("botocore.tokens", logging.WARNING, True),
+        ("botocore.utils", logging.WARNING, True),
+        ("botocore.session", logging.WARNING, True),
+        ("botocore.credentials.sso", logging.WARNING, True),
+        ("botocore.credentials.sso_credentials", logging.WARNING, True),
+        ("botocore.credentials.sso_token_provider", logging.WARNING, True),
         ("urllib3", logging.WARNING, True),
         ("httpx", logging.WARNING, True),
         ("httpcore", logging.WARNING, True),
@@ -105,6 +104,7 @@ def setup_logging_with_rich_logger(
         ("uvicorn.access", logging.WARNING, True),
         ("uvicorn.error", logging.INFO, True),
         ("uvicorn.server", logging.INFO, True),
+        ("mcp.server", logging.WARNING, True),
     ]
 
     for name, lvl, propagate in logger_configs:
