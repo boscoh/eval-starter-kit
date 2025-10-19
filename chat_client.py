@@ -412,6 +412,19 @@ class OpenAIChatClient(IChatClient):
                     "elapsed_seconds": elapsed_seconds,
                 }
 
+            # Extract tool calls if present
+            tool_calls = None
+            if completion.choices and completion.choices[0].message.tool_calls:
+                tool_calls = []
+                for tool_call in completion.choices[0].message.tool_calls:
+                    tool_calls.append({
+                        "function": {
+                            "name": tool_call.function.name,
+                            "arguments": tool_call.function.arguments,
+                            "tool_call_id": tool_call.id
+                        }
+                    })
+
             return {
                 "text": text,
                 "metadata": {
@@ -421,6 +434,7 @@ class OpenAIChatClient(IChatClient):
                     if completion.choices and completion.choices[0].finish_reason
                     else "stop",
                 },
+                "tool_calls": tool_calls,
             }
         except Exception as e:
             logger.error(f"Error calling OpenAI: {e}")

@@ -10,16 +10,17 @@ import asyncio
 import json
 import logging
 import os
-from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from setup_logger import setup_logging_with_rich_logger
+setup_logging_with_rich_logger()
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from path import Path
 
 from chat_client import IChatClient, get_chat_client
-from setup_logger import setup_logging_with_rich_logger
 
-setup_logging_with_rich_logger()
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +35,16 @@ class MinimalMcpClient:
 
         self.tools: Optional[List[Dict[str, Any]]] = None
 
+        self.llm_service = llm_service
         self.chat_client: IChatClient = None
-        if llm_service == "bedrock":
+        if self.llm_service == "bedrock":
             self.chat_client = get_chat_client(
-                llm_service, model="anthropic.claude-3-sonnet-20240229-v1:0"
+                self.llm_service, model="anthropic.claude-3-sonnet-20240229-v1:0"
             )
+        elif self.llm_service == "openai":
+            self.chat_client = get_chat_client(self.llm_service, model="gpt-4o")
         else:
-            self.chat_client = get_chat_client(llm_service, model="gpt-4o-mini")
+            raise ValueError(f"Unsupported LLM service: {self.llm_service}")
 
     async def get_tools(self):
         """Returns tool in format compatible with IChatClient.get_completion()"""
@@ -63,6 +67,7 @@ class MinimalMcpClient:
 
         env = os.environ.copy()
         env["PYTHONPATH"] = str(self.server_script_path.parent)
+        env["LLM_SERVICE"] = self.llm_service
         server_params = StdioServerParameters(
             command="uv",
             args=["run", "python", str(self.server_script_path)],
@@ -76,7 +81,7 @@ class MinimalMcpClient:
 
         self.tools = await self.get_tools()
         names = [tool["function"]["name"] for tool in self.tools]
-        logger.info(f"Connected to MCP server with tools: {', '.join(names)}")
+        logger.info(f"Connected Server to MCP tools: {', '.join(names)}")
 
         await self.chat_client.connect()
 
@@ -97,7 +102,6 @@ class MinimalMcpClient:
         """
         await self.connect()
 
-        # Add system prompt to encourage multi-step reasoning
         system_prompt = """You are a helpful assistant that can use tools to answer 
         questions about speakers. 
 
@@ -113,34 +117,34 @@ class MinimalMcpClient:
            information through tools
         5. Never ask the user to provide more details - use tools to find what 
            you need
+        6. ALWAYS provide a complete, detailed final answer that includes specific 
+           information about the speakers you found through the tools
 
         Available tools can help you search, filter, and retrieve speaker 
         information. Use them proactively and iteratively until you have enough 
-        data to provide a complete response."""
-        
+        data to provide a complete response. Your final answer should be detailed 
+        and include specific speaker information, not just mention that you used tools."""
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": str(query)}
         ]
 
+        logger.info(f"Calling model with query='{query[:50]}' in {len(messages)} messages")
         response = await self.chat_client.get_completion(messages, self.tools)
 
         max_tool_iterations = 5
         iterations = 0
-        
-        # Check for tool calls in the response
+
         tool_calls = response.get("tool_calls")
         while tool_calls and iterations < max_tool_iterations:
             iterations += 1
-            logger.info(f"Multi-step reasoning iteration {iterations}")
-            logger.info(f"Step {iterations}: Using {len(tool_calls)} tool(s)")
+            logger.info(f"Reasoning step {iterations} with {len(tool_calls)} tool calls")
 
-            # Add assistant message with tool calls
             assistant_content = response.get("text", "")
             if assistant_content:
                 messages.append({"role": "assistant", "content": assistant_content})
 
-            # Execute all tool calls
             tool_results = []
             for tool_call in tool_calls:
                 tool_name = tool_call["function"]["name"]
@@ -153,20 +157,16 @@ class MinimalMcpClient:
                 else:
                     tool_args = raw_args or {}
 
-                logger.info(f"Calling tool {tool_name}({tool_args})...")
                 try:
+                    logger.info(f"Calling tool {tool_name}({tool_args})...")
                     result = await self.mcp_client.call_tool(tool_name, tool_args)
                     tool_result = str(getattr(result, "content", str(result)))
-                    # Format tool results to encourage follow-up tool usage
                     tool_results.append(f"Tool {tool_name} returned: {tool_result}")
-                    logger.info(f"Tool {tool_name} completed successfully")
-                    logger.debug(f"Tool {tool_name} result: {tool_result[:100]}...")
                 except Exception as e:
                     error_msg = f"Tool {tool_name} failed: {str(e)}"
                     tool_results.append(error_msg)
                     logger.error(error_msg)
 
-            # Add tool results to conversation with follow-up encouragement
             if tool_results:
                 follow_up_prompt = """Based on the tool results above, analyze what 
                 information you have and determine if you need to use additional 
@@ -178,57 +178,29 @@ class MinimalMcpClient:
                 IMPORTANT: When you provide your final answer, make sure to 
                 incorporate and reference the specific information you gathered 
                 from the tools. Don't just mention that you used tools - include 
-                the actual data and results in your response."""
-                
+                the actual data and results in your response. Provide a complete, 
+                detailed answer that directly addresses the user's question with 
+                specific speaker information."""
+
                 messages.append({
-                    "role": "user", 
+                    "role": "user",
                     "content": "\n".join(tool_results) + f"\n\n{follow_up_prompt}"
                 })
 
-            # Get next response from the model
+            logger.info(f"Calling model with tool results in {len(messages)} messages")
             response = await self.chat_client.get_completion(
                 messages=messages, tools=self.tools
             )
-            
-            # Check for more tool calls
+
             tool_calls = response.get("tool_calls")
+
             if not tool_calls:
-                # Check if the response suggests asking user for more info
-                response_text = response.get("text", "").lower()
-                if any(phrase in response_text for phrase in [
-                    "need more information", "could you provide", 
-                    "please provide", "can you tell me", "what specific"
-                ]):
-                    logger.warning("Model is asking user for information instead of "
-                                 "using tools - encouraging tool usage")
-                    # Add a prompt to encourage tool usage instead
-                    messages.append({
-                        "role": "user",
-                        "content": "Don't ask the user for more information. Use the "
-                                 "available tools to search and find what you need. If "
-                                 "the previous results weren't sufficient, try different "
-                                 "search terms or use other available tools."
-                    })
-                    # Get another response
-                    response = await self.chat_client.get_completion(messages, self.tools)
-                    tool_calls = response.get("tool_calls")
-                    if tool_calls:
-                        continue
-                logger.info("No more tool calls needed, reasoning complete")
+                logger.info("No more tool calls requested")
 
         if iterations >= max_tool_iterations:
             logger.warning(f"Reached maximum tool iterations ({max_tool_iterations})")
 
-        # Ensure tool results are included in the final response
-        final_response = response.get("text", "")
-        
-        # If we had tool calls but the final response doesn't seem to include the results,
-        # we should check if the model properly incorporated the tool data
-        if iterations > 0 and final_response:
-            # Log the final response for debugging
-            logger.info(f"Final response after {iterations} tool iterations: {final_response[:200]}...")
-            
-        return final_response
+        return response.get("text", "")
 
     async def run_chat_loop(self):
         await self.connect()
@@ -246,11 +218,11 @@ class MinimalMcpClient:
             except KeyboardInterrupt:
                 print("\n\nGoodbye!")
                 break
-        
+
 
 async def amain():
     try:
-        client = MinimalMcpClient()
+        client = MinimalMcpClient("openai")
         await client.run_chat_loop()
     except Exception as e:
         logger.error(f"Error in chat: {e}")

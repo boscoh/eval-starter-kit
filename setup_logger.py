@@ -88,7 +88,7 @@ def setup_logging_with_rich_logger(
         ("boto3", logging.INFO, True),
         ("botocore", logging.INFO, True),
         ("botocore.credentials", logging.WARNING, True),
-        ("botocore.auth", logging.INFO, True),
+        ("botocore.auth", logging.WARNING, True),
         ("botocore.tokens", logging.WARNING, True),
         ("botocore.utils", logging.WARNING, True),
         ("botocore.session", logging.WARNING, True),

@@ -13,7 +13,6 @@ from path import Path
 from pydash import py_
 
 from chat_client import get_chat_client
-from setup_logger import setup_logging_with_rich_logger
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +37,22 @@ class RAGService:
         self.embed_json = data_dir / f"embeddings-{py_.kebab_case(model)}.json"
 
         # to be created in ainit
-        self.speakers: Optional[List[dict]] = None
+        self.speakers_with_embeddings: Optional[List[dict]] = None
         self.clean_speakers: Optional[List[dict]] = None
 
     async def ainit(self):
-        if self.speakers and self.clean_speakers:
+        if self.speakers_with_embeddings and self.clean_speakers:
             return
         elif self.is_exists(self.embed_json):
-            self.speakers = json.loads(self.read_text_file(self.embed_json))
+            self.speakers_with_embeddings = json.loads(self.read_text_file(self.embed_json))
             self.clean_speakers = [
-                self._strip_embeddings(speaker) for speaker in self.speakers
+                self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
             ]
         else:
-            self.speakers = await self._generate_speaker_embeddings()
-            self.save_text_file(json.dumps(self.speakers, indent=2), self.embed_json)
+            self.speakers_with_embeddings = await self._generate_speaker_embeddings()
+            self.save_text_file(json.dumps(self.speakers_with_embeddings, indent=2), self.embed_json)
             self.clean_speakers = [
-                self._strip_embeddings(speaker) for speaker in self.speakers
+                self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
             ]
             logger.info(f"Embeddings saved to '{self.embed_json}'")
 
@@ -134,7 +133,7 @@ class RAGService:
         query_embedding = await self.embed_client.embed(query)
 
         speaker_pairs = []
-        for i, speaker in enumerate(self.speakers):
+        for i, speaker in enumerate(self.speakers_with_embeddings):
             if "abstract_embedding" not in speaker or "bio_embedding" not in speaker:
                 logger.warning(
                     f"Speaker {speaker.get('name', 'Unknown')} missing embedding data"
@@ -147,7 +146,7 @@ class RAGService:
                 bio_distance = self.cosine_distance(
                     query_embedding, speaker["bio_embedding"]
                 )
-                distance = (abstract_distance + bio_distance) / 2
+                distance = min(abstract_distance, bio_distance)
             speaker_pairs.append((i, distance))
 
         best_pair = min(speaker_pairs, key=lambda x: x[1])
@@ -162,6 +161,7 @@ class RAGService:
 
 async def main():
     """Run embeddings generation."""
+    from setup_logger import setup_logging_with_rich_logger
     setup_logging_with_rich_logger(level=logging.INFO)
     load_dotenv()
     service = RAGService()
