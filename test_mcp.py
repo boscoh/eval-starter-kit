@@ -25,7 +25,7 @@ from chat_client import IChatClient, get_chat_client
 logger = logging.getLogger(__name__)
 
 
-class MinimalMcpClient:
+class MinimalMcpChatLoop:
 
     def __init__(self, llm_service: str = "bedrock"):
         self.mcp_client: Optional[ClientSession] = None
@@ -109,21 +109,25 @@ class MinimalMcpClient:
         responding. Do NOT ask the user for clarification or additional 
         information. Instead:
 
-        1. Use available tools to search and gather comprehensive data
-        2. If initial tool results are incomplete, automatically use additional 
-           tools to get more information
-        3. Chain multiple tool calls together to build a complete answer
-        4. Only provide your final answer after you have gathered sufficient 
-           information through tools
-        5. Never ask the user to provide more details - use tools to find what 
-           you need
-        6. ALWAYS provide a complete, detailed final answer that includes specific 
-           information about the speakers you found through the tools
+        EFFICIENT TOOL USAGE STRATEGY:
+        1. ANALYZE the query to identify what information you need
+        2. PLAN the minimum necessary tool calls to get complete information
+        3. EXECUTE tool calls efficiently - avoid duplicate calls with same parameters
+        4. REASON through results to determine if you have enough information
+        5. ONLY make additional tool calls if you're missing critical information
+        6. SYNTHESIZE all gathered information into a comprehensive final answer
+
+        TOOL USAGE GUIDELINES:
+        - Use tools efficiently - don't repeat the same tool call with identical parameters
+        - Get complete information in the fewest tool calls possible
+        - Only make additional tool calls if you're missing essential information
+        - ALWAYS provide a complete, detailed final answer that includes specific 
+          information about the speakers you found through the tools
 
         Available tools can help you search, filter, and retrieve speaker 
-        information. Use them proactively and iteratively until you have enough 
-        data to provide a complete response. Your final answer should be detailed 
-        and include specific speaker information, not just mention that you used tools."""
+        information. Use them efficiently to get complete information without 
+        unnecessary repetition. Your final answer should be detailed and include 
+        specific speaker information."""
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -132,11 +136,12 @@ class MinimalMcpClient:
 
         logger.info(f"Calling model with query='{query[:50]}' in {len(messages)} messages")
         response = await self.chat_client.get_completion(messages, self.tools)
+        tool_calls = response.get("tool_calls")
 
         max_tool_iterations = 5
         iterations = 0
+        executed_tool_calls = set()  # Track executed tool calls to prevent duplicates
 
-        tool_calls = response.get("tool_calls")
         while tool_calls and iterations < max_tool_iterations:
             iterations += 1
             logger.info(f"Reasoning step {iterations} with {len(tool_calls)} tool calls")
@@ -157,6 +162,17 @@ class MinimalMcpClient:
                 else:
                     tool_args = raw_args or {}
 
+                # Create a unique identifier for this tool call
+                tool_call_id = f"{tool_name}({json.dumps(tool_args, sort_keys=True)})"
+                
+                # Skip if we've already executed this exact tool call
+                if tool_call_id in executed_tool_calls:
+                    logger.info(f"Skipping duplicate tool call: {tool_call_id}")
+                    tool_results.append(f"Tool {tool_name} already executed with same parameters - skipping duplicate")
+                    continue
+                
+                executed_tool_calls.add(tool_call_id)
+
                 try:
                     logger.info(f"Calling tool {tool_name}({tool_args})...")
                     result = await self.mcp_client.call_tool(tool_name, tool_args)
@@ -168,13 +184,21 @@ class MinimalMcpClient:
                     logger.error(error_msg)
 
             if tool_results:
-                follow_up_prompt = """Based on the tool results above, analyze what 
-                information you have and determine if you need to use additional 
-                tools to get more complete information. If the results are 
-                incomplete or you need more specific details, use more tools 
-                automatically. Do not ask the user for clarification - use tools 
-                to find what you need.
-                
+                follow_up_prompt = """Based on the tool results above, analyze what you have:
+
+                EFFICIENT ANALYSIS PROCESS:
+                1. REVIEW all tool results to understand what information you now have
+                2. DETERMINE if you have sufficient information to answer the user's question
+                3. ONLY make additional tool calls if you're missing critical information
+                4. AVOID repeating tool calls with the same parameters you've already used
+                5. SYNTHESIZE all available information into a comprehensive answer
+
+                REASONING GUIDELINES:
+                - Assess whether you have enough information to provide a complete answer
+                - Only use additional tools if you're missing essential information
+                - Don't repeat tool calls with identical parameters
+                - Focus on providing a complete answer with the information you have
+
                 IMPORTANT: When you provide your final answer, make sure to 
                 incorporate and reference the specific information you gathered 
                 from the tools. Don't just mention that you used tools - include 
@@ -191,7 +215,6 @@ class MinimalMcpClient:
             response = await self.chat_client.get_completion(
                 messages=messages, tools=self.tools
             )
-
             tool_calls = response.get("tool_calls")
 
             if not tool_calls:
@@ -206,7 +229,7 @@ class MinimalMcpClient:
         await self.connect()
         print("Type your questions about speakers.")
         print("Type 'quit', 'exit', or 'q' to end the conversation.")
-        print("The assistant will use multi-step reasoning with tools to answer your questions.")
+        print("The assistant will use parallel processing and multi-step reasoning with tools to answer your questions.")
         while True:
             try:
                 user_input = input("\nYou: ").strip()
@@ -222,7 +245,7 @@ class MinimalMcpClient:
 
 async def amain():
     try:
-        client = MinimalMcpClient("openai")
+        client = MinimalMcpChatLoop("bedrock")
         await client.run_chat_loop()
     except Exception as e:
         logger.error(f"Error in chat: {e}")

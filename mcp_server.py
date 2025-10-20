@@ -26,7 +26,6 @@ mcp = FastMCP("Simle MCP")
 
 load_dotenv()
 llm_service = os.getenv("LLM_SERVICE", "openai")
-logger.info(f"MCP-RAG LLM Service: {llm_service}")
 rag_service = RAGService(llm_service)
 
 
@@ -96,8 +95,8 @@ def main():
     import asyncio
 
     try:
-        asyncio.run(ainit())
         logger.info("Starting MCP Server...")
+        asyncio.run(ainit())
         mcp.run()
     except Exception as e:
         logger.error(f"Failed to start MCP server: {e}")

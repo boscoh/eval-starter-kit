@@ -239,6 +239,7 @@ class OllamaChatClient(IChatClient):
                 "Please start the Ollama service and try again."
             )
 
+        logger.info(f"Initializing 'ollama:{self.model}'")
         self.client = ollama.AsyncClient()
         try:
             ollama.show(self.model)
@@ -349,6 +350,7 @@ class OpenAIChatClient(IChatClient):
                 "Please set OPENAI_API_KEY in your .env file or environment variables."
             )
 
+        logger.info(f"Initializing 'openai:{self.model}'")
         self.client = openai.AsyncOpenAI(api_key=api_key)
         self._closed = False
 
@@ -528,7 +530,6 @@ def get_aws_config(is_raise_exception: bool = True):
 
     profile_name = os.getenv("AWS_PROFILE")
     if profile_name:
-        logger.info(f"Authenticate with AWS_PROFILE={profile_name}")
         aws_config["profile_name"] = profile_name
 
     try:
@@ -557,8 +558,6 @@ def get_aws_config(is_raise_exception: bool = True):
             ):
                 logger.warning(f"AWS credentials expired on {creds.expiry_time}")
                 return aws_config
-
-        logger.info(f"Valid AWS credentials found for '{identity['Arn']}'")
 
     except ProfileNotFound:
         if is_raise_exception:
@@ -609,10 +608,9 @@ class BedrockChatClient(IChatClient):
         if self.client is not None and not self._closed:
             return
 
-        logger.info(f"Initializing Bedrock client for model '{self.model}'")
+        logger.info(f"Initializing 'bedrock:{self.model}'")
         self._session = aioboto3.Session(**get_aws_config())
         self.client = await self._session.client("bedrock-runtime").__aenter__()
-        logger.info("Initialized Bedrock client")
         self._closed = False
 
     async def close(self):

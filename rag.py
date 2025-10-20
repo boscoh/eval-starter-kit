@@ -35,6 +35,7 @@ class RAGService:
 
         self.embed_client = get_chat_client(self.llm_service, model=model)
         self.embed_json = data_dir / f"embeddings-{py_.kebab_case(model)}.json"
+        logger.info(f"RAG LLM Service: '{llm_service}:{model}'")
 
         # to be created in ainit
         self.speakers_with_embeddings: Optional[List[dict]] = None
