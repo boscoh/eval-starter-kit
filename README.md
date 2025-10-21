@@ -176,23 +176,23 @@ Run the MCP server:
 uv run mcp_server.py
 ```
 
-## MCP Chat Loop Client (test_mcp.py)
+## MCP Chat Loop Client (test_mcp_chat.py)
 
 This repository includes an interactive MCP chat loop client that connects to the MCP server over stdio and demonstrates tool-augmented reasoning to answer questions about conference speakers.
 
-- File: `test_mcp.py`
+- File: `test_mcp_chat.py`
 - What it does: Launches the MCP server automatically, fetches available tools, and runs a multi-step chat loop where the model can call tools, analyze results, and iterate until it has enough information to produce a final answer.
 - Default backend: Bedrock Claude Sonnet via Converse API
 - Supported backends: `bedrock`, `openai`
 
 Run the chat loop (default Bedrock):
 ```bash
-env LLM_SERVICE=bedrock uv run test_mcp.py
+env LLM_SERVICE=bedrock uv run test_mcp_chat.py
 ```
 
 Run with OpenAI instead:
 ```bash
-env LLM_SERVICE=openai OPENAI_API_KEY=your-key uv run test_mcp.py
+env LLM_SERVICE=openai OPENAI_API_KEY=your-key uv run test_mcp_chat.py
 ```
 
 Tips:
@@ -232,7 +232,7 @@ Tips:
 ├── yaml_utils.py                # YAML utility functions
 ├── test_chat.py                 # Basic API/chat tests
 ├── test_embed.py                # Embedding-related tests
-├── test_mcp.py                  # MCP chat loop client (interactive)
+├── test_mcp_chat.py             # MCP chat loop client (interactive)
 ├── pyproject.toml               # Project metadata and dependencies
 └── uv.lock                      # Locked dependency versions for uv
 ```
