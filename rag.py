@@ -34,7 +34,7 @@ class RAGService:
             raise ValueError(f"Unsupported service: {self.llm_service}")
 
         self.embed_client = get_chat_client(self.llm_service, model=model)
-        self.embed_json = data_dir / f"embeddings-{py_.kebab_case(model)}.json"
+        self.embed_json = f"embeddings-{py_.kebab_case(model)}.json"
         logger.info(f"RAG LLM Service: '{llm_service}:{model}'")
 
         # to be created in ainit
@@ -55,22 +55,23 @@ class RAGService:
             self.clean_speakers = [
                 self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
             ]
-            logger.info(f"Embeddings saved to '{self.embed_json}'")
+            logger.info(f"Embeddings saved to '{self._resolve_data_path(self.embed_json)}'")
 
-    @staticmethod
-    def is_exists(file_path: Path) -> str:
-        return file_path.exists()
+    def _resolve_data_path(self, file_path: Union[Path, str]) -> Path:
+        path = Path(file_path)
+        return path if path.isabs() else data_dir / path
 
-    @staticmethod
-    def read_text_file(file_path: Path) -> str:
-        return file_path.read_text()
+    def is_exists(self, file_path: Union[Path, str]) -> bool:
+        return self._resolve_data_path(file_path).exists()
 
-    @staticmethod
-    def save_text_file(text: str, file_path: Path):
-        file_path.write_text(text)
+    def read_text_file(self, file_path: Union[Path, str]) -> str:
+        return self._resolve_data_path(file_path).read_text()
+
+    def save_text_file(self, text: str, file_path: Union[Path, str]):
+        self._resolve_data_path(file_path).write_text(text)
 
     async def _generate_speaker_embeddings(self) -> List[dict]:
-        csv_text = self.read_text_file(data_dir / "2025-09-02-speaker-bio.csv")
+        csv_text = self.read_text_file("2025-09-02-speaker-bio.csv")
         csv_reader = csv.DictReader(StringIO(csv_text))
         speakers = [dict(row) for row in csv_reader]
 
