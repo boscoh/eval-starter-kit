@@ -29,7 +29,6 @@ class MinimalMcpChatLoop:
 
     def __init__(self, llm_service: str = "bedrock"):
         self.mcp_client: Optional[ClientSession] = None
-        self.server_script_path = Path(__file__).parent / "mcp_server.py"
         self._session_context: Optional[ClientSession] = None
         self._stdio_context: Optional[StdioServerParameters] = None
 
@@ -66,11 +65,12 @@ class MinimalMcpChatLoop:
             return
 
         env = os.environ.copy()
-        env["PYTHONPATH"] = str(self.server_script_path.parent)
+        server_script_path = Path(__file__).parent / "mcp_server.py"
+        env["PYTHONPATH"] = server_script_path.parent
         env["LLM_SERVICE"] = self.llm_service
         server_params = StdioServerParameters(
             command="uv",
-            args=["run", "python", str(self.server_script_path)],
+            args=["run", "python", server_script_path],
             env=env,
         )
         self._stdio_context = stdio_client(server_params)
@@ -164,13 +164,13 @@ class MinimalMcpChatLoop:
 
                 # Create a unique identifier for this tool call
                 tool_call_id = f"{tool_name}({json.dumps(tool_args, sort_keys=True)})"
-                
+
                 # Skip if we've already executed this exact tool call
                 if tool_call_id in executed_tool_calls:
                     logger.info(f"Skipping duplicate tool call: {tool_call_id}")
                     tool_results.append(f"Tool {tool_name} already executed with same parameters - skipping duplicate")
                     continue
-                
+
                 executed_tool_calls.add(tool_call_id)
 
                 try:
