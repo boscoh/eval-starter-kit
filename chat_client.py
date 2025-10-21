@@ -582,7 +582,6 @@ class BedrockChatClient(IChatClient):
     def __init__(
         self,
         model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
-        embedding_model: str = "amazon.titan-embed-text-v2:0",
     ):
         """
         Initialize Bedrock chat client.
@@ -594,11 +593,8 @@ class BedrockChatClient(IChatClient):
 
         Args:
             model: Claude model ID for Bedrock (e.g., "anthropic.claude-3-sonnet-20240229-v1:0").
-                  Only Claude models are supported due to Converse API tool requirements.
-            embedding_model: Text embedding model ID for Bedrock (e.g., "amazon.titan-embed-text-v2:0").
         """
         self.model = model
-        self.embedding_model = embedding_model
         self.client = None
         self._session = None
         self._closed = True
@@ -756,7 +752,7 @@ class BedrockChatClient(IChatClient):
             await self.connect()
 
             response = await self.client.invoke_model(
-                modelId=self.embedding_model,
+                modelId=self.model,
                 contentType="application/json",
                 accept="application/json",
                 body=json.dumps({"inputText": input}),
