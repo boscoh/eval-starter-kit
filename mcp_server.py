@@ -29,10 +29,6 @@ llm_service = os.getenv("LLM_SERVICE", "openai")
 rag_service = RAGService(llm_service)
 
 
-async def ainit():
-    await rag_service.ainit()
-
-
 @mcp.tool()
 async def get_best_speaker(query: str) -> Dict[str, Any]:
     """
@@ -92,11 +88,8 @@ async def list_all_speakers() -> Dict[str, Any]:
 
 def main():
     """Main function to run the MCP server."""
-    import asyncio
-
     try:
         logger.info("Starting MCP Server...")
-        asyncio.run(ainit())
         mcp.run()
     except Exception as e:
         logger.error(f"Failed to start MCP server: {e}")

@@ -21,5 +21,5 @@ async def main(service):
 
 
 if __name__ == "__main__":
-    service = "bedrock"
+    service = "openai"
     asyncio.run(main(service))

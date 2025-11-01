@@ -18,6 +18,7 @@ setup_logging_with_rich_logger()
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from path import Path
+from rag import RAGService
 
 from chat_client import IChatClient, get_chat_client
 
@@ -37,13 +38,12 @@ class MinimalMcpChatLoop:
         self.llm_service = llm_service
         self.chat_client: IChatClient = None
         if self.llm_service == "bedrock":
-            self.chat_client = get_chat_client(
-                self.llm_service, model="anthropic.claude-3-sonnet-20240229-v1:0"
-            )
+            model = "anthropic.claude-3-sonnet-20240229-v1:0"
         elif self.llm_service == "openai":
-            self.chat_client = get_chat_client(self.llm_service, model="gpt-4o")
+            model = "gpt-4o"
         else:
-            raise ValueError(f"Unsupported LLM service: {self.llm_service}")
+            raise ValueError(f"Unsupported LLM service for tools: {self.llm_service}")
+        self.chat_client = get_chat_client(self.llm_service, model=model)
 
     async def get_tools(self):
         """Returns tool in format compatible with IChatClient.get_completion()"""
@@ -136,52 +136,38 @@ class MinimalMcpChatLoop:
 
         logger.info(f"Calling model with query='{query[:50]}' in {len(messages)} messages")
         response = await self.chat_client.get_completion(messages, self.tools)
+
         tool_calls = response.get("tool_calls")
-
-        max_tool_iterations = 5
+        max_iterations = 5
         iterations = 0
-        executed_tool_calls = set()  # Track executed tool calls to prevent duplicates
 
-        while tool_calls and iterations < max_tool_iterations:
+        while tool_calls and iterations < max_iterations:
             iterations += 1
             logger.info(f"Reasoning step {iterations} with {len(tool_calls)} tool calls")
 
-            assistant_content = response.get("text", "")
-            if assistant_content:
+            if assistant_content := response.get("text", ""):
                 messages.append({"role": "assistant", "content": assistant_content})
 
             tool_results = []
             for tool_call in tool_calls:
                 tool_name = tool_call["function"]["name"]
-                raw_args = tool_call["function"].get("arguments", {})
-                if isinstance(raw_args, str):
-                    try:
-                        tool_args = json.loads(raw_args) if raw_args else {}
-                    except Exception:
-                        tool_args = {"__raw": raw_args}
-                else:
-                    tool_args = raw_args or {}
 
-                # Create a unique identifier for this tool call
-                tool_call_id = f"{tool_name}({json.dumps(tool_args, sort_keys=True)})"
-
-                # Skip if we've already executed this exact tool call
-                if tool_call_id in executed_tool_calls:
-                    logger.info(f"Skipping duplicate tool call: {tool_call_id}")
-                    tool_results.append(f"Tool {tool_name} already executed with same parameters - skipping duplicate")
-                    continue
-
-                executed_tool_calls.add(tool_call_id)
+                tool_args_json = tool_call["function"].get("arguments", "")
+                try:
+                    tool_args = json.loads(tool_args_json) if tool_args_json else {}
+                except json.JSONDecodeError:
+                    tool_args = {"__raw": tool_args_json}
 
                 try:
                     logger.info(f"Calling tool {tool_name}({tool_args})...")
+
                     result = await self.mcp_client.call_tool(tool_name, tool_args)
-                    tool_result = str(getattr(result, "content", str(result)))
-                    tool_results.append(f"Tool {tool_name} returned: {tool_result}")
+
+                    tool_result = str(getattr(result, "content", result))
                 except Exception as e:
-                    error_msg = f"Tool {tool_name} failed: {str(e)}"
-                    tool_results.append(error_msg)
-                    logger.error(error_msg)
+                    tool_result = f"Tool {tool_name} failed: {str(e)}"
+                    logger.error(tool_result)
+                tool_results.append(tool_result)
 
             if tool_results:
                 follow_up_prompt = """Based on the tool results above, analyze what you have:
@@ -212,16 +198,12 @@ class MinimalMcpChatLoop:
                 })
 
             logger.info(f"Calling model with tool results in {len(messages)} messages")
-            response = await self.chat_client.get_completion(
-                messages=messages, tools=self.tools
-            )
+            response = await self.chat_client.get_completion(messages, self.tools)
+
             tool_calls = response.get("tool_calls")
 
-            if not tool_calls:
-                logger.info("No more tool calls requested")
-
-        if iterations >= max_tool_iterations:
-            logger.warning(f"Reached maximum tool iterations ({max_tool_iterations})")
+        if iterations >= max_iterations:
+            logger.warning(f"Reached maximum tool iterations ({max_iterations})")
 
         return response.get("text", "")
 
@@ -229,7 +211,6 @@ class MinimalMcpChatLoop:
         await self.connect()
         print("Type your questions about speakers.")
         print("Type 'quit', 'exit', or 'q' to end the conversation.")
-        print("The assistant will use parallel processing and multi-step reasoning with tools to answer your questions.")
         while True:
             try:
                 user_input = input("\nYou: ").strip()
@@ -245,7 +226,8 @@ class MinimalMcpChatLoop:
 
 async def amain():
     try:
-        client = MinimalMcpChatLoop("bedrock")
+        client = MinimalMcpChatLoop("openai")
+        await RAGService("openai").ainit()
         await client.run_chat_loop()
     except Exception as e:
         logger.error(f"Error in chat: {e}")

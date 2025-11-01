@@ -39,20 +39,21 @@ class RAGService:
 
         # to be created in ainit
         self.speakers_with_embeddings: Optional[List[dict]] = None
-        self.clean_speakers: Optional[List[dict]] = None
+        self.speakers: Optional[List[dict]] = None
 
     async def ainit(self):
-        if self.speakers_with_embeddings and self.clean_speakers:
+        logger.info("Initializing RAG service")
+        if self.speakers_with_embeddings and self.speakers:
             return
         elif self.is_exists(self.embed_json):
             self.speakers_with_embeddings = json.loads(self.read_text_file(self.embed_json))
-            self.clean_speakers = [
+            self.speakers = [
                 self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
             ]
         else:
             self.speakers_with_embeddings = await self._generate_speaker_embeddings()
             self.save_text_file(json.dumps(self.speakers_with_embeddings, indent=2), self.embed_json)
-            self.clean_speakers = [
+            self.speakers = [
                 self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
             ]
             logger.info(f"Embeddings saved to '{self._resolve_data_path(self.embed_json)}'")
@@ -75,9 +76,7 @@ class RAGService:
         csv_reader = csv.DictReader(StringIO(csv_text))
         speakers = [dict(row) for row in csv_reader]
 
-        logger.info(
-            f"Generating embeddings for '{self.llm_service}:{self.embed_client.model}'"
-        )
+        logger.info(f"Generating embeddings for {len(speakers)} speakers with '{self.llm_service}:{self.embed_client.model}'")
         result = []
         for speaker in speakers:
             speaker = py_.map_keys(speaker, lambda v, k: py_.snake_case(k))
@@ -100,6 +99,7 @@ class RAGService:
     def cosine_distance(
         vec1: Union[List[float], np.ndarray], vec2: Union[List[float], np.ndarray]
     ) -> float:
+        """Return cosine distance between 2 vectors, 0 being the best match."""
         a = np.asarray(vec1, dtype=np.float64)
         b = np.asarray(vec2, dtype=np.float64)
 
@@ -127,38 +127,24 @@ class RAGService:
             clean_speaker.pop(key, None)
         return clean_speaker
 
-    async def get_best_speaker(
-        self, query: str, speakers: Optional[List[dict]] = None
-    ) -> Optional[dict]:
+    async def get_best_speaker(self, query: str) -> Optional[dict]:
         await self.ainit()
-
-        query_embedding = await self.embed_client.embed(query)
-
-        speaker_pairs = []
-        for i, speaker in enumerate(self.speakers_with_embeddings):
-            if "abstract_embedding" not in speaker or "bio_embedding" not in speaker:
-                logger.warning(
-                    f"Speaker {speaker.get('name', 'Unknown')} missing embedding data"
+        embedding = await self.embed_client.embed(query)
+        distances = []
+        for speaker in self.speakers_with_embeddings:
+            distance = float("inf")
+            if "abstract_embedding" in speaker and "bio_embedding" in speaker:
+                distance = min(
+                    self.cosine_distance(embedding, speaker["abstract_embedding"]),
+                    self.cosine_distance(embedding, speaker["bio_embedding"]),
                 )
-                distance = float("inf")
-            else:
-                abstract_distance = self.cosine_distance(
-                    query_embedding, speaker["abstract_embedding"]
-                )
-                bio_distance = self.cosine_distance(
-                    query_embedding, speaker["bio_embedding"]
-                )
-                distance = min(abstract_distance, bio_distance)
-            speaker_pairs.append((i, distance))
-
-        best_pair = min(speaker_pairs, key=lambda x: x[1])
-        best_index = best_pair[0]
-
-        return self.clean_speakers[best_index]
+            distances.append(distance)
+        i_speaker_best = distances.index(min(distances))
+        return self.speakers[i_speaker_best]
 
     async def get_speakers(self) -> List[dict]:
         await self.ainit()
-        return self.clean_speakers
+        return self.speakers
 
 
 async def main():
