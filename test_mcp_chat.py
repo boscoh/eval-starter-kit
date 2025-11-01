@@ -23,14 +23,6 @@ from chat_client import IChatClient, get_chat_client
 logger = logging.getLogger(__name__)
 
 
-def normalize_tool_args(tool_args: Dict[str, Any]) -> str:
-    """Normalize tool arguments to a consistent string format for comparison."""
-    try:
-        return json.dumps(tool_args, sort_keys=True)
-    except Exception:
-        return str(tool_args)
-
-
 class SpeakerMcpClient:
     def __init__(self, llm_service: str = "bedrock"):
         self.mcp_client: Optional[ClientSession] = None
@@ -41,12 +33,13 @@ class SpeakerMcpClient:
 
         self.llm_service = llm_service
         self.chat_client: IChatClient = None
-        if self.llm_service == "bedrock":
-            model = "anthropic.claude-3-sonnet-20240229-v1:0"
-        elif self.llm_service == "openai":
-            model = "gpt-4o"
-        else:
+        models = {
+            "bedrock": "anthropic.claude-3-sonnet-20240229-v1:0",
+            "openai": "gpt-4o"
+        }
+        if self.llm_service not in models:
             raise ValueError(f"Unsupported LLM service for tools: {self.llm_service}")
+        model = models[self.llm_service]
         self.chat_client = get_chat_client(self.llm_service, model=model)
 
     async def __aenter__(self):
@@ -129,12 +122,26 @@ class SpeakerMcpClient:
         
         Returns True if the call should be processed, False if it's a duplicate.
         """
-        call_key = (tool_name, normalize_tool_args(tool_args))
+        try:
+            normalized_args = json.dumps(tool_args, sort_keys=True)
+        except Exception:
+            normalized_args = str(tool_args)
+        call_key = (tool_name, normalized_args)
         if call_key in seen_calls:
             logger.info(f"Skipped duplicate tool call: {call_key}")
             return False
         seen_calls.add(call_key)
         return True
+
+    def log_messages(self, messages: List[Dict[str, Any]], max_length: int = 100):
+        """Log each message with truncated content if too long."""
+        logger.info(f"Calling LLM with {len(messages)} messages:")
+        for i, msg in enumerate(messages):
+            msg_content = msg.get("content", "")
+            content = msg_content[:max_length]
+            truncated_content = " ".join(content.split()) + ("..." if len(msg_content) > max_length else "")
+            role = msg.get("role", 'unknown')
+            logger.info(f"- {role}: {truncated_content}")
 
     async def process_query(self, query: str) -> str:
         """Returns a response to a user query by getting a completion with tool calls.
@@ -177,9 +184,7 @@ class SpeakerMcpClient:
             {"role": "user", "content": str(query)},
         ]
 
-        logger.info(
-            f"Calling model with query='{query[:50]}' in {len(messages)} messages"
-        )
+        self.log_messages(messages)
 
         response = await self.chat_client.get_completion(messages, self.tools)
 
@@ -194,64 +199,59 @@ class SpeakerMcpClient:
                 f"Reasoning step {iterations} with {len(tool_calls)} tool calls"
             )
 
-            if assistant_content := response.get("text", ""):
-                messages.append({"role": "assistant", "content": assistant_content})
+            if content := response.get("text", ""):
+                messages.append( { "role": "assistant", "content": content } )
 
             tool_results = []
             for tool_call in tool_calls:
                 tool_name = tool_call["function"]["name"]
                 tool_args = self.parse_tool_args(tool_call)
                 if not self.is_duplicate_call(tool_name, tool_args, seen_calls):
-                    continue
-
-                try:
-                    logger.info(f"Calling tool {tool_name}({tool_args})...")
-
-                    result = await self.mcp_client.call_tool(tool_name, tool_args)
-
-                    tool_result = str(getattr(result, "content", result))
-                except Exception as e:
-                    tool_result = f"Tool {tool_name} failed: {str(e)}"
-                    logger.error(tool_result)
+                    tool_result = f"Repeated tool call: {tool_name}({tool_args})"
+                    logger.warning(tool_result)
+                else:
+                    try:
+                        logger.info(f"Calling tool {tool_name}({tool_args})...")
+                        result = await self.mcp_client.call_tool(tool_name, tool_args)
+                        tool_result = str(getattr(result, "content", result))
+                    except Exception as e:
+                        tool_result = f"Tool {tool_name} failed: {str(e)}"
+                        logger.error(tool_result)
                 tool_results.append(tool_result)
 
-            if tool_results:
-                content = f"""
-                TOOL RESULTS:
+            content = f"""
+            TOOL RESULTS:
 
-                {'\n'.join(tool_results)}
+            {'\n'.join(tool_results)}
 
-                Based on the tool results above, analyze what you have:
+            Based on the tool results above, analyze what you have:
 
-                EFFICIENT ANALYSIS PROCESS:
-                1. REVIEW all tool results to understand what information you now have
-                2. DETERMINE if you have sufficient information to answer the user's question
-                3. ONLY make additional tool calls if you're missing critical information
-                4. AVOID repeating tool calls with the same parameters you've already used
-                5. SYNTHESIZE all available information into a comprehensive answer
+            EFFICIENT ANALYSIS PROCESS:
+            1. REVIEW all tool results to understand what information you now have
+            2. DETERMINE if you have sufficient information to answer the user's question
+            3. ONLY make additional tool calls if you're missing critical information
+            4. AVOID repeating tool calls with the same parameters you've already used
+            5. SYNTHESIZE all available information into a comprehensive answer
 
-                REASONING GUIDELINES:
-                - Assess whether you have enough information to provide a complete answer
-                - Only use additional tools if you're missing essential information
-                - Don't repeat tool calls with identical parameters
-                - Focus on providing a complete answer with the information you have
+            REASONING GUIDELINES:
+            - Assess whether you have enough information to provide a complete answer
+            - Only use additional tools if you're missing essential information
+            - Don't repeat tool calls with identical parameters
+            - Focus on providing a complete answer with the information you have
 
-                IMPORTANT: When you provide your final answer, make sure to 
-                incorporate and reference the specific information you gathered 
-                from the tools. Don't just mention that you used tools - include 
-                the actual data and results in your response. Provide a complete, 
-                detailed answer that directly addresses the user's question with 
-                specific speaker information."""
+            IMPORTANT: When you provide your final answer, make sure to 
+            incorporate and reference the specific information you gathered 
+            from the tools. Include  the actual data and results in your response. Provide a complete, 
+            detailed answer that directly addresses the user's question with 
+            specific speaker information. Do not mention that you used tools."""
 
-                messages.append( { "role": "user", "content": content } )
+            messages.append( { "role": "tool", "content": content } )
 
-                logger.info(
-                    f"Calling model with tool results in {len(messages)} messages"
-                )
+            self.log_messages(messages)
 
-                response = await self.chat_client.get_completion(messages, self.tools)
+            response = await self.chat_client.get_completion(messages, self.tools)
 
-                tool_calls = response.get("tool_calls")
+            tool_calls = response.get("tool_calls")
 
         if iterations >= max_iterations:
             logger.warning(f"Reached maximum tool iterations ({max_iterations})")
@@ -271,9 +271,9 @@ async def setup_async_exception_handler():
     loop.set_exception_handler(silence_event_loop_closed)
 
 
-async def amain():
+async def amain(service):
     await setup_async_exception_handler()
-    async with SpeakerMcpClient("bedrock") as client:
+    async with SpeakerMcpClient(service) as client:
         print("Type your questions about speakers.")
         print("Type 'quit', 'exit', or 'q' to end the conversation.")
         while True:
@@ -287,7 +287,7 @@ async def amain():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(amain())
+        asyncio.run(amain("bedrock"))
     except KeyboardInterrupt:
         print("\nGoodbye!")
     except Exception as e:
