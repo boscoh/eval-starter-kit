@@ -46,17 +46,25 @@ class RAGService:
         if self.speakers_with_embeddings and self.speakers:
             return
         elif self.is_exists(self.embed_json):
-            self.speakers_with_embeddings = json.loads(self.read_text_file(self.embed_json))
+            self.speakers_with_embeddings = json.loads(
+                self.read_text_file(self.embed_json)
+            )
             self.speakers = [
-                self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
+                self._strip_embeddings(speaker)
+                for speaker in self.speakers_with_embeddings
             ]
         else:
             self.speakers_with_embeddings = await self._generate_speaker_embeddings()
-            self.save_text_file(json.dumps(self.speakers_with_embeddings, indent=2), self.embed_json)
+            self.save_text_file(
+                json.dumps(self.speakers_with_embeddings, indent=2), self.embed_json
+            )
             self.speakers = [
-                self._strip_embeddings(speaker) for speaker in self.speakers_with_embeddings
+                self._strip_embeddings(speaker)
+                for speaker in self.speakers_with_embeddings
             ]
-            logger.info(f"Embeddings saved to '{self._resolve_data_path(self.embed_json)}'")
+            logger.info(
+                f"Embeddings saved to '{self._resolve_data_path(self.embed_json)}'"
+            )
 
     def _resolve_data_path(self, file_path: Union[Path, str]) -> Path:
         path = Path(file_path)
@@ -76,7 +84,9 @@ class RAGService:
         csv_reader = csv.DictReader(StringIO(csv_text))
         speakers = [dict(row) for row in csv_reader]
 
-        logger.info(f"Generating embeddings for {len(speakers)} speakers with '{self.llm_service}:{self.embed_client.model}'")
+        logger.info(
+            f"Generating embeddings for {len(speakers)} speakers with '{self.llm_service}:{self.embed_client.model}'"
+        )
         result = []
         for speaker in speakers:
             speaker = py_.map_keys(speaker, lambda v, k: py_.snake_case(k))
@@ -150,6 +160,7 @@ class RAGService:
 async def main():
     """Run embeddings generation."""
     from setup_logger import setup_logging_with_rich_logger
+
     setup_logging_with_rich_logger(level=logging.INFO)
     load_dotenv()
     service = RAGService()

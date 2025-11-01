@@ -28,9 +28,7 @@ async def test_embedding(client_type: str, test_text: str) -> None:
         elif client_type == "openai":
             client = get_chat_client("openai", model="gpt-4o")
         elif client_type == "bedrock":
-            client = get_chat_client(
-                "bedrock", model="amazon.titan-embed-text-v2:0"
-            )
+            client = get_chat_client("bedrock", model="amazon.titan-embed-text-v2:0")
         else:
             raise ValueError(f"Unknown client type: {client_type}")
 

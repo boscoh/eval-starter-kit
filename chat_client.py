@@ -419,13 +419,15 @@ class OpenAIChatClient(IChatClient):
             if completion.choices and completion.choices[0].message.tool_calls:
                 tool_calls = []
                 for tool_call in completion.choices[0].message.tool_calls:
-                    tool_calls.append({
-                        "function": {
-                            "name": tool_call.function.name,
-                            "arguments": tool_call.function.arguments,
-                            "tool_call_id": tool_call.id
+                    tool_calls.append(
+                        {
+                            "function": {
+                                "name": tool_call.function.name,
+                                "arguments": tool_call.function.arguments,
+                                "tool_call_id": tool_call.id,
+                            }
                         }
-                    })
+                    )
 
             return {
                 "text": text,

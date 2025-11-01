@@ -13,6 +13,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from setup_logger import setup_logging_with_rich_logger
+
 setup_logging_with_rich_logger()
 
 from mcp import ClientSession, StdioServerParameters
@@ -27,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class MinimalMcpChatLoop:
-
     def __init__(self, llm_service: str = "bedrock"):
         self.mcp_client: Optional[ClientSession] = None
         self._session_context: Optional[ClientSession] = None
@@ -131,10 +131,12 @@ class MinimalMcpChatLoop:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": str(query)}
+            {"role": "user", "content": str(query)},
         ]
 
-        logger.info(f"Calling model with query='{query[:50]}' in {len(messages)} messages")
+        logger.info(
+            f"Calling model with query='{query[:50]}' in {len(messages)} messages"
+        )
         response = await self.chat_client.get_completion(messages, self.tools)
 
         tool_calls = response.get("tool_calls")
@@ -143,7 +145,9 @@ class MinimalMcpChatLoop:
 
         while tool_calls and iterations < max_iterations:
             iterations += 1
-            logger.info(f"Reasoning step {iterations} with {len(tool_calls)} tool calls")
+            logger.info(
+                f"Reasoning step {iterations} with {len(tool_calls)} tool calls"
+            )
 
             if assistant_content := response.get("text", ""):
                 messages.append({"role": "assistant", "content": assistant_content})
@@ -192,10 +196,12 @@ class MinimalMcpChatLoop:
                 detailed answer that directly addresses the user's question with 
                 specific speaker information."""
 
-                messages.append({
-                    "role": "user",
-                    "content": "\n".join(tool_results) + f"\n\n{follow_up_prompt}"
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": "\n".join(tool_results) + f"\n\n{follow_up_prompt}",
+                    }
+                )
 
             logger.info(f"Calling model with tool results in {len(messages)} messages")
             response = await self.chat_client.get_completion(messages, self.tools)
