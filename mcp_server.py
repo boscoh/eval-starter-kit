@@ -15,18 +15,27 @@ from setup_logger import setup_logging_with_rich_logger
 
 setup_logging_with_rich_logger()
 
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from rag import RAGService
 
 logger = logging.getLogger(__name__)
 
-
-mcp = FastMCP("Simle MCP")
-
 load_dotenv()
 llm_service = os.getenv("LLM_SERVICE", "openai")
 rag_service = RAGService(llm_service)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    await rag_service.__aenter__()
+    yield
+    await rag_service.__aexit__(None, None, None)
+
+
+mcp = FastMCP("Simle MCP", lifespan=lifespan)
 
 
 @mcp.tool()

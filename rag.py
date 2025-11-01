@@ -24,24 +24,34 @@ class RAGService:
 
     def __init__(self, llm_service: Optional[str] = None):
         self.llm_service = llm_service or os.getenv("LLM_SERVICE", "openai").lower()
-        if self.llm_service == "openai":
-            model = "text-embedding-3-small"
-        elif self.llm_service == "ollama":
-            model = "nomic-embed-text"
-        elif self.llm_service == "bedrock":
-            model = "amazon.titan-embed-text-v2:0"
-        else:
+
+        models = {
+            "openai": "text-embedding-3-small",
+            "ollama": "nomic-embed-text",
+            "bedrock": "amazon.titan-embed-text-v2:0",
+        }
+
+        model = models.get(self.llm_service)
+        if model is None:
             raise ValueError(f"Unsupported service: {self.llm_service}")
 
         self.embed_client = get_chat_client(self.llm_service, model=model)
         self.embed_json = f"embeddings-{py_.kebab_case(model)}.json"
         logger.info(f"RAG LLM Service: '{llm_service}:{model}'")
 
-        # to be created in ainit
         self.speakers_with_embeddings: Optional[List[dict]] = None
         self.speakers: Optional[List[dict]] = None
 
-    async def ainit(self):
+    async def __aenter__(self):
+        await self.embed_client.connect()
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.embed_client.close()
+        return False
+
+    async def connect(self):
         logger.info("Initializing RAG service")
         if self.speakers_with_embeddings and self.speakers:
             return
@@ -138,22 +148,21 @@ class RAGService:
         return clean_speaker
 
     async def get_best_speaker(self, query: str) -> Optional[dict]:
-        await self.ainit()
+        await self.connect()
         embedding = await self.embed_client.embed(query)
         distances = []
         for speaker in self.speakers_with_embeddings:
-            distance = float("inf")
             if "abstract_embedding" in speaker and "bio_embedding" in speaker:
-                distance = min(
-                    self.cosine_distance(embedding, speaker["abstract_embedding"]),
-                    self.cosine_distance(embedding, speaker["bio_embedding"]),
-                )
-            distances.append(distance)
+                d1 = self.cosine_distance(embedding, speaker["abstract_embedding"])
+                d2 = self.cosine_distance(embedding, speaker["bio_embedding"])
+                distances.append((d1 + d2) / 2)
+            else:
+                distances.append(float("inf"))
         i_speaker_best = distances.index(min(distances))
         return self.speakers[i_speaker_best]
 
     async def get_speakers(self) -> List[dict]:
-        await self.ainit()
+        await self.connect()
         return self.speakers
 
 
@@ -163,8 +172,8 @@ async def main():
 
     setup_logging_with_rich_logger(level=logging.INFO)
     load_dotenv()
-    service = RAGService()
-    await service.ainit()
+    async with RAGService() as service:
+        await service.get_speakers()
 
 
 if __name__ == "__main__":

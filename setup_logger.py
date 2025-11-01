@@ -58,7 +58,7 @@ def setup_logging_with_rich_logger(
         handler.close()
         root_logger.removeHandler(handler)
 
-    console = Console(theme=custom_theme, stderr=True, width=140)
+    console = Console(theme=custom_theme, stderr=True)
 
     formatter = logging.Formatter(
         "%(message)s",
@@ -87,6 +87,7 @@ def setup_logging_with_rich_logger(
         ("__main__", logging.INFO, True),
         ("boto3", logging.INFO, True),
         ("botocore", logging.WARNING, True),
+        ("aioboto3", logging.INFO, True),
         ("aiobotocore", logging.WARNING, True),
         ("urllib3", logging.WARNING, True),
         ("httpx", logging.WARNING, True),

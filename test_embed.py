@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple test script to test embeddings for Ollama, Bedrock, and OpenAI chat clients.
-
-Usage:
-    uv run test_embeddings.py
-
-Requirements:
-    - Set OPENAI_API_KEY in .env file for OpenAI testing
-    - Configure AWS credentials for Bedrock testing
-    - Have Ollama running locally for Ollama testing
+Test embedding generation across Ollama, Bedrock, and OpenAI providers.
 """
 
 import asyncio
