@@ -178,88 +178,183 @@ uv run mcp_server.py
 
 ## Interactive Test Clients
 
-This repository includes three interactive test clients that demonstrate different levels of LLM integration and tool use:
+This repository includes three interactive test clients that demonstrate progressively sophisticated patterns of LLM integration:
+
+**Quick Guide - Which client should I use?**
+
+- **Want to just chat with an LLM?** → Use `test_chat.py`
+- **Testing embedding/RAG retrieval?** → Use `test_rag_chat.py`
+- **Exploring agentic/tool-calling patterns?** → Use `test_mcp_chat.py`
+
+All clients support environment-based configuration via `LLM_SERVICE` (set to `openai`, `bedrock`, or `ollama`).
+
+---
 
 ### 1. Basic Chat Client (`test_chat.py`)
 
-A simple interactive chat loop for testing LLM providers without tools.
+**Pure LLM interaction** - Simple chat loop for testing LLM providers without any RAG or tools.
 
-- What it does: Direct chat interface with any LLM provider (OpenAI, Bedrock, Ollama)
-- Use case: Quick testing of model responses, comparing provider outputs
-- No RAG, no tools
+**What it does:**
+- Direct conversational interface with any LLM provider
+- No data retrieval, no tools, no RAG - just pure chat
+- Useful for quick model testing and comparing provider responses
 
-Run basic chat:
+**Configuration:**
+- Default service: `openai`
+- Configure via `LLM_SERVICE` environment variable
+- Supports: `openai`, `bedrock`, `ollama`
+
+**Usage:**
 ```bash
+# Use default (OpenAI)
 uv run test_chat.py
+
+# Or specify service
+env LLM_SERVICE=bedrock uv run test_chat.py
+env LLM_SERVICE=ollama uv run test_chat.py
 ```
 
-Change service by editing the `service` variable in the script (line 39):
-```python
-service = "openai"  # or "bedrock", "ollama"
+**Example interaction:**
 ```
+Chat loop with openai-gpt-4o
+
+You: Hello!
+Response: Hello! How can I help you today?
+```
+
+---
 
 ### 2. RAG Chat Client (`test_rag_chat.py`)
 
-Interactive client that directly uses the RAG service to find speakers based on semantic similarity.
+**RAG + LLM synthesis** - Demonstrates the classic RAG pattern: retrieve relevant data via embeddings, then synthesize with LLM.
 
-- What it does: Embeds your query and finds the best matching speaker using cosine distance
-- Use case: Testing and debugging the RAG embedding and retrieval logic
-- No tools, no multi-step reasoning, just direct embedding comparison
-- Logs detailed distance calculations and embedding vectors
+**What it does:**
+1. Embeds your query using the embedding service
+2. Finds the best matching speaker via cosine distance to all speaker embeddings
+3. Calls the LLM to generate a natural language explanation of why the speaker matches
+4. Returns formatted results with speaker details and AI explanation
 
-Run RAG chat (default OpenAI):
+**Key features:**
+- Direct RAG implementation (no MCP server needed)
+- Detailed logging of embedding vectors and distance calculations
+- Shows distances to all speakers for debugging
+- Separate distance metrics for bio and abstract embeddings
+- Formatted markdown output with sections for speaker, bio, abstract, and explanation
+
+**Configuration:**
+- Default service: `openai`
+- Configure via `LLM_SERVICE` environment variable
+- Supports: `openai`, `bedrock`, `ollama`
+
+**Usage:**
 ```bash
+# Use default (OpenAI)
 uv run test_rag_chat.py
-```
 
-Run with Bedrock:
-```bash
+# Or specify service
 env LLM_SERVICE=bedrock uv run test_rag_chat.py
+env LLM_SERVICE=ollama uv run test_rag_chat.py
 ```
 
-What you'll see:
-- Query embedding representation (length and first 9 values)
-- Distance to each speaker in the database
-- Best match with detailed bio and abstract
-- Debug logs showing embedding distances to bio and abstract separately
+**What you'll see in logs:**
+- Query embedding: `embedding(1536)[0.123 0.456 ...]`
+- Speaker distances: `0.234 0.567 0.890 ...`
+- Best match details with separate bio and abstract distances
+- Bio and abstract embedding representations
+
+**Example output:**
+```
+# Best Match
+
+## Speaker
+Dr. Jane Smith
+
+## Bio
+Expert in distributed systems...
+
+## Abstract
+This talk explores...
+
+# Why this speaker matches your query
+Dr. Smith's expertise in distributed systems architecture 
+directly addresses your query about scalability patterns...
+```
+
+---
 
 ### 3. MCP Tool-Augmented Chat Client (`test_mcp_chat.py`)
 
-Advanced interactive client that connects to the MCP server and demonstrates multi-step reasoning with tool calls for speaker queries.
+**Agentic workflow** - Advanced multi-step reasoning where the LLM autonomously uses tools to gather information before answering.
 
-- What it does: Launches the MCP server automatically, fetches available tools, and runs a multi-step chat loop where the model can call tools, analyze results, and iterate until it has enough information to produce a final answer
-- Use case: Testing agentic workflows, tool calling, and multi-turn reasoning
-- Supported backends: `bedrock`, `openai` (requires tool-calling capable models)
-- Default model: Bedrock Claude Sonnet or OpenAI GPT-4o
+**What it does:**
+1. Launches the MCP server automatically in the background
+2. Fetches available tools from the server
+3. Runs an agentic loop where the model:
+   - Analyzes your query
+   - Decides which tools to call and with what parameters
+   - Calls tools (potentially multiple times across multiple rounds)
+   - Synthesizes gathered information into a comprehensive answer
+4. Supports up to 5 reasoning iterations per query
 
-Run MCP chat (default OpenAI):
+**Key features:**
+- Autonomous multi-step reasoning and tool calling
+- Prevents duplicate tool calls (tracks what's been called)
+- Sophisticated prompting to encourage exploration and verification
+- Detailed logging of each reasoning step and tool invocation
+- Uses MCP protocol for tool discovery and execution
+
+**Available tools:**
+- `get_best_speaker(query: str)` - Find best matching speaker
+- `list_all_speakers()` - Get all available speakers
+
+**Configuration:**
+- Default service: `openai`
+- Configure via `LLM_SERVICE` environment variable
+- Supports: `openai`, `bedrock` (requires tool-calling capable models)
+- **Note:** Does NOT support `ollama` (most Ollama models lack tool-calling)
+
+**Usage:**
 ```bash
+# Use default (OpenAI GPT-4o)
 uv run test_mcp_chat.py
-```
 
-Run with Bedrock:
-```bash
+# Or use Bedrock Claude
 env LLM_SERVICE=bedrock uv run test_mcp_chat.py
 ```
 
-Features:
-- Multi-step reasoning with up to 5 tool-call iterations per question
-- Prevents duplicate tool calls to avoid infinite loops
-- Uses the same RAG-powered tools exposed by `mcp_server.py` (e.g., `get_best_speaker`, `list_all_speakers`)
-- Detailed logging of tool calls, responses, and reasoning steps
-- Sophisticated prompting to encourage iterative tool use and verification
+**Example reasoning flow:**
+```
+Reasoning step 1 with 1 tool calls
+Calling tool get_best_speaker({"query": "machine learning"})...
+Tool result: [speaker details]
+
+Reasoning step 2 with 1 tool calls
+Calling tool list_all_speakers()...
+Tool result: [all speakers]
+
+Response: Based on my search, Dr. Jane Smith is the best match 
+because...
+```
+
+---
 
 ### Comparison of Test Clients
 
-| Feature              | test_chat.py  | test_rag_chat.py | test_mcp_chat.py |
-|----------------------|---------------|------------------|------------------|
-| Direct LLM chat      | ✓             | ✓ (via RAG)      | ✓                |
-| RAG/embeddings       | ✗             | ✓                | ✓ (via tools)    |
-| Tool calling         | ✗             | ✗                | ✓                |
-| Multi-step reasoning | ✗             | ✗                | ✓                |
-| MCP server           | ✗             | ✗                | ✓                |
-| Supported services   | All           | All              | Bedrock, OpenAI  |
-| Best for             | Quick testing | RAG debugging    | Agent testing    |
+| Feature                  | test_chat.py     | test_rag_chat.py         | test_mcp_chat.py         |
+|--------------------------|------------------|--------------------------|--------------------------|
+| **Pattern**              | Pure LLM         | RAG + LLM synthesis      | Agentic workflow         |
+| **Complexity**           | Simple           | Moderate                 | Advanced                 |
+| **Direct LLM chat**      | ✓                | ✓ (for explanation)      | ✓                        |
+| **RAG/embeddings**       | ✗                | ✓ (direct)               | ✓ (via tools)            |
+| **Tool calling**         | ✗                | ✗                        | ✓                        |
+| **Multi-step reasoning** | ✗                | ✗                        | ✓ (up to 5 iterations)   |
+| **MCP server**           | ✗                | ✗                        | ✓                        |
+| **Output format**        | Plain text       | Markdown sections        | Plain text               |
+| **Logging detail**       | Minimal          | Detailed (embeddings)    | Detailed (tool calls)    |
+| **Ollama support**       | ✓                | ✓                        | ✗                        |
+| **Supported services**   | All 3            | All 3                    | OpenAI, Bedrock only     |
+| **Best for**             | Quick testing    | RAG debugging/synthesis  | Testing agentic patterns |
+| **Demonstrates**         | Basic LLM usage  | Embedding + retrieval    | Autonomous reasoning     |
 
 ## Project Structure
 

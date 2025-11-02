@@ -9,16 +9,16 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from setup_logger import setup_logging_with_rich_logger
-
-setup_logging_with_rich_logger()
-
+from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from path import Path
 
 from chat_client import IChatClient, get_chat_client
+from setup_logger import setup_logging_with_rich_logger
 
+load_dotenv()
+setup_logging_with_rich_logger()
 
 logger = logging.getLogger(__name__)
 
@@ -286,8 +286,9 @@ async def amain(service):
 
 
 if __name__ == "__main__":
+    service = os.getenv("LLM_SERVICE", "openai")  # "bedrock", "openai"
     try:
-        asyncio.run(amain("openai"))
+        asyncio.run(amain(service))
     except KeyboardInterrupt:
         print("\nGoodbye!")
     except Exception as e:

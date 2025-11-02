@@ -4,8 +4,13 @@ Test interactive chat loop with LLM providers.
 """
 
 import asyncio
+import os
+
+from dotenv import load_dotenv
 
 from chat_client import get_chat_client
+
+load_dotenv()
 
 
 async def setup_async_exception_handler():
@@ -36,7 +41,7 @@ async def amain(service):
 
 
 if __name__ == "__main__":
-    service = "openai"  # "bedrock", "ollama"
+    service = os.getenv("LLM_SERVICE", "openai")  # "bedrock", "ollama", "openai"
     try:
         asyncio.run(amain(service))
     except KeyboardInterrupt:
