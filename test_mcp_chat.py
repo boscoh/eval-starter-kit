@@ -207,45 +207,49 @@ class SpeakerMcpClient:
                 tool_name = tool_call["function"]["name"]
                 tool_args = self.parse_tool_args(tool_call)
                 if not self.is_duplicate_call(tool_name, tool_args, seen_calls):
-                    tool_result = f"Repeated tool call: {tool_name}({tool_args})"
+                    tool_result = f"Duplicate tool call: {tool_name}({tool_args})"
                     logger.warning(tool_result)
                 else:
                     try:
                         logger.info(f"Calling tool {tool_name}({tool_args})...")
                         result = await self.mcp_client.call_tool(tool_name, tool_args)
-                        tool_result = str(getattr(result, "content", result))
+                        tool_result = f"Tool used: {tool_name}({tool_args}) \nTool result: {getattr(result, "content", result)}\n\n"
                     except Exception as e:
-                        tool_result = f"Tool {tool_name} failed: {str(e)}"
+                        tool_result = f"Tool used {tool_name}({tool_args}) but failed: {str(e)}"
                         logger.error(tool_result)
                 tool_results.append(tool_result)
 
             content = f"""
-            TOOL RESULTS:
-
             {'\n'.join(tool_results)}
 
-            Based on the tool results above, analyze what you have:
+            REVIEW TOOL RESULTS: What did you learn, and what's still needed?
 
-            EFFICIENT ANALYSIS PROCESS:
-            1. REVIEW all tool results to understand what information you now have
-            2. DETERMINE if you have sufficient information to answer the user's question
-            3. ONLY make additional tool calls if you're missing critical information
-            4. AVOID repeating tool calls with the same parameters you've already used
-            5. SYNTHESIZE all available information into a comprehensive answer
+            KEY QUESTIONS TO ASK YOURSELF:
+            - Did the results reveal any ambiguities that need clarification?
+            - Are there alternative approaches or parameters worth exploring?
+            - Could you cross-reference or verify the information you found?
+            - Is there related information that would strengthen your answer?
+            - Would filtering, sorting, or searching differently provide better results?
 
-            REASONING GUIDELINES:
-            - Assess whether you have enough information to provide a complete answer
-            - Only use additional tools if you're missing essential information
-            - Don't repeat tool calls with identical parameters
-            - Focus on providing a complete answer with the information you have
+            ✓ USE MORE TOOLS if you can:
+            - Verify or cross-check information from different angles
+            - Explore alternative search terms or parameters
+            - Fill gaps in the information you've gathered
+            - Get more specific details about promising results
+            - Compare multiple options before concluding
 
-            IMPORTANT: When you provide your final answer, make sure to 
-            incorporate and reference the specific information you gathered 
-            from the tools. Include  the actual data and results in your response. Provide a complete, 
-            detailed answer that directly addresses the user's question with 
-            specific speaker information. Do not mention that you used tools."""
+            ✗ PROVIDE FINAL ANSWER only when:
+            - You've explored the main approaches to gathering information
+            - You have comprehensive data that fully addresses the question
+            - Additional tool calls would genuinely be duplicates (same parameters)
 
-            messages.append( { "role": "tool", "content": content } )
+            FINAL ANSWER REQUIREMENTS:
+            - Incorporate specific data and details from the tool results
+            - Be comprehensive and directly address the user's question
+            - Do not mention that you used tools or the reasoning process
+            """
+
+            messages.append( { "role": "assistant", "content": content } )
 
             self.log_messages(messages)
 
@@ -287,7 +291,7 @@ async def amain(service):
 
 if __name__ == "__main__":
     try:
-        asyncio.run(amain("bedrock"))
+        asyncio.run(amain("openai"))
     except KeyboardInterrupt:
         print("\nGoodbye!")
     except Exception as e:
