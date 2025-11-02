@@ -118,10 +118,7 @@ class SpeakerMcpClient:
             return {"__raw": tool_args_json}
 
     def is_duplicate_call(self, tool_name: str, tool_args: Dict[str, Any], seen_calls: set) -> bool:
-        """Check if a tool call should be processed based on whether it's been seen before.
-        
-        Returns True if the call should be processed, False if it's a duplicate.
-        """
+        """Return True if this tool call was seen before; otherwise record it and return False."""
         try:
             normalized_args = json.dumps(tool_args, sort_keys=True)
         except Exception:
@@ -129,9 +126,9 @@ class SpeakerMcpClient:
         call_key = (tool_name, normalized_args)
         if call_key in seen_calls:
             logger.info(f"Skipped duplicate tool call: {call_key}")
-            return False
+            return True
         seen_calls.add(call_key)
-        return True
+        return False
 
     def log_messages(self, messages: List[Dict[str, Any]], max_length: int = 100):
         """Log each message with truncated content if too long."""
@@ -206,9 +203,8 @@ class SpeakerMcpClient:
             for tool_call in tool_calls:
                 tool_name = tool_call["function"]["name"]
                 tool_args = self.parse_tool_args(tool_call)
-                if not self.is_duplicate_call(tool_name, tool_args, seen_calls):
+                if self.is_duplicate_call(tool_name, tool_args, seen_calls):
                     tool_result = f"Duplicate tool call: {tool_name}({tool_args})"
-                    logger.warning(tool_result)
                 else:
                     try:
                         logger.info(f"Calling tool {tool_name}({tool_args})...")
