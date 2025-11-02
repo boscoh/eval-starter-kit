@@ -176,28 +176,90 @@ Run the MCP server:
 uv run mcp_server.py
 ```
 
-## MCP Chat Loop Client (test_mcp_chat.py)
+## Interactive Test Clients
 
-This repository includes an interactive MCP chat loop client that connects to the MCP server over stdio and demonstrates tool-augmented reasoning to answer questions about conference speakers.
+This repository includes three interactive test clients that demonstrate different levels of LLM integration and tool use:
 
-- File: `test_mcp_chat.py`
-- What it does: Launches the MCP server automatically, fetches available tools, and runs a multi-step chat loop where the model can call tools, analyze results, and iterate until it has enough information to produce a final answer.
-- Default backend: Bedrock Claude Sonnet via Converse API
-- Supported backends: `bedrock`, `openai`
+### 1. Basic Chat Client (`test_chat.py`)
 
-Run the chat loop (default Bedrock):
+A simple interactive chat loop for testing LLM providers without tools.
+
+- What it does: Direct chat interface with any LLM provider (OpenAI, Bedrock, Ollama)
+- Use case: Quick testing of model responses, comparing provider outputs
+- No RAG, no tools
+
+Run basic chat:
+```bash
+uv run test_chat.py
+```
+
+Change service by editing the `service` variable in the script (line 39):
+```python
+service = "openai"  # or "bedrock", "ollama"
+```
+
+### 2. RAG Chat Client (`test_rag_chat.py`)
+
+Interactive client that directly uses the RAG service to find speakers based on semantic similarity.
+
+- What it does: Embeds your query and finds the best matching speaker using cosine distance
+- Use case: Testing and debugging the RAG embedding and retrieval logic
+- No tools, no multi-step reasoning, just direct embedding comparison
+- Logs detailed distance calculations and embedding vectors
+
+Run RAG chat (default OpenAI):
+```bash
+uv run test_rag_chat.py
+```
+
+Run with Bedrock:
+```bash
+env LLM_SERVICE=bedrock uv run test_rag_chat.py
+```
+
+What you'll see:
+- Query embedding representation (length and first 9 values)
+- Distance to each speaker in the database
+- Best match with detailed bio and abstract
+- Debug logs showing embedding distances to bio and abstract separately
+
+### 3. MCP Tool-Augmented Chat Client (`test_mcp_chat.py`)
+
+Advanced interactive client that connects to the MCP server and demonstrates multi-step reasoning with tool calls for speaker queries.
+
+- What it does: Launches the MCP server automatically, fetches available tools, and runs a multi-step chat loop where the model can call tools, analyze results, and iterate until it has enough information to produce a final answer
+- Use case: Testing agentic workflows, tool calling, and multi-turn reasoning
+- Supported backends: `bedrock`, `openai` (requires tool-calling capable models)
+- Default model: Bedrock Claude Sonnet or OpenAI GPT-4o
+
+Run MCP chat (default OpenAI):
+```bash
+uv run test_mcp_chat.py
+```
+
+Run with Bedrock:
 ```bash
 env LLM_SERVICE=bedrock uv run test_mcp_chat.py
 ```
 
-Run with OpenAI instead:
-```bash
-env LLM_SERVICE=openai OPENAI_API_KEY=your-key uv run test_mcp_chat.py
-```
+Features:
+- Multi-step reasoning with up to 5 tool-call iterations per question
+- Prevents duplicate tool calls to avoid infinite loops
+- Uses the same RAG-powered tools exposed by `mcp_server.py` (e.g., `get_best_speaker`, `list_all_speakers`)
+- Detailed logging of tool calls, responses, and reasoning steps
+- Sophisticated prompting to encourage iterative tool use and verification
 
-Tips:
-- The client prevents duplicate tool calls and supports up to 5 reasoning/tool-call iterations per question.
-- It uses the same RAG-powered tools exposed by `mcp_server.py` (e.g., `get_best_speaker`, `list_all_speakers`).
+### Comparison of Test Clients
+
+| Feature              | test_chat.py  | test_rag_chat.py | test_mcp_chat.py |
+|----------------------|---------------|------------------|------------------|
+| Direct LLM chat      | ✓             | ✓ (via RAG)      | ✓                |
+| RAG/embeddings       | ✗             | ✓                | ✓ (via tools)    |
+| Tool calling         | ✗             | ✗                | ✓                |
+| Multi-step reasoning | ✗             | ✗                | ✓                |
+| MCP server           | ✗             | ✗                | ✓                |
+| Supported services   | All           | All              | Bedrock, OpenAI  |
+| Best for             | Quick testing | RAG debugging    | Agent testing    |
 
 ## Project Structure
 
@@ -230,9 +292,9 @@ Tips:
 ├── server.py                    # Web server and API
 ├── setup_logger.py              # Logging configuration
 ├── yaml_utils.py                # YAML utility functions
-├── test_chat.py                 # Basic API/chat tests
-├── test_embed.py                # Embedding-related tests
-├── test_mcp_chat.py             # MCP chat loop client (interactive)
+├── test_chat.py                 # Basic interactive chat client
+├── test_rag_chat.py             # RAG-based speaker matching client
+├── test_mcp_chat.py             # MCP tool-augmented chat client with multi-step reasoning
 ├── pyproject.toml               # Project metadata and dependencies
 └── uv.lock                      # Locked dependency versions for uv
 ```
