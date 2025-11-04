@@ -274,7 +274,14 @@ async def setup_async_exception_handler():
 async def amain(service):
     await setup_async_exception_handler()
     async with SpeakerMcpClient(service) as client:
-        print("Type your questions about speakers.")
+        for tool in client.tools:
+            logger.info("----------------------------------------------")
+            logger.info(f"Tool: {tool['function']['name']}")
+            logger.info("Description:")
+            for line in tool['function']['description'].split('\n'):
+                logger.info(f"| {line}")
+        logger.info("----------------------------------------------")
+        print("Type your query to pick a speaker.")
         print("Type 'quit', 'exit', or 'q' to end the conversation.")
         while True:
             user_input = input("\nYou: ").strip()
