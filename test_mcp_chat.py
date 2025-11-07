@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -24,8 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 class SpeakerMcpClient:
-    def __init__(self, llm_service: str = "bedrock"):
-        self.mcp_client: Optional[ClientSession] = None
+    def __init__(self, llm_service: Optional[str] = None):
+        llm_service = os.getenv("LLM_SERVICE")
+        if not llm_service:
+            raise ValueError("LLM_SERVICE environment variable is not set")
+        self._mcp_session: Optional[ClientSession] = None
         self._session_context: Optional[ClientSession] = None
         self._stdio_context: Optional[StdioServerParameters] = None
 
@@ -51,7 +55,7 @@ class SpeakerMcpClient:
         return False
 
     async def connect(self):
-        if self.mcp_client:
+        if self._mcp_session:
             return
 
         env = os.environ.copy()
@@ -66,8 +70,8 @@ class SpeakerMcpClient:
         self._stdio_context = stdio_client(server_params)
         _stdio_read, _stdio_write = await self._stdio_context.__aenter__()
         self._session_context = ClientSession(_stdio_read, _stdio_write)
-        self.mcp_client = await self._session_context.__aenter__()
-        await self.mcp_client.initialize()
+        self._mcp_session = await self._session_context.__aenter__()
+        await self._mcp_session.initialize()
 
         self.tools = await self.get_tools()
         names = [tool["function"]["name"] for tool in self.tools]
@@ -91,11 +95,11 @@ class SpeakerMcpClient:
                 await self._stdio_context.__aexit__(None, None, None)
         except Exception:
             pass
-        self.mcp_client = None
+        self._mcp_session = None
 
     async def get_tools(self):
         """Returns tool in format compatible with IChatClient.get_completion()"""
-        response = await self.mcp_client.list_tools()
+        response = await self._mcp_session.list_tools()
         return [
             {
                 "type": "function",
@@ -130,13 +134,33 @@ class SpeakerMcpClient:
         seen_calls.add(call_key)
         return False
 
+    def _extract_content_text(self, item: Any) -> str:
+        """Extract text representation from a message content item."""
+        if isinstance(item, dict):
+            if "text" in item:
+                return item["text"]
+            elif "toolUse" in item:
+                return f"[toolUse: {item['toolUse'].get('name', 'unknown')}]"
+            elif "toolResult" in item:
+                return f"[toolResult: {item['toolResult'].get('toolUseId', 'unknown')}]"
+        return str(item)
+
     def log_messages(self, messages: List[Dict[str, Any]], max_length: int = 100):
         """Log each message with truncated content if too long."""
         logger.info(f"Calling LLM with {len(messages)} messages:")
-        for i, msg in enumerate(messages):
+        for msg in messages:
             msg_content = msg.get("content", "")
-            content = msg_content[:max_length]
-            truncated_content = " ".join(content.split()) + ("..." if len(msg_content) > max_length else "")
+            
+            if isinstance(msg_content, list):
+                content_parts = [self._extract_content_text(item) for item in msg_content]
+                content_str = " ".join(content_parts)
+            else:
+                content_str = str(msg_content)
+            
+            content_str = content_str.replace("\r", "")
+            content_str = re.sub(r'\s+', ' ', content_str).strip()
+            
+            truncated_content = content_str[:max_length] + ("..." if len(content_str) > max_length else "")
             role = msg.get("role", 'unknown')
             logger.info(f"- {role}: {truncated_content}")
 
@@ -196,56 +220,60 @@ class SpeakerMcpClient:
                 f"Reasoning step {iterations} with {len(tool_calls)} tool calls"
             )
 
-            if content := response.get("text", ""):
-                messages.append( { "role": "assistant", "content": content } )
+            if tool_calls:
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": response.get("text") or None,
+                    "tool_calls": [
+                        {
+                            "id": tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId", ""),
+                            "type": "function",
+                            "function": {
+                                "name": tool_call["function"]["name"],
+                                "arguments": tool_call["function"].get("arguments", json.dumps(self.parse_tool_args(tool_call))),
+                            }
+                        }
+                        for tool_call in tool_calls
+                        if tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId")
+                    ]
+                }
+                if assistant_msg["tool_calls"]:
+                    messages.append(assistant_msg)
 
-            tool_results = []
-            for tool_call in tool_calls:
-                tool_name = tool_call["function"]["name"]
-                tool_args = self.parse_tool_args(tool_call)
-                if self.is_duplicate_call(tool_name, tool_args, seen_calls):
-                    tool_result = f"Duplicate tool call: {tool_name}({tool_args})"
-                else:
-                    try:
-                        logger.info(f"Calling tool {tool_name}({tool_args})...")
-                        result = await self.mcp_client.call_tool(tool_name, tool_args)
-                        tool_result = f"Tool used: {tool_name}({tool_args}) \nTool result: {getattr(result, "content", result)}\n\n"
-                    except Exception as e:
-                        tool_result = f"Tool used {tool_name}({tool_args}) but failed: {str(e)}"
-                        logger.error(tool_result)
-                tool_results.append(tool_result)
+                tool_result_messages = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call["function"]["name"]
+                    tool_args = self.parse_tool_args(tool_call)
+                    tool_call_id = tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId", "")
+                    
+                    if not tool_call_id:
+                        logger.warning(f"Skipping tool call {tool_name} without tool_call_id")
+                        continue
+                    
+                    if self.is_duplicate_call(tool_name, tool_args, seen_calls):
+                        result_content = f"Duplicate tool call: {tool_name}({tool_args})"
+                        status = "error"
+                    else:
+                        try:
+                            logger.info(f"Calling tool {tool_name}({tool_args})...")
+                            result = await self._mcp_session.call_tool(tool_name, tool_args)
+                            result_content = str(getattr(result, "content", result))
+                            status = "success"
+                        except Exception as e:
+                            result_content = f"Tool {tool_name} failed: {str(e)}"
+                            status = "error"
+                            logger.error(f"Tool {tool_name} error: {e}")
 
-            content = f"""
-            {'\n'.join(tool_results)}
+                    tool_result_messages.append({
+                        "role": "tool",
+                        "content": result_content,
+                        "tool_call_id": tool_call_id,
+                        "status": status,
+                    })
 
-            REVIEW TOOL RESULTS: What did you learn, and what's still needed?
-
-            KEY QUESTIONS TO ASK YOURSELF:
-            - Did the results reveal any ambiguities that need clarification?
-            - Are there alternative approaches or parameters worth exploring?
-            - Could you cross-reference or verify the information you found?
-            - Is there related information that would strengthen your answer?
-            - Would filtering, sorting, or searching differently provide better results?
-
-            ✓ USE MORE TOOLS if you can:
-            - Verify or cross-check information from different angles
-            - Explore alternative search terms or parameters
-            - Fill gaps in the information you've gathered
-            - Get more specific details about promising results
-            - Compare multiple options before concluding
-
-            ✗ PROVIDE FINAL ANSWER only when:
-            - You've explored the main approaches to gathering information
-            - You have comprehensive data that fully addresses the question
-            - Additional tool calls would genuinely be duplicates (same parameters)
-
-            FINAL ANSWER REQUIREMENTS:
-            - Incorporate specific data and details from the tool results
-            - Be comprehensive and directly address the user's question
-            - Do not mention that you used tools or the reasoning process
-            """
-
-            messages.append( { "role": "assistant", "content": content } )
+                messages.extend(tool_result_messages)
+            elif content := response.get("text", ""):
+                messages.append({"role": "assistant", "content": content})
 
             self.log_messages(messages)
 

@@ -27,14 +27,6 @@ class SpeakerRagClient:
         self.chat_client = None
 
     async def __aenter__(self):
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.disconnect()
-        return False
-
-    async def connect(self):
         if self.rag_service:
             return
 
@@ -45,8 +37,9 @@ class SpeakerRagClient:
         await self.chat_client.connect()
         
         logger.info(f"Connected to RAG service with {self.llm_service}")
+        return self
 
-    async def disconnect(self):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         try:
             if self.chat_client:
                 await self.chat_client.close()
@@ -59,6 +52,8 @@ class SpeakerRagClient:
             pass
         self.chat_client = None
         self.rag_service = None
+
+        return False
 
     @staticmethod
     def format_embedding(embedding: list[float], n: int = 9) -> str:
@@ -76,7 +71,7 @@ class SpeakerRagClient:
         2. Calculate distances to all speakers
         3. Return the speaker with the minimum distance
         """
-        await self.connect()
+        await self.__aenter__()
 
         embedding = await self.rag_service.embed_client.embed(query)
         logger.info(f"Query {self.format_embedding(embedding)}")
@@ -107,7 +102,7 @@ class SpeakerRagClient:
         Explain why a speaker is a good match for a given query by analyzing their 
         bio and presentation abstract. Be specific and concise."""
         
-        user_prompt = dedent(f"""\
+        user_prompt = dedent(f"""                         
 Query: {query}
 
 Best matching speaker: {best_speaker['name']}
@@ -128,19 +123,18 @@ Focus on specific aspects of their expertise or presentation that align with the
         llm_result = await self.chat_client.get_completion(messages)
         explanation = llm_result.get("text", "No explanation available.")
         
-        response = dedent(f"""\
+        response = dedent(f"""             
 ## Speaker
 {best_speaker['name']}
-    
+
 ## Bio
 {best_speaker['bio_max_120_words']}
 
 ## Abstract
-{best_speaker['final_abstract_max_150_words']}
+{best_speaker['final_abstract_max_150_words']}  
 
 # Why this speaker matches your query
-{explanation}
-""")
+{explanation}""")
         return response
 
 

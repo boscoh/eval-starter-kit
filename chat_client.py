@@ -1,12 +1,11 @@
 import json
 import logging
 import os
-import subprocess
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import aioboto3
 import boto3
@@ -44,11 +43,11 @@ class IChatClient(ABC):
 
     @abstractmethod
     async def get_completion(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        max_tokens: Optional[int] = None,
-        temperature: float = 0.0,
+            self,
+            messages: List[Dict[str, Any]],
+            tools: Optional[List[Dict[str, Any]]] = None,
+            max_tokens: Optional[int] = None,
+            temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """
         Get a chat completion from the model.
@@ -62,35 +61,102 @@ class IChatClient(ABC):
         Args:
             messages: List of message dictionaries representing the conversation history.
                 Each message dict must contain:
-                - 'role': str - One of 'user', 'assistant', or 'system'
-                - 'content': str - The message content/text
+                - 'role': str - One of 'system', 'user', 'assistant', or 'tool'
+                - 'content': str | None - The message content/text (None allowed for assistant with tool_calls)
                 - 'name': str (optional) - Name of the message sender
+                
+                Message types:
+                
+                1. System messages (role='system'):
+                   - 'role': 'system' (required)
+                   - 'content': str (required) - System instructions or context
+                   - 'name': str (optional) - Name identifier
+                   
+                2. User messages (role='user'):
+                   - 'role': 'user' (required)
+                   - 'content': str (required) - User's message text
+                   - 'name': str (optional) - Name identifier
+                   
+                3. Assistant messages (role='assistant'):
+                   - 'role': 'assistant' (required)
+                   - 'content': str | None (optional) - Assistant's response text
+                     Can be None if only tool_calls are present
+                   - 'tool_calls': list[dict] (optional) - List of tool calls when assistant wants to use tools
+                     Each tool call dict contains:
+                     - 'id': str - Unique identifier for this tool call
+                     - 'type': str - Usually 'function'
+                     - 'function': dict - Function call details:
+                       - 'name': str - Name of the function to call
+                       - 'arguments': str - JSON string of function arguments
+                   - 'name': str (optional) - Name identifier
+                   
+                4. Tool messages (role='tool'):
+                   - 'role': 'tool' (required)
+                   - 'content': str (required) - Result of the tool execution
+                   - 'tool_call_id': str (required) - ID of the tool call this result corresponds to
+                   - 'status': str (optional) - Status of tool execution: 'success' or 'error'
+                   - 'name': str (optional) - Name identifier
 
                 Example:
                 [
                     {'role': 'system', 'content': 'You are a helpful assistant.'},
-                    {'role': 'user', 'content': 'Hello, how are you?'}
+                    {'role': 'user', 'content': 'What is the weather in Paris?'},
+                    {
+                        'role': 'assistant',
+                        'content': None,
+                        'tool_calls': [
+                            {
+                                'id': 'call_123',
+                                'type': 'function',
+                                'function': {
+                                    'name': 'get_weather',
+                                    'arguments': '{"location": "Paris"}'
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        'role': 'tool',
+                        'content': 'Sunny, 22°C',
+                        'tool_call_id': 'call_123',
+                        'status': 'success'
+                    },
+                    {'role': 'assistant', 'content': 'The weather in Paris is sunny and 22°C.'}
                 ]
 
             tools: Optional list of tool/function definitions for function calling.
-                Each tool dict should contain:
+                Each tool dict must contain:
                 - 'type': str - Tool type (typically 'function')
-                - 'function': dict - Function specification with:
-                  - 'name': str - Function name
-                  - 'description': str - Function description
-                  - 'parameters': dict - JSON Schema defining parameters
+                - 'function': dict - Function specification sub-dictionary containing:
+                  - 'name': str (required) - Function name, must be unique
+                  - 'description': str (required) - Function description explaining what it does
+                  - 'parameters': dict (required) - JSON Schema object defining the function parameters
+                    The parameters dict must follow JSON Schema format with:
+                    - 'type': str - Usually 'object'
+                    - 'properties': dict - Dictionary of parameter definitions
+                      Each property should have 'type' (e.g., 'string', 'number', 'boolean')
+                    - 'required': list[str] (optional) - List of required parameter names
 
                 Example:
                 [{
                     'type': 'function',
                     'function': {
                         'name': 'get_weather',
-                        'description': 'Get current weather',
+                        'description': 'Get current weather for a location',
                         'parameters': {
                             'type': 'object',
                             'properties': {
-                                'location': {'type': 'string'}
-                            }
+                                'location': {
+                                    'type': 'string',
+                                    'description': 'City name or location'
+                                },
+                                'unit': {
+                                    'type': 'string',
+                                    'enum': ['celsius', 'fahrenheit'],
+                                    'description': 'Temperature unit'
+                                }
+                            },
+                            'required': ['location']
                         }
                     }
                 }]
@@ -231,16 +297,17 @@ class OllamaChatClient(IChatClient):
         if self.client:
             return
 
+        logger.info(f"Initializing 'ollama:{self.model}'")
+        self.client = ollama.AsyncClient()
         try:
-            subprocess.run(["ollama", "--version"], capture_output=True, check=True)
-        except (subprocess.SubprocessError, FileNotFoundError):
+            # Check if Ollama is available by trying to list models
+            await self.client.list()
+        except Exception as e:
             raise RuntimeError(
                 "Ollama is not running or not installed. "
                 "Please start the Ollama service and try again."
-            )
-
-        logger.info(f"Initializing 'ollama:{self.model}'")
-        self.client = ollama.AsyncClient()
+            ) from e
+        
         try:
             ollama.show(self.model)
         except Exception as e:
@@ -250,11 +317,11 @@ class OllamaChatClient(IChatClient):
             )
 
     async def get_completion(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        max_tokens: Optional[int] = None,
-        temperature: float = 0.0,
+            self,
+            messages: List[Dict[str, Any]],
+            tools: Optional[List[Dict[str, Any]]] = None,
+            max_tokens: Optional[int] = None,
+            temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Ollama implementation of get_completion. Tools not supported."""
         await self.connect()
@@ -323,8 +390,8 @@ class OllamaChatClient(IChatClient):
 
 class OpenAIChatClient(IChatClient):
     def __init__(
-        self,
-        model: str = "gpt-4o",
+            self,
+            model: str = "gpt-4o",
     ):
         """Initialize OpenAI chat client.
 
@@ -375,12 +442,30 @@ class OpenAIChatClient(IChatClient):
             self.client = None
             self._closed = True
 
+    def _transform_messages_for_openai(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Transform intermediate message format to OpenAI API format. Ensures tool messages have correct structure."""
+        formatted_messages = []
+        
+        for msg in messages:
+            role = msg["role"]
+            
+            if role == "tool":
+                formatted_messages.append({
+                    "role": "tool",
+                    "content": msg.get("content", ""),
+                    "tool_call_id": msg.get("tool_call_id", ""),
+                })
+            else:
+                formatted_messages.append(msg)
+        
+        return formatted_messages
+
     async def get_completion(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        max_tokens: Optional[int] = None,
-        temperature: float = 0.0,
+            self,
+            messages: List[Dict[str, Any]],
+            tools: Optional[List[Dict[str, Any]]] = None,
+            max_tokens: Optional[int] = None,
+            temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """OpenAI implementation of get_completion with full tool support."""
         await self.connect()
@@ -388,9 +473,10 @@ class OpenAIChatClient(IChatClient):
         start_time = time.time()
 
         try:
+            formatted_messages = self._transform_messages_for_openai(messages)
             completion = await self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=formatted_messages,
                 tools=tools,
                 max_tokens=max_tokens,
                 temperature=temperature,
@@ -556,7 +642,7 @@ def get_aws_config(is_raise_exception: bool = True):
         if hasattr(credentials, "token"):
             creds = credentials.get_frozen_credentials()
             if hasattr(creds, "expiry_time") and creds.expiry_time < datetime.now(
-                timezone.utc
+                    timezone.utc
             ):
                 logger.warning(f"AWS credentials expired on {creds.expiry_time}")
                 return aws_config
@@ -582,8 +668,8 @@ def get_aws_config(is_raise_exception: bool = True):
 
 class BedrockChatClient(IChatClient):
     def __init__(
-        self,
-        model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
+            self,
+            model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
     ):
         """
         Initialize Bedrock chat client.
@@ -618,116 +704,192 @@ class BedrockChatClient(IChatClient):
             self.client = None
             self._closed = True
 
+    def _extract_tool_calls(self, response: Any) -> Optional[List[Dict[str, Any]]]:
+        tool_calls = []
+        
+        if isinstance(response, str):
+            return None
+        
+        output = response.get("output", {})
+        if isinstance(output, dict) and "message" in output:
+            message = output["message"]
+            for content in message.get("content", []):
+                if "toolUse" in content:
+                    tool_use = content["toolUse"]
+                    tool_calls.append(
+                        {
+                            "function": {
+                                "name": tool_use["name"],
+                                "arguments": json.dumps(
+                                    tool_use.get("input", {})
+                                ),
+                                "tool_call_id": tool_use.get(
+                                    "toolUseId", ""
+                                ),
+                            }
+                        }
+                    )
+        
+        return tool_calls if tool_calls else None
+
+    def _extract_text(self, response: Any) -> str:
+        text_parts = []
+        
+        if isinstance(response, str):
+            text_parts.append(response)
+        else:
+            output = response.get("output", {})
+            if isinstance(output, dict) and "message" in output:
+                message = output["message"]
+                for content in message.get("content", []):
+                    if "text" in content:
+                        text_parts.append(content["text"])
+        
+        return "\n".join(text_parts).strip()
+
+    def _extract_metadata(self, response: Any, start_time: float) -> Dict[str, Any]:
+        if isinstance(response, str):
+            usage = {}
+            stop_reason = "stop"
+        else:
+            usage = response.get("usage", {})
+            stop_reason = response.get("stopReason", "unknown")
+        
+        return {
+            "usage": {
+                "prompt_tokens": usage.get("inputTokens", 0),
+                "completion_tokens": usage.get("outputTokens", 0),
+                "total_tokens": usage.get("inputTokens", 0)
+                                + usage.get("outputTokens", 0),
+                "elapsed_seconds": time.time() - start_time,
+            },
+            "model": self.model,
+            "finish_reason": stop_reason,
+        }
+
+    def _transform_messages_for_bedrock(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+        """Transform intermediate message format to Bedrock Converse API format.
+        Returns partially filled request_kwargs with messages, system, and toolConfig.
+        """
+        system_parts = []
+        formatted_messages = []
+
+        for msg in messages:
+            role = msg["role"]
+            content = msg.get("content", "")
+
+            if role == "system":
+                system_parts.append(content)
+            elif role == "assistant" and "tool_calls" in msg:
+                assistant_content = []
+                if content:
+                    assistant_content.append({"text": content})
+                for tool_call in msg.get("tool_calls", []):
+                    tool_call_id = tool_call.get("id", "")
+                    if tool_call_id:
+                        assistant_content.append({
+                            "toolUse": {
+                                "toolUseId": tool_call_id,
+                                "name": tool_call["function"]["name"],
+                                "input": json.loads(tool_call["function"]["arguments"]) if isinstance(tool_call["function"]["arguments"], str) else tool_call["function"]["arguments"],
+                            }
+                        })
+                if assistant_content:
+                    formatted_messages.append({
+                        "role": "assistant",
+                        "content": assistant_content,
+                    })
+            elif role == "tool":
+                tool_call_id = msg.get("tool_call_id", "")
+                tool_content = content.rstrip() if isinstance(content, str) else str(content)
+                tool_status = msg.get("status", "success")
+                formatted_messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "toolResult": {
+                                "toolUseId": tool_call_id,
+                                "content": [{"text": tool_content}],
+                                "status": tool_status,
+                            }
+                        }
+                    ]
+                })
+            elif role == "user" and isinstance(content, list) and content and isinstance(content[0], dict) and "toolResult" in content[0]:
+                formatted_messages.append(msg)
+            elif role == "assistant" and isinstance(content, list):
+                formatted_messages.append(msg)
+            else:
+                role = "user" if role == "user" else "assistant"
+                content = content.rstrip() if isinstance(content, str) else content
+                formatted_messages.append(
+                    {"role": role, "content": [{"text": content}]}
+                )
+        
+        formatted_tools = None
+        if tools:
+            formatted_tools = [
+                {
+                    "toolSpec": {
+                        "name": tool["function"]["name"],
+                        "description": tool["function"].get("description", ""),
+                        "inputSchema": {
+                            "json": tool["function"].get("parameters", {})
+                        },
+                    }
+                }
+                for tool in tools
+            ]
+        
+        system_blocks = (
+            [{"text": "\n\n".join(system_parts)}] if system_parts else []
+        )
+        
+        request_kwargs = {
+            "messages": formatted_messages,
+            "system": system_blocks,
+        }
+        
+        if tools:
+            request_kwargs["toolConfig"] = {"tools": formatted_tools}
+        
+        return request_kwargs
+
     async def get_completion(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        max_tokens: Optional[int] = None,
-        temperature: float = 0.0,
+            self,
+            messages: List[Dict[str, Any]],
+            tools: Optional[List[Dict[str, Any]]] = None,
+            max_tokens: Optional[int] = None,
+            temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Bedrock implementation using Converse API with tool support."""
         await self.connect()
         start_time = time.time()
 
         try:
-            system_parts = []
-            formatted_messages = []
-
-            for msg in messages:
-                role = msg["role"]
-                content = msg.get("content", "")
-
-                if role == "system":
-                    system_parts.append(content)
-                else:
-                    role = "user" if role == "user" else "assistant"
-                    formatted_messages.append(
-                        {"role": role, "content": [{"text": content}]}
-                    )
-
-            system_blocks = (
-                [{"text": "\n\n".join(system_parts)}] if system_parts else []
-            )
-
-            formatted_tools = None
-            if tools:
-                formatted_tools = [
-                    {
-                        "toolSpec": {
-                            "name": tool["function"]["name"],
-                            "description": tool["function"].get("description", ""),
-                            "inputSchema": {
-                                "json": tool["function"].get("parameters", {})
-                            },
-                        }
-                    }
-                    for tool in tools
-                ]
+            request_kwargs = self._transform_messages_for_bedrock(messages, tools)
+            
+            request_kwargs.update({
+                "modelId": self.model,
+                "inferenceConfig": {
+                    "temperature": temperature,
+                    "maxTokens": max_tokens or 1024,
+                },
+            })
 
             try:
-                request_kwargs = {
-                    "modelId": self.model,
-                    "messages": formatted_messages,
-                    "system": system_blocks,
-                    "inferenceConfig": {
-                        "temperature": temperature,
-                        "maxTokens": max_tokens or 1024,
-                    },
-                }
-
-                if tools:
-                    request_kwargs["toolConfig"] = {"tools": formatted_tools}
-
                 response = await self.client.converse(**request_kwargs)
 
-                text_parts = []
-                tool_calls = []
-
-                if isinstance(response, str):
-                    text_parts.append(response)
-                    usage = {}
-                    stop_reason = "stop"
-                else:
-                    output = response.get("output", {})
-                    if isinstance(output, dict) and "message" in output:
-                        message = output["message"]
-                        for content in message.get("content", []):
-                            if "text" in content:
-                                text_parts.append(content["text"])
-                            elif "toolUse" in content:
-                                tool_use = content["toolUse"]
-                                tool_calls.append(
-                                    {
-                                        "function": {
-                                            "name": tool_use["name"],
-                                            "arguments": json.dumps(
-                                                tool_use.get("input", {})
-                                            ),
-                                            "tool_call_id": tool_use.get(
-                                                "toolUseId", ""
-                                            ),
-                                        }
-                                    }
-                                )
-
-                    usage = response.get("usage", {})
-                    stop_reason = response.get("stopReason", "unknown")
-
-                return {
-                    "text": "\n".join(text_parts).strip(),
-                    "metadata": {
-                        "usage": {
-                            "prompt_tokens": usage.get("inputTokens", 0),
-                            "completion_tokens": usage.get("outputTokens", 0),
-                            "total_tokens": usage.get("inputTokens", 0)
-                            + usage.get("outputTokens", 0),
-                            "elapsed_seconds": time.time() - start_time,
-                        },
-                        "model": self.model,
-                        "finish_reason": stop_reason,
-                    },
-                    "tool_calls": tool_calls if tool_calls else None,
+                result = {
+                    "text": self._extract_text(response),
+                    "metadata": self._extract_metadata(response, start_time),
                 }
+                
+                tool_calls = self._extract_tool_calls(response)
+                if tool_calls:
+                    result["tool_calls"] = tool_calls
+
+                return result
             except Exception as e:
                 logger.error(f"Error in Converse API call: {str(e)}")
                 raise
