@@ -11,9 +11,9 @@ import os
 import sys
 from typing import Any, Dict
 
-from setup_logger import setup_logging_with_rich_logger
+from setup_logger import setup_logging
 
-setup_logging_with_rich_logger()
+setup_logging()
 
 from contextlib import asynccontextmanager
 

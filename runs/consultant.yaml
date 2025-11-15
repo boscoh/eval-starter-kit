@@ -2,9 +2,10 @@
 file_path: runs/consultant.yaml
 query_ref: consultant
 prompt_ref: candidate-summary
-service: bedrock
-model: anthropic.claude-3-sonnet-20240229-v1:0
+service: ollama
+model: llama3.2
 repeat: 2
+temperature: 0.7
 evaluators:
 - word_count
 - coherence

@@ -2,9 +2,10 @@
 file_path: runs/engineer.yaml
 query_ref: engineer
 prompt_ref: candidate-summary
-service: bedrock
-model: anthropic.claude-3-sonnet-20240229-v1:0
+service: openai
+model: gpt-4o
 repeat: 3
+temperature: 0.5
 evaluators:
 - equivalence
 - coherence

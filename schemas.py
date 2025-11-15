@@ -44,6 +44,7 @@ class RunConfig(BaseModel):
     service: str = "ollama"
     model: str = "llama3.2"
     repeat: int = 1
+    temperature: float = 0.0
     evaluators: List[str] = Field(default_factory=lambda: ["CoherenceEvaluator"])
 
     @staticmethod

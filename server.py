@@ -16,12 +16,12 @@ from schemas import (
     dir_from_table,
     ext_from_table,
 )
-from setup_logger import setup_logging_with_rich_logger
+from setup_logger import setup_logging
 from yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 
-setup_logging_with_rich_logger()
+setup_logging()
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -105,6 +105,7 @@ def get_defaults():
                 "service": "ollama",
                 "model": "llama3.2",
                 "repeat": 1,
+                "temperature": 0.0,
                 "evaluators": ["CoherenceEvaluator"],
             },
             "services": ["bedrock", "ollama", "openai"],

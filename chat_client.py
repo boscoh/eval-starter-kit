@@ -442,7 +442,7 @@ class OpenAIChatClient(IChatClient):
             self.client = None
             self._closed = True
 
-    def _transform_messages_for_openai(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _transform_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Transform intermediate message format to OpenAI API format. Ensures tool messages have correct structure."""
         formatted_messages = []
         
@@ -473,7 +473,7 @@ class OpenAIChatClient(IChatClient):
         start_time = time.time()
 
         try:
-            formatted_messages = self._transform_messages_for_openai(messages)
+            formatted_messages = self._transform_messages(messages)
             completion = await self.client.chat.completions.create(
                 model=self.model,
                 messages=formatted_messages,
@@ -704,39 +704,15 @@ class BedrockChatClient(IChatClient):
             self.client = None
             self._closed = True
 
-    def _extract_tool_calls(self, response: Any) -> Optional[List[Dict[str, Any]]]:
+    def _build_result_from_response(self, response: Any, start_time: float) -> Dict[str, Any]:
+        """Build standardized result structure from Bedrock response."""
+        text_parts = []
         tool_calls = []
         
         if isinstance(response, str):
-            return None
-        
-        output = response.get("output", {})
-        if isinstance(output, dict) and "message" in output:
-            message = output["message"]
-            for content in message.get("content", []):
-                if "toolUse" in content:
-                    tool_use = content["toolUse"]
-                    tool_calls.append(
-                        {
-                            "function": {
-                                "name": tool_use["name"],
-                                "arguments": json.dumps(
-                                    tool_use.get("input", {})
-                                ),
-                                "tool_call_id": tool_use.get(
-                                    "toolUseId", ""
-                                ),
-                            }
-                        }
-                    )
-        
-        return tool_calls if tool_calls else None
-
-    def _extract_text(self, response: Any) -> str:
-        text_parts = []
-        
-        if isinstance(response, str):
             text_parts.append(response)
+            usage = {}
+            stop_reason = "stop"
         else:
             output = response.get("output", {})
             if isinstance(output, dict) and "message" in output:
@@ -744,30 +720,45 @@ class BedrockChatClient(IChatClient):
                 for content in message.get("content", []):
                     if "text" in content:
                         text_parts.append(content["text"])
-        
-        return "\n".join(text_parts).strip()
-
-    def _extract_metadata(self, response: Any, start_time: float) -> Dict[str, Any]:
-        if isinstance(response, str):
-            usage = {}
-            stop_reason = "stop"
-        else:
+                    elif "toolUse" in content:
+                        tool_use = content["toolUse"]
+                        tool_calls.append(
+                            {
+                                "function": {
+                                    "name": tool_use["name"],
+                                    "arguments": json.dumps(
+                                        tool_use.get("input", {})
+                                    ),
+                                    "tool_call_id": tool_use.get(
+                                        "toolUseId", ""
+                                    ),
+                                }
+                            }
+                        )
             usage = response.get("usage", {})
             stop_reason = response.get("stopReason", "unknown")
         
-        return {
-            "usage": {
-                "prompt_tokens": usage.get("inputTokens", 0),
-                "completion_tokens": usage.get("outputTokens", 0),
-                "total_tokens": usage.get("inputTokens", 0)
-                                + usage.get("outputTokens", 0),
-                "elapsed_seconds": time.time() - start_time,
+        result = {
+            "text": "\n".join(text_parts).strip(),
+            "metadata": {
+                "usage": {
+                    "prompt_tokens": usage.get("inputTokens", 0),
+                    "completion_tokens": usage.get("outputTokens", 0),
+                    "total_tokens": usage.get("inputTokens", 0)
+                                    + usage.get("outputTokens", 0),
+                    "elapsed_seconds": time.time() - start_time,
+                },
+                "model": self.model,
+                "finish_reason": stop_reason,
             },
-            "model": self.model,
-            "finish_reason": stop_reason,
         }
+        
+        if tool_calls:
+            result["tool_calls"] = tool_calls
+        
+        return result
 
-    def _transform_messages_for_bedrock(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def _transform_messages(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """Transform intermediate message format to Bedrock Converse API format.
         Returns partially filled request_kwargs with messages, system, and toolConfig.
         """
@@ -867,7 +858,7 @@ class BedrockChatClient(IChatClient):
         start_time = time.time()
 
         try:
-            request_kwargs = self._transform_messages_for_bedrock(messages, tools)
+            request_kwargs = self._transform_messages(messages, tools)
             
             request_kwargs.update({
                 "modelId": self.model,
@@ -879,17 +870,7 @@ class BedrockChatClient(IChatClient):
 
             try:
                 response = await self.client.converse(**request_kwargs)
-
-                result = {
-                    "text": self._extract_text(response),
-                    "metadata": self._extract_metadata(response, start_time),
-                }
-                
-                tool_calls = self._extract_tool_calls(response)
-                if tool_calls:
-                    result["tool_calls"] = tool_calls
-
-                return result
+                return self._build_result_from_response(response, start_time)
             except Exception as e:
                 logger.error(f"Error in Converse API call: {str(e)}")
                 raise

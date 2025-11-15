@@ -160,9 +160,9 @@ class RAGService:
 
 async def main():
     """Run embeddings generation."""
-    from setup_logger import setup_logging_with_rich_logger
+    from setup_logger import setup_logging
 
-    setup_logging_with_rich_logger(level=logging.INFO)
+    setup_logging(level=logging.INFO)
     load_dotenv()
     async with RAGService():
         pass

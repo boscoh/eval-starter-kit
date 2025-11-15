@@ -16,10 +16,10 @@ from mcp.client.stdio import stdio_client
 from path import Path
 
 from chat_client import IChatClient, get_chat_client
-from setup_logger import setup_logging_with_rich_logger
+from setup_logger import setup_logging
 
 load_dotenv()
-setup_logging_with_rich_logger()
+setup_logging()
 
 logger = logging.getLogger(__name__)
 

@@ -47,7 +47,8 @@ class Runner:
                     messages=[
                         {"role": "system", "content": self._config.prompt},
                         {"role": "user", "content": self._config.input},
-                    ]
+                    ],
+                    temperature=self._config.temperature,
                 )
 
                 response_texts.append(response["text"])
@@ -99,9 +100,9 @@ async def run_all(file_paths):
 
 
 if __name__ == "__main__":
-    from setup_logger import setup_logging_with_rich_logger
+    from setup_logger import setup_logging
 
-    setup_logging_with_rich_logger()
+    setup_logging()
     if len(sys.argv) == 1:
         logger.info("Usage: python runner.py <config_file_path>")
         logger.info("No file path provided, run all in `./runs/*.yaml`")

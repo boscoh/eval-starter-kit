@@ -11,11 +11,11 @@ from textwrap import dedent
 from dotenv import load_dotenv
 
 from chat_client import get_chat_client
-from setup_logger import setup_logging_with_rich_logger
+from setup_logger import setup_logging
 from rag import RAGService
 
 load_dotenv()
-setup_logging_with_rich_logger()
+setup_logging()
 
 logger = logging.getLogger(__name__)
 
