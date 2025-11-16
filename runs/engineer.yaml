@@ -2,8 +2,8 @@
 file_path: runs/engineer.yaml
 query_ref: engineer
 prompt_ref: candidate-summary
-service: openai
-model: gpt-4o
+service: bedrock
+model: amazon.nova-pro-v1:0
 repeat: 3
 temperature: 0.5
 evaluators:

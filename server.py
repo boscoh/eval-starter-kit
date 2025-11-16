@@ -110,7 +110,7 @@ def get_defaults():
             },
             "services": ["bedrock", "ollama", "openai"],
             "models": {
-                "bedrock": ["anthropic.claude-3-sonnet-20240229-v1:0"],
+                "bedrock": ["amazon.nova-pro-v1:0", "anthropic.claude-3-sonnet-20240229-v1:0"],
                 "ollama": ["llama3.2"],
                 "openai": ["gpt-4o"],
             },
