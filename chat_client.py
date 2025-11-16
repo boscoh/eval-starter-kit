@@ -281,11 +281,11 @@ def parse_response_as_json_list(response):
 
 
 class OllamaChatClient(IChatClient):
-    def __init__(self, model: str = "llama3.2"):
+    def __init__(self, model: str = None):
         """Initialize Ollama chat client.
 
         Args:
-            model: Name of the Ollama model to use (default: "llama3.2")
+            model: Name of the Ollama model to use (default from config)
 
         Raises:
             RuntimeError: If Ollama is not running or the model is not available
@@ -391,12 +391,12 @@ class OllamaChatClient(IChatClient):
 class OpenAIChatClient(IChatClient):
     def __init__(
             self,
-            model: str = "gpt-4o",
+            model: str = None,
     ):
         """Initialize OpenAI chat client.
 
         Args:
-            model: Name of the OpenAI model to use (default: "gpt-4o")
+            model: Name of the OpenAI model to use (default from config)
 
         Raises:
             ValueError: If OPENAI_API_KEY environment variable is not set
@@ -548,7 +548,7 @@ class OpenAIChatClient(IChatClient):
 
         try:
             response = await self.client.embeddings.create(
-                model="text-embedding-3-small", input=input
+                model=self.model, input=input
             )
             return response.data[0].embedding
         except Exception as e:
@@ -594,11 +594,13 @@ def get_aws_config(is_raise_exception: bool = True):
         AWS_PROFILE (str, optional): Name of the AWS profile to use from
                                    ~/.aws/credentials. If not set, uses the
                                    default profile.
+        AWS_REGION (str, optional): AWS region to use for AWS services
 
     Returns:
         dict: AWS configuration dictionary for boto3 client initialization:
             - profile_name (str, optional): The AWS profile name to pass to
                                           boto3.client() or boto3.Session()
+            - region_name (str): AWS region name for service clients
 
     Note:
         This function is cached to avoid repeated credential discovery and
@@ -619,6 +621,10 @@ def get_aws_config(is_raise_exception: bool = True):
     profile_name = os.getenv("AWS_PROFILE")
     if profile_name:
         aws_config["profile_name"] = profile_name
+
+    region = os.getenv("AWS_REGION")
+    if region:
+        aws_config["region_name"] = region
 
     try:
         aws_credentials_path = os.path.expanduser("~/.aws/credentials")
@@ -669,7 +675,7 @@ def get_aws_config(is_raise_exception: bool = True):
 class BedrockChatClient(IChatClient):
     def __init__(
             self,
-            model: str = "anthropic.claude-3-sonnet-20240229-v1:0",
+            model: str = None,
     ):
         """
         Initialize Bedrock chat client.
@@ -680,7 +686,7 @@ class BedrockChatClient(IChatClient):
         tool usage. Other Bedrock models may not support tools through this API.
 
         Args:
-            model: Claude model ID for Bedrock (e.g., "anthropic.claude-3-sonnet-20240229-v1:0").
+            model: Claude model ID for Bedrock (default from config).
         """
         self.model = model
         self.client = None
@@ -693,7 +699,8 @@ class BedrockChatClient(IChatClient):
             return
 
         logger.info(f"Initializing 'bedrock:{self.model}'")
-        self._session = aioboto3.Session(**get_aws_config())
+        aws_config = get_aws_config()
+        self._session = aioboto3.Session(**aws_config)
         self.client = await self._session.client("bedrock-runtime").__aenter__()
         self._closed = False
 

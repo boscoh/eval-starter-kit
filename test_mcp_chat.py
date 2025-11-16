@@ -17,6 +17,7 @@ from path import Path
 
 from chat_client import IChatClient, get_chat_client
 from setup_logger import setup_logging
+from config import chat_models
 
 load_dotenv()
 setup_logging()
@@ -37,13 +38,9 @@ class SpeakerMcpClient:
 
         self.llm_service = llm_service
         self.chat_client: IChatClient = None
-        models = {
-            "bedrock": "anthropic.claude-3-sonnet-20240229-v1:0",
-            "openai": "gpt-4o"
-        }
-        if self.llm_service not in models:
+        model = chat_models.get(self.llm_service)
+        if not model:
             raise ValueError(f"Unsupported LLM service for tools: {self.llm_service}")
-        model = models[self.llm_service]
         self.chat_client = get_chat_client(self.llm_service, model=model)
 
     async def __aenter__(self):

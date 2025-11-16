@@ -1,0 +1,101 @@
+---
+texts:
+- "Here is a rewritten version of the candidate's professional profile in a concise\
+  \ format:\n\n**Systems Analyst & Consultant**\n\n* 26+ years of experience supporting\
+  \ multiple departments across enterprise environments\n* Expertise in SDLC and Computer\
+  \ Systems Validation (CSV)\n* Strong analytical and problem-solving skills with\
+  \ expertise in:\n\t+ Software development lifecycle\n\t+ Documentum DCM and D2\n\
+  \t+ MS Access, VBA, C, C++, Assembly language programming\n\t+ System administration,\
+  \ data communications, and document management\n* Proven project leadership and\
+  \ technical skills\n\n**Key Qualifications**\n\n* Project leadership and management\n\
+  * Strong technical and analytical skills\n* Problem-solving, organizational, and\
+  \ communication skills\n* Systems analysis, general application support, software\
+  \ development, and data communications expertise\n\n**Professional Experience**\n\
+  \n* **Consultant**, Company Name (1999-2015)\n\t+ Applied SDLC processes and GxP/SOX\
+  \ compliance for McNeil Consumer Healthcare\n\t+ Led project leadership roles in\
+  \ application upgrades and issue analysis\n\t+ Delivered Level 2 production support\
+  \ and generated reports\n* **Systems Programmer**, Company Name (1985-1990)\n\t\
+  + Designed, developed, and tested real-time client/server applications\n\t+ Built\
+  \ messaging systems between VAX/VMS and IBM applications\n\n**Education**\n\n* M.S.\
+  \ Computer Science (Data Communications), Villanova University (1996)\n* B.A. Computer\
+  \ Science, LaSalle University (1985)\n\n**Technical Skills**\n\n* Programming languages:\
+  \ C, C++, VBA, Assembly, HTML\n* Databases: MS Access, Documentum DCM/D2, relational\
+  \ databases\n* Systems: VAX/VMS, Windows, client/server architectures\n* Methodologies:\
+  \ SDLC, CSV, GxP, SOX compliance\n\nThis rewritten version aims to provide a concise\
+  \ and clear summary of the candidate's experience and qualifications while maintaining\
+  \ their key strengths and technical expertise."
+- >-
+  Here is a concise candidate summary:
+
+
+  **Systems Analyst & Consultant**
+
+
+  Highly motivated Systems Analyst with 26+ years of experience in diverse environments
+  and technologies. Proven expertise in SDLC, CSV, and GxP/SOX compliance.
+
+
+  * Strong analytical skills and problem-solving techniques
+
+  * Proficient in C, C++, VBA, Assembly, HTML, MS Access/Datumum DCM/D2
+
+  * Experience with project leadership, system administration, data communications,
+  document management
+
+  * Skilled in Microsoft Access/Excel VBA automation, network administration, OS upgrades,
+  reporting, and troubleshooting
+
+
+  **Key Strengths:**
+
+
+  * Technical expertise in multiple systems and technologies
+
+  * Excellent analytical and problem-solving skills
+
+  * Proven ability to deliver results in fast-paced environments
+
+
+  **Location:** [City, State]
+
+
+  Note: I've kept the summary concise while highlighting the candidate's key strengths
+  and experience. I've also removed the educational background information as per
+  your requirements. Let me know if you'd like any further adjustments!
+evaluations:
+- name: word_count
+  values:
+  - 1.0
+  - 1.0
+  average: 1.0
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 12.467839241027832
+  - 7.365999698638916
+  average: 9.916919469833374
+  standard_deviation: 3.607545336948875
+- name: token_count
+  values:
+  - 786
+  - 678
+  average: 732
+  standard_deviation: 76.36753236814714
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

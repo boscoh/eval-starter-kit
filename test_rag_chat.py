@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from chat_client import get_chat_client
 from setup_logger import setup_logging
 from rag import RAGService
-
+from config import chat_models
 load_dotenv()
 setup_logging()
 
@@ -32,8 +32,9 @@ class SpeakerRagClient:
 
         self.rag_service = RAGService(llm_service=self.llm_service)
         await self.rag_service.__aenter__()
-        
-        self.chat_client = get_chat_client(self.llm_service)
+
+        model = chat_models.get(self.llm_service)
+        self.chat_client = get_chat_client(self.llm_service, model=model)
         await self.chat_client.connect()
         
         logger.info(f"Connected to RAG service with {self.llm_service}")
@@ -92,9 +93,9 @@ class SpeakerRagClient:
         distance_to_bio = self.rag_service.cosine_distance(embedding, speaker_with_embeddings['bio_embedding'])
 
         logger.info(f"Speaker distances: {' '.join(f'{d:.3f}' for d in distances)}")
-        logger.info( f"Best match of d={best_distance:.3f} to Speaker\\[{i_speaker_best}] ")
-        logger.info( f"Bio\\[{i_speaker_best}] (d={distance_to_bio:.3f}) {bio_embedding_str}" )
-        logger.info( f"Abstract\\[{i_speaker_best}] (d={distance_to_abstract:.3f}) {abstract_embedding_str}" )
+        logger.info( f"Best match of d={best_distance:.3f} to Speaker[{i_speaker_best}] ")
+        logger.info( f"Bio[{i_speaker_best}] (d={distance_to_bio:.3f}) {bio_embedding_str}" )
+        logger.info( f"Abstract[{i_speaker_best}] (d={distance_to_abstract:.3f}) {abstract_embedding_str}" )
 
         best_speaker = self.rag_service.speakers[i_speaker_best]
         

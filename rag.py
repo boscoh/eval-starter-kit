@@ -13,6 +13,7 @@ from path import Path
 from pydash import py_
 
 from chat_client import get_chat_client
+from config import embed_models
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +26,13 @@ class RAGService:
     def __init__(self, llm_service: Optional[str] = None):
         self.llm_service = llm_service or os.getenv("LLM_SERVICE", "openai").lower()
 
-        models = {
-            "openai": "text-embedding-3-small",
-            "ollama": "nomic-embed-text",
-            "bedrock": "amazon.titan-embed-text-v2:0",
-        }
-
-        model = models.get(self.llm_service)
+        model = embed_models.get(self.llm_service)
         if model is None:
             raise ValueError(f"Unsupported service: {self.llm_service}")
 
         self.embed_client = get_chat_client(self.llm_service, model=model)
         self.embed_json = f"embeddings-{py_.kebab_case(model)}.json"
-        logger.info(f"RAG LLM Service: '{llm_service}:{model}'")
+        logger.info(f"RAG LLM Service: '{self.llm_service}:{model}'")
 
         self.speakers_with_embeddings: Optional[List[dict]] = None
         self.speakers: Optional[List[dict]] = None

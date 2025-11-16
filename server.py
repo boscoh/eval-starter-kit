@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
+from config import chat_models
 from evaluator import EvaluationRunner
 from runner import Runner
 from schemas import (
@@ -93,6 +94,9 @@ def get_defaults():
     """
     Response: { "content": object }
     """
+    default_service = "openai"
+    default_model = chat_models[default_service]
+    
     return {
         "content": {
             "evaluators": EvaluationRunner.evaluators(),
@@ -102,18 +106,14 @@ def get_defaults():
                 "prompt": "",
                 "input": "",
                 "output": "",
-                "service": "ollama",
-                "model": "llama3.2",
+                "service": default_service,
+                "model": default_model,
                 "repeat": 1,
                 "temperature": 0.0,
                 "evaluators": ["CoherenceEvaluator"],
             },
-            "services": ["bedrock", "ollama", "openai"],
-            "models": {
-                "bedrock": ["amazon.nova-pro-v1:0", "anthropic.claude-3-sonnet-20240229-v1:0"],
-                "ollama": ["llama3.2"],
-                "openai": ["gpt-4o"],
-            },
+            "services": list(chat_models.keys()),
+            "models": {service: [chat_models[service]] for service in chat_models.keys()},
         }
     }
 

@@ -1,0 +1,44 @@
+---
+texts:
+- >-
+  Error: Error when retrieving token from sso: Token has expired and refresh failed
+- >-
+  Error: Error when retrieving token from sso: Token has expired and refresh failed
+- >-
+  Error: Error when retrieving token from sso: Token has expired and refresh failed
+evaluations:
+- name: equivalence
+  values:
+  - 0.5
+  - 0.5
+  - 0.5
+  average: 0.5
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.5
+  - 0.5
+  - 0.5
+  average: 0.5
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 1.2250399589538574
+  - 1.2973928451538086
+  - 1.2574338912963867
+  average: 1.2599555651346843
+  standard_deviation: 0.03624229800351844
+- name: token_count
+  values:
+  - 0
+  - 0
+  - 0
+  average: 0
+  standard_deviation: 0.0
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

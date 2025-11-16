@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 
 from chat_client import get_chat_client
+from config import chat_models
 
 load_dotenv()
 
@@ -27,8 +28,7 @@ async def setup_async_exception_handler():
 
 async def amain(service):
     await setup_async_exception_handler()
-
-    async with get_chat_client(service) as client:
+    async with get_chat_client(service, model=chat_models[service]) as client:
         print(f"Chat loop with {service}-{client.model}")
         while True:
             user_input = input("\nYou: ")
