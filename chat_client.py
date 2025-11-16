@@ -43,11 +43,11 @@ class IChatClient(ABC):
 
     @abstractmethod
     async def get_completion(
-            self,
-            messages: List[Dict[str, Any]],
-            tools: Optional[List[Dict[str, Any]]] = None,
-            max_tokens: Optional[int] = None,
-            temperature: float = 0.0,
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """
         Get a chat completion from the model.
@@ -64,19 +64,19 @@ class IChatClient(ABC):
                 - 'role': str - One of 'system', 'user', 'assistant', or 'tool'
                 - 'content': str | None - The message content/text (None allowed for assistant with tool_calls)
                 - 'name': str (optional) - Name of the message sender
-                
+
                 Message types:
-                
+
                 1. System messages (role='system'):
                    - 'role': 'system' (required)
                    - 'content': str (required) - System instructions or context
                    - 'name': str (optional) - Name identifier
-                   
+
                 2. User messages (role='user'):
                    - 'role': 'user' (required)
                    - 'content': str (required) - User's message text
                    - 'name': str (optional) - Name identifier
-                   
+
                 3. Assistant messages (role='assistant'):
                    - 'role': 'assistant' (required)
                    - 'content': str | None (optional) - Assistant's response text
@@ -89,7 +89,7 @@ class IChatClient(ABC):
                        - 'name': str - Name of the function to call
                        - 'arguments': str - JSON string of function arguments
                    - 'name': str (optional) - Name identifier
-                   
+
                 4. Tool messages (role='tool'):
                    - 'role': 'tool' (required)
                    - 'content': str (required) - Result of the tool execution
@@ -307,7 +307,7 @@ class OllamaChatClient(IChatClient):
                 "Ollama is not running or not installed. "
                 "Please start the Ollama service and try again."
             ) from e
-        
+
         try:
             ollama.show(self.model)
         except Exception as e:
@@ -317,11 +317,11 @@ class OllamaChatClient(IChatClient):
             )
 
     async def get_completion(
-            self,
-            messages: List[Dict[str, Any]],
-            tools: Optional[List[Dict[str, Any]]] = None,
-            max_tokens: Optional[int] = None,
-            temperature: float = 0.0,
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Ollama implementation of get_completion. Tools not supported."""
         await self.connect()
@@ -390,8 +390,8 @@ class OllamaChatClient(IChatClient):
 
 class OpenAIChatClient(IChatClient):
     def __init__(
-            self,
-            model: str = None,
+        self,
+        model: str = None,
     ):
         """Initialize OpenAI chat client.
 
@@ -442,30 +442,34 @@ class OpenAIChatClient(IChatClient):
             self.client = None
             self._closed = True
 
-    def _transform_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _transform_messages(
+        self, messages: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Transform intermediate message format to OpenAI API format. Ensures tool messages have correct structure."""
         formatted_messages = []
-        
+
         for msg in messages:
             role = msg["role"]
-            
+
             if role == "tool":
-                formatted_messages.append({
-                    "role": "tool",
-                    "content": msg.get("content", ""),
-                    "tool_call_id": msg.get("tool_call_id", ""),
-                })
+                formatted_messages.append(
+                    {
+                        "role": "tool",
+                        "content": msg.get("content", ""),
+                        "tool_call_id": msg.get("tool_call_id", ""),
+                    }
+                )
             else:
                 formatted_messages.append(msg)
-        
+
         return formatted_messages
 
     async def get_completion(
-            self,
-            messages: List[Dict[str, Any]],
-            tools: Optional[List[Dict[str, Any]]] = None,
-            max_tokens: Optional[int] = None,
-            temperature: float = 0.0,
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """OpenAI implementation of get_completion with full tool support."""
         await self.connect()
@@ -648,7 +652,7 @@ def get_aws_config(is_raise_exception: bool = True):
         if hasattr(credentials, "token"):
             creds = credentials.get_frozen_credentials()
             if hasattr(creds, "expiry_time") and creds.expiry_time < datetime.now(
-                    timezone.utc
+                timezone.utc
             ):
                 logger.warning(f"AWS credentials expired on {creds.expiry_time}")
                 return aws_config
@@ -674,8 +678,8 @@ def get_aws_config(is_raise_exception: bool = True):
 
 class BedrockChatClient(IChatClient):
     def __init__(
-            self,
-            model: str = None,
+        self,
+        model: str = None,
     ):
         """
         Initialize Bedrock chat client.
@@ -711,11 +715,13 @@ class BedrockChatClient(IChatClient):
             self.client = None
             self._closed = True
 
-    def _build_result_from_response(self, response: Any, start_time: float) -> Dict[str, Any]:
+    def _build_result_from_response(
+        self, response: Any, start_time: float
+    ) -> Dict[str, Any]:
         """Build standardized result structure from Bedrock response."""
         text_parts = []
         tool_calls = []
-        
+
         if isinstance(response, str):
             text_parts.append(response)
             usage = {}
@@ -733,18 +739,14 @@ class BedrockChatClient(IChatClient):
                             {
                                 "function": {
                                     "name": tool_use["name"],
-                                    "arguments": json.dumps(
-                                        tool_use.get("input", {})
-                                    ),
-                                    "tool_call_id": tool_use.get(
-                                        "toolUseId", ""
-                                    ),
+                                    "arguments": json.dumps(tool_use.get("input", {})),
+                                    "tool_call_id": tool_use.get("toolUseId", ""),
                                 }
                             }
                         )
             usage = response.get("usage", {})
             stop_reason = response.get("stopReason", "unknown")
-        
+
         result = {
             "text": "\n".join(text_parts).strip(),
             "metadata": {
@@ -752,20 +754,24 @@ class BedrockChatClient(IChatClient):
                     "prompt_tokens": usage.get("inputTokens", 0),
                     "completion_tokens": usage.get("outputTokens", 0),
                     "total_tokens": usage.get("inputTokens", 0)
-                                    + usage.get("outputTokens", 0),
+                    + usage.get("outputTokens", 0),
                     "elapsed_seconds": time.time() - start_time,
                 },
                 "model": self.model,
                 "finish_reason": stop_reason,
             },
         }
-        
+
         if tool_calls:
             result["tool_calls"] = tool_calls
-        
+
         return result
 
-    def _transform_messages(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def _transform_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         """Transform intermediate message format to Bedrock Converse API format.
         Returns partially filled request_kwargs with messages, system, and toolConfig.
         """
@@ -785,35 +791,55 @@ class BedrockChatClient(IChatClient):
                 for tool_call in msg.get("tool_calls", []):
                     tool_call_id = tool_call.get("id", "")
                     if tool_call_id:
-                        assistant_content.append({
-                            "toolUse": {
-                                "toolUseId": tool_call_id,
-                                "name": tool_call["function"]["name"],
-                                "input": json.loads(tool_call["function"]["arguments"]) if isinstance(tool_call["function"]["arguments"], str) else tool_call["function"]["arguments"],
+                        assistant_content.append(
+                            {
+                                "toolUse": {
+                                    "toolUseId": tool_call_id,
+                                    "name": tool_call["function"]["name"],
+                                    "input": json.loads(
+                                        tool_call["function"]["arguments"]
+                                    )
+                                    if isinstance(
+                                        tool_call["function"]["arguments"], str
+                                    )
+                                    else tool_call["function"]["arguments"],
+                                }
                             }
-                        })
+                        )
                 if assistant_content:
-                    formatted_messages.append({
-                        "role": "assistant",
-                        "content": assistant_content,
-                    })
+                    formatted_messages.append(
+                        {
+                            "role": "assistant",
+                            "content": assistant_content,
+                        }
+                    )
             elif role == "tool":
                 tool_call_id = msg.get("tool_call_id", "")
-                tool_content = content.rstrip() if isinstance(content, str) else str(content)
+                tool_content = (
+                    content.rstrip() if isinstance(content, str) else str(content)
+                )
                 tool_status = msg.get("status", "success")
-                formatted_messages.append({
-                    "role": "user",
-                    "content": [
-                        {
-                            "toolResult": {
-                                "toolUseId": tool_call_id,
-                                "content": [{"text": tool_content}],
-                                "status": tool_status,
+                formatted_messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "toolResult": {
+                                    "toolUseId": tool_call_id,
+                                    "content": [{"text": tool_content}],
+                                    "status": tool_status,
+                                }
                             }
-                        }
-                    ]
-                })
-            elif role == "user" and isinstance(content, list) and content and isinstance(content[0], dict) and "toolResult" in content[0]:
+                        ],
+                    }
+                )
+            elif (
+                role == "user"
+                and isinstance(content, list)
+                and content
+                and isinstance(content[0], dict)
+                and "toolResult" in content[0]
+            ):
                 formatted_messages.append(msg)
             elif role == "assistant" and isinstance(content, list):
                 formatted_messages.append(msg)
@@ -823,7 +849,7 @@ class BedrockChatClient(IChatClient):
                 formatted_messages.append(
                     {"role": role, "content": [{"text": content}]}
                 )
-        
+
         formatted_tools = None
         if tools:
             formatted_tools = [
@@ -831,34 +857,30 @@ class BedrockChatClient(IChatClient):
                     "toolSpec": {
                         "name": tool["function"]["name"],
                         "description": tool["function"].get("description", ""),
-                        "inputSchema": {
-                            "json": tool["function"].get("parameters", {})
-                        },
+                        "inputSchema": {"json": tool["function"].get("parameters", {})},
                     }
                 }
                 for tool in tools
             ]
-        
-        system_blocks = (
-            [{"text": "\n\n".join(system_parts)}] if system_parts else []
-        )
-        
+
+        system_blocks = [{"text": "\n\n".join(system_parts)}] if system_parts else []
+
         request_kwargs = {
             "messages": formatted_messages,
             "system": system_blocks,
         }
-        
+
         if tools:
             request_kwargs["toolConfig"] = {"tools": formatted_tools}
-        
+
         return request_kwargs
 
     async def get_completion(
-            self,
-            messages: List[Dict[str, Any]],
-            tools: Optional[List[Dict[str, Any]]] = None,
-            max_tokens: Optional[int] = None,
-            temperature: float = 0.0,
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.0,
     ) -> Dict[str, Any]:
         """Bedrock implementation using Converse API with tool support."""
         await self.connect()
@@ -866,14 +888,16 @@ class BedrockChatClient(IChatClient):
 
         try:
             request_kwargs = self._transform_messages(messages, tools)
-            
-            request_kwargs.update({
-                "modelId": self.model,
-                "inferenceConfig": {
-                    "temperature": temperature,
-                    "maxTokens": max_tokens or 1024,
-                },
-            })
+
+            request_kwargs.update(
+                {
+                    "modelId": self.model,
+                    "inferenceConfig": {
+                        "temperature": temperature,
+                        "maxTokens": max_tokens or 1024,
+                    },
+                }
+            )
 
             try:
                 response = await self.client.converse(**request_kwargs)

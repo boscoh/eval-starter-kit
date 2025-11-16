@@ -11,9 +11,10 @@ from textwrap import dedent
 from dotenv import load_dotenv
 
 from chat_client import get_chat_client
-from setup_logger import setup_logging
-from rag import RAGService
 from config import chat_models
+from rag import RAGService
+from setup_logger import setup_logging
+
 load_dotenv()
 setup_logging()
 
@@ -36,7 +37,7 @@ class SpeakerRagClient:
         model = chat_models.get(self.llm_service)
         self.chat_client = get_chat_client(self.llm_service, model=model)
         await self.chat_client.connect()
-        
+
         logger.info(f"Connected to RAG service with {self.llm_service}")
         return self
 
@@ -66,7 +67,7 @@ class SpeakerRagClient:
 
     async def process_query(self, query: str) -> str:
         """Process query using RAG service to find best speaker.
-        
+
         Explicitly reproduces the get_best_speaker logic:
         1. Get embedding for the query
         2. Calculate distances to all speakers
@@ -86,53 +87,69 @@ class SpeakerRagClient:
         i_speaker_best = distances.index(min(distances))
         best_distance = distances[i_speaker_best]
 
-        speaker_with_embeddings = self.rag_service.speakers_with_embeddings[i_speaker_best]
-        abstract_embedding_str = self.format_embedding(speaker_with_embeddings['abstract_embedding'])
-        distance_to_abstract = self.rag_service.cosine_distance(embedding, speaker_with_embeddings['abstract_embedding'])
-        bio_embedding_str = self.format_embedding(speaker_with_embeddings['bio_embedding'])
-        distance_to_bio = self.rag_service.cosine_distance(embedding, speaker_with_embeddings['bio_embedding'])
+        speaker_with_embeddings = self.rag_service.speakers_with_embeddings[
+            i_speaker_best
+        ]
+        abstract_embedding_str = self.format_embedding(
+            speaker_with_embeddings["abstract_embedding"]
+        )
+        distance_to_abstract = self.rag_service.cosine_distance(
+            embedding, speaker_with_embeddings["abstract_embedding"]
+        )
+        bio_embedding_str = self.format_embedding(
+            speaker_with_embeddings["bio_embedding"]
+        )
+        distance_to_bio = self.rag_service.cosine_distance(
+            embedding, speaker_with_embeddings["bio_embedding"]
+        )
 
         logger.info(f"Speaker distances: {' '.join(f'{d:.3f}' for d in distances)}")
-        logger.info( f"Best match of d={best_distance:.3f} to Speaker[{i_speaker_best}] ")
-        logger.info( f"Bio[{i_speaker_best}] (d={distance_to_bio:.3f}) {bio_embedding_str}" )
-        logger.info( f"Abstract[{i_speaker_best}] (d={distance_to_abstract:.3f}) {abstract_embedding_str}" )
+        logger.info(
+            f"Best match of d={best_distance:.3f} to Speaker[{i_speaker_best}] "
+        )
+        logger.info(
+            f"Bio[{i_speaker_best}] (d={distance_to_bio:.3f}) {bio_embedding_str}"
+        )
+        logger.info(
+            f"Abstract[{i_speaker_best}] (d={distance_to_abstract:.3f}) {abstract_embedding_str}"
+        )
 
         best_speaker = self.rag_service.speakers[i_speaker_best]
-        
+
         system_prompt = """You are an expert at analyzing speaker-query matches. 
         Explain why a speaker is a good match for a given query by analyzing their 
         bio and presentation abstract. Be specific and concise."""
-        
+
         user_prompt = dedent(f"""                         
 Query: {query}
 
-Best matching speaker: {best_speaker['name']}
+Best matching speaker: {best_speaker["name"]}
 
-Bio: {best_speaker['bio_max_120_words']}
+Bio: {best_speaker["bio_max_120_words"]}
 
-Abstract: {best_speaker['final_abstract_max_150_words']}
+Abstract: {best_speaker["final_abstract_max_150_words"]}
 
 Explain in 2-3 sentences why this speaker is a good match for the query. 
 Focus on specific aspects of their expertise or presentation that align with the query.""")
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+            {"role": "user", "content": user_prompt},
         ]
-        
+
         logger.info("Calling LLM to explain speaker choice...")
         llm_result = await self.chat_client.get_completion(messages)
         explanation = llm_result.get("text", "No explanation available.")
-        
+
         response = dedent(f"""             
 ## Speaker
-{best_speaker['name']}
+{best_speaker["name"]}
 
 ## Bio
-{best_speaker['bio_max_120_words']}
+{best_speaker["bio_max_120_words"]}
 
 ## Abstract
-{best_speaker['final_abstract_max_150_words']}  
+{best_speaker["final_abstract_max_150_words"]}  
 
 # Why this speaker matches your query
 {explanation}""")
@@ -173,4 +190,3 @@ if __name__ == "__main__":
         print("\nGoodbye!")
     except Exception as e:
         print(f"\n\nUnexpected error: {e}")
-

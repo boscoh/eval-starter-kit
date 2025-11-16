@@ -96,7 +96,7 @@ def get_defaults():
     """
     default_service = "openai"
     default_model = chat_models[default_service]
-    
+
     return {
         "content": {
             "evaluators": EvaluationRunner.evaluators(),
@@ -113,7 +113,9 @@ def get_defaults():
                 "evaluators": ["CoherenceEvaluator"],
             },
             "services": list(chat_models.keys()),
-            "models": {service: [chat_models[service]] for service in chat_models.keys()},
+            "models": {
+                service: [chat_models[service]] for service in chat_models.keys()
+            },
         }
     }
 
@@ -237,10 +239,10 @@ async def delete_object(request: DeleteRequest):
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
         file_path = (table_dir / request.basename).with_suffix(ext)
-        
+
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-        
+
         file_path.remove()
         logger.info(f"Successfully deleted '{file_path}'")
         return MessageResponse(
@@ -272,18 +274,20 @@ class RenameRequest(BaseModel):
 @app.post("/rename", response_model=MessageResponse)
 async def rename_object(request: RenameRequest):
     try:
-        logger.info(f"Request to rename {request.table}/{request.basename} to {request.newBasename}")
+        logger.info(
+            f"Request to rename {request.table}/{request.basename} to {request.newBasename}"
+        )
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
         old_path = (table_dir / request.basename).with_suffix(ext)
         new_path = (table_dir / request.newBasename).with_suffix(ext)
-        
+
         if not old_path.exists():
             raise FileNotFoundError(f"File not found: {old_path}")
-        
+
         if new_path.exists():
             raise FileExistsError(f"File already exists: {new_path}")
-        
+
         old_path.rename(new_path)
         logger.info(f"Successfully renamed '{old_path}' to '{new_path}'")
         return MessageResponse(

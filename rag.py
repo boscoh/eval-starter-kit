@@ -54,13 +54,15 @@ class RAGService:
                 self.read_text_file(self.embed_json)
             )
         else:
-            logger.info( f"Generating embeddings with '{self.llm_service}:{self.embed_client.model}'" )
+            logger.info(
+                f"Generating embeddings with '{self.llm_service}:{self.embed_client.model}'"
+            )
             self.speakers_with_embeddings = await self._generate_speaker_embeddings()
             self.save_text_file(
                 json.dumps(self.speakers_with_embeddings, indent=2), self.embed_json
             )
-            logger.info( f"Embeddings saved to '{self.embed_json}'" )
-        self.speakers = py_.map( self.speakers_with_embeddings, self._strip_embeddings )
+            logger.info(f"Embeddings saved to '{self.embed_json}'")
+        self.speakers = py_.map(self.speakers_with_embeddings, self._strip_embeddings)
 
     def _resolve_data_path(self, file_path: Union[Path, str]) -> Path:
         path = Path(file_path)
@@ -144,7 +146,10 @@ class RAGService:
     async def get_best_speaker(self, query: str) -> Optional[dict]:
         await self.connect()
         embedding = await self.embed_client.embed(query)
-        distances = py_.map( self.speakers_with_embeddings, lambda s: self.get_speaker_distance(embedding, s) )
+        distances = py_.map(
+            self.speakers_with_embeddings,
+            lambda s: self.get_speaker_distance(embedding, s),
+        )
         i_speaker_best = distances.index(min(distances))
         return self.speakers[i_speaker_best]
 

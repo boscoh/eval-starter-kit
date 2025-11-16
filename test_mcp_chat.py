@@ -16,8 +16,8 @@ from mcp.client.stdio import stdio_client
 from path import Path
 
 from chat_client import IChatClient, get_chat_client
-from setup_logger import setup_logging
 from config import chat_models
+from setup_logger import setup_logging
 
 load_dotenv()
 setup_logging()
@@ -118,7 +118,9 @@ class SpeakerMcpClient:
         except json.JSONDecodeError:
             return {"__raw": tool_args_json}
 
-    def is_duplicate_call(self, tool_name: str, tool_args: Dict[str, Any], seen_calls: set) -> bool:
+    def is_duplicate_call(
+        self, tool_name: str, tool_args: Dict[str, Any], seen_calls: set
+    ) -> bool:
         """Return True if this tool call was seen before; otherwise record it and return False."""
         try:
             normalized_args = json.dumps(tool_args, sort_keys=True)
@@ -147,18 +149,22 @@ class SpeakerMcpClient:
         logger.info(f"Calling LLM with {len(messages)} messages:")
         for msg in messages:
             msg_content = msg.get("content", "")
-            
+
             if isinstance(msg_content, list):
-                content_parts = [self._extract_content_text(item) for item in msg_content]
+                content_parts = [
+                    self._extract_content_text(item) for item in msg_content
+                ]
                 content_str = " ".join(content_parts)
             else:
                 content_str = str(msg_content)
-            
+
             content_str = content_str.replace("\r", "")
-            content_str = re.sub(r'\s+', ' ', content_str).strip()
-            
-            truncated_content = content_str[:max_length] + ("..." if len(content_str) > max_length else "")
-            role = msg.get("role", 'unknown')
+            content_str = re.sub(r"\s+", " ", content_str).strip()
+
+            truncated_content = content_str[:max_length] + (
+                "..." if len(content_str) > max_length else ""
+            )
+            role = msg.get("role", "unknown")
             logger.info(f"- {role}: {truncated_content}")
 
     async def process_query(self, query: str) -> str:
@@ -223,16 +229,21 @@ class SpeakerMcpClient:
                     "content": response.get("text") or None,
                     "tool_calls": [
                         {
-                            "id": tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId", ""),
+                            "id": tool_call["function"].get("tool_call_id")
+                            or tool_call["function"].get("toolUseId", ""),
                             "type": "function",
                             "function": {
                                 "name": tool_call["function"]["name"],
-                                "arguments": tool_call["function"].get("arguments", json.dumps(self.parse_tool_args(tool_call))),
-                            }
+                                "arguments": tool_call["function"].get(
+                                    "arguments",
+                                    json.dumps(self.parse_tool_args(tool_call)),
+                                ),
+                            },
                         }
                         for tool_call in tool_calls
-                        if tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId")
-                    ]
+                        if tool_call["function"].get("tool_call_id")
+                        or tool_call["function"].get("toolUseId")
+                    ],
                 }
                 if assistant_msg["tool_calls"]:
                     messages.append(assistant_msg)
@@ -241,19 +252,27 @@ class SpeakerMcpClient:
                 for tool_call in tool_calls:
                     tool_name = tool_call["function"]["name"]
                     tool_args = self.parse_tool_args(tool_call)
-                    tool_call_id = tool_call["function"].get("tool_call_id") or tool_call["function"].get("toolUseId", "")
-                    
+                    tool_call_id = tool_call["function"].get(
+                        "tool_call_id"
+                    ) or tool_call["function"].get("toolUseId", "")
+
                     if not tool_call_id:
-                        logger.warning(f"Skipping tool call {tool_name} without tool_call_id")
+                        logger.warning(
+                            f"Skipping tool call {tool_name} without tool_call_id"
+                        )
                         continue
-                    
+
                     if self.is_duplicate_call(tool_name, tool_args, seen_calls):
-                        result_content = f"Duplicate tool call: {tool_name}({tool_args})"
+                        result_content = (
+                            f"Duplicate tool call: {tool_name}({tool_args})"
+                        )
                         status = "error"
                     else:
                         try:
                             logger.info(f"Calling tool {tool_name}({tool_args})...")
-                            result = await self._mcp_session.call_tool(tool_name, tool_args)
+                            result = await self._mcp_session.call_tool(
+                                tool_name, tool_args
+                            )
                             result_content = str(getattr(result, "content", result))
                             status = "success"
                         except Exception as e:
@@ -261,12 +280,14 @@ class SpeakerMcpClient:
                             status = "error"
                             logger.error(f"Tool {tool_name} error: {e}")
 
-                    tool_result_messages.append({
-                        "role": "tool",
-                        "content": result_content,
-                        "tool_call_id": tool_call_id,
-                        "status": status,
-                    })
+                    tool_result_messages.append(
+                        {
+                            "role": "tool",
+                            "content": result_content,
+                            "tool_call_id": tool_call_id,
+                            "status": status,
+                        }
+                    )
 
                 messages.extend(tool_result_messages)
             elif content := response.get("text", ""):
@@ -303,7 +324,7 @@ async def amain(service):
             logger.info("----------------------------------------------")
             logger.info(f"Tool: {tool['function']['name']}")
             logger.info("Description:")
-            for line in tool['function']['description'].split('\n'):
+            for line in tool["function"]["description"].split("\n"):
                 logger.info(f"| {line}")
         logger.info("----------------------------------------------")
         print("Type your query to pick a speaker.")

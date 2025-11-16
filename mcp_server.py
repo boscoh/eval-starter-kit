@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+
 from rag import RAGService
 
 logger = logging.getLogger(__name__)
