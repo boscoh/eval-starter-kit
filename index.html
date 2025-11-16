@@ -134,12 +134,24 @@
                     ) + new
 
                     ul.list-group
-                      li.list-group-item(
-                        v-for="f in runNames" :key="f" @click="chooseRun(f)"
+                      li.list-group-item.d-flex.justify-content-between.align-items-center(
+                        v-for="f in runNames" :key="f"
                         :class="{ 'list-group-item-info': selectedRunName == f }"
-                        role="button"
                       )
-                        | {{f}}
+                        .flex-grow-1(@click="chooseRun(f)" role="button")
+                          | {{f}}
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openRenameDialog('run', f)"
+                          title="Rename run"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-edit
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openDeleteConfirm('run', f)"
+                          title="Delete run"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-trash
 
                   //// Run tab - central column
                 .d-flex.flex-column.scrollable-column.border.flex-grow-1(style="max-width: 20em")
@@ -296,14 +308,25 @@
                     ) + new
 
                     ul.list-group
-                      li.list-group-item(
+                      li.list-group-item.d-flex.justify-content-between.align-items-center(
                         v-for="query in queryRefs"
                         :key="query"
-                        @click="chooseSelectedQuery(query)"
                         :class="{ 'list-group-item-info': selectedQueryRef == query }"
-                        role="button"
                       )
-                        | {{query}}
+                        .flex-grow-1(@click="chooseSelectedQuery(query)" role="button")
+                          | {{query}}
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openRenameDialog('query', query)"
+                          title="Rename query"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-edit
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openDeleteConfirm('query', query)"
+                          title="Delete query"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-trash
 
                 //// Queries tab - central column
                 .d-flex.flex-column.scrollable-column.flex-grow-1
@@ -346,14 +369,25 @@
                     ) + new
 
                     ul.list-group
-                      li.list-group-item(
+                      li.list-group-item.d-flex.justify-content-between.align-items-center(
                         v-for="promptName in promptRefs"
                         :key="promptName"
-                        @click="chooseSelectedPrompt(promptName)"
                         :class="{ 'list-group-item-info': selectedPromptRef == promptName }"
-                        role="button"
                       )
-                        | {{promptName}}
+                        .flex-grow-1(@click="chooseSelectedPrompt(promptName)" role="button")
+                          | {{promptName}}
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openRenameDialog('prompt', promptName)"
+                          title="Rename prompt"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-edit
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openDeleteConfirm('prompt', promptName)"
+                          title="Delete prompt"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-trash
 
                 //// Prompts tab - right column
                 .d-flex.flex-column.scrollable-column.flex-grow-1
@@ -439,6 +473,41 @@
                   @click="createPrompt"
                   :disabled="!newPromptRef"
                 ) Create
+
+        // Delete Confirmation Modal
+        .modal.fade(id="delete-confirm-modal" tabindex="-1")
+          .modal-dialog
+            .modal-content
+              .modal-header
+                h5.modal-title Confirm Delete
+                button.btn-close(data-bs-dismiss="modal" aria-label="Close")
+              .modal-body
+                p Are you sure you want to delete {{ deleteItemType }} "{{ deleteItemName }}"?
+                p.text-muted This action cannot be undone.
+              .modal-footer
+                button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
+                button.btn.btn-danger(@click="confirmDelete") Delete
+
+        // Rename Modal
+        .modal.fade(id="rename-modal" tabindex="-1")
+          .modal-dialog
+            .modal-content
+              .modal-header
+                h5.modal-title Rename {{ renameItemType }}
+                button.btn-close(data-bs-dismiss="modal" aria-label="Close")
+              .modal-body
+                .form-group.mb-3
+                  label.form-label New Name
+                  input.form-control(
+                    type="text"
+                    v-model="renameNewName"
+                    placeholder="new-name"
+                    @keyup.enter="confirmRename"
+                    autofocus
+                  )
+              .modal-footer
+                button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
+                button.btn.btn-primary(@click="confirmRename" :disabled="!renameNewName") Rename
     `);
 
     function deepCamelCaseKeys(value) {
@@ -529,6 +598,13 @@
       const isSavingQuery = ref(false);
 
       const notifications = ref([]);
+      
+      const deleteItemType = ref("");
+      const deleteItemName = ref("");
+      
+      const renameItemType = ref("");
+      const renameOldName = ref("");
+      const renameNewName = ref("");
 
       // Derived values
       const filteredModels = computed(() => {
@@ -821,6 +897,122 @@
         }
       }
 
+      function openDeleteConfirm(type, name) {
+        deleteItemType.value = type;
+        deleteItemName.value = name;
+        const modal = new bootstrap.Modal(
+          document.getElementById("delete-confirm-modal")
+        );
+        modal.show();
+      }
+
+      async function confirmDelete() {
+        const type = deleteItemType.value;
+        const name = deleteItemName.value;
+        
+        if (!type || !name) return;
+
+        try {
+          await ky.post(`/delete`, {
+            json: {
+              table: type,
+              basename: name,
+            },
+          });
+
+          // Remove from local lists
+          if (type === "run") {
+            const idx = runNames.value.indexOf(name);
+            if (idx > -1) runNames.value.splice(idx, 1);
+            // If deleted item was selected, choose another
+            if (selectedRunName.value === name) {
+              await chooseRun(runNames.value[0] || "");
+            }
+          } else if (type === "query") {
+            const idx = queryRefs.value.indexOf(name);
+            if (idx > -1) queryRefs.value.splice(idx, 1);
+            if (selectedQueryRef.value === name) {
+              selectedQueryRef.value = "";
+              selectedQuery.value = { input: "", output: "" };
+            }
+          } else if (type === "prompt") {
+            const idx = promptRefs.value.indexOf(name);
+            if (idx > -1) promptRefs.value.splice(idx, 1);
+            if (selectedPromptRef.value === name) {
+              selectedPromptRef.value = "";
+              selectedPrompt.value = "";
+            }
+          }
+
+          showNotification(`${type} "${name}" deleted successfully!`);
+          closeBootstrapModal("delete-confirm-modal");
+        } catch (error) {
+          console.error(`Failed to delete ${type}:`, error);
+          showNotification(`Failed to delete ${type}`, "danger");
+        }
+      }
+
+      function openRenameDialog(type, name) {
+        renameItemType.value = type;
+        renameOldName.value = name;
+        renameNewName.value = name;
+        const modal = new bootstrap.Modal(
+          document.getElementById("rename-modal")
+        );
+        modal.show();
+      }
+
+      async function confirmRename() {
+        const type = renameItemType.value;
+        const oldName = renameOldName.value;
+        const newName = renameNewName.value;
+        
+        if (!type || !oldName || !newName || oldName === newName) {
+          showNotification("Please provide a different name", "warning");
+          return;
+        }
+
+        try {
+          await ky.post(`/rename`, {
+            json: {
+              table: type,
+              basename: oldName,
+              newBasename: newName,
+            },
+          });
+
+          // Update local lists
+          if (type === "run") {
+            const idx = runNames.value.indexOf(oldName);
+            if (idx > -1) runNames.value[idx] = newName;
+            if (selectedRunName.value === oldName) {
+              selectedRunName.value = newName;
+              await loadRunConfig(newName);
+            }
+          } else if (type === "query") {
+            const idx = queryRefs.value.indexOf(oldName);
+            if (idx > -1) queryRefs.value[idx] = newName;
+            if (selectedQueryRef.value === oldName) {
+              selectedQueryRef.value = newName;
+              await chooseSelectedQuery(newName);
+            }
+          } else if (type === "prompt") {
+            const idx = promptRefs.value.indexOf(oldName);
+            if (idx > -1) promptRefs.value[idx] = newName;
+            if (selectedPromptRef.value === oldName) {
+              selectedPromptRef.value = newName;
+              await chooseSelectedPrompt(newName);
+            }
+          }
+
+          showNotification(`${type} renamed to "${newName}" successfully!`);
+          closeBootstrapModal("rename-modal");
+        } catch (error) {
+          console.error(`Failed to rename ${type}:`, error);
+          showNotification(`Failed to rename ${type}`, "danger");
+        }
+      }
+
       // Expose methods and state to template
       return {
         // State
@@ -843,6 +1035,11 @@
         selectedQuery,
         notifications,
         filteredModels,
+        deleteItemType,
+        deleteItemName,
+        renameItemType,
+        renameOldName,
+        renameNewName,
 
         // Methods
         chooseRun,
@@ -857,6 +1054,10 @@
         saveQuery,
         createQuery,
         closeBootstrapModal,
+        openDeleteConfirm,
+        confirmDelete,
+        openRenameDialog,
+        confirmRename,
       };
     }
 

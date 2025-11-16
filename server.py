@@ -109,7 +109,7 @@ def get_defaults():
                 "service": default_service,
                 "model": default_model,
                 "repeat": 1,
-                "temperature": 0.0,
+                "temperature": 0.2,
                 "evaluators": ["CoherenceEvaluator"],
             },
             "services": list(chat_models.keys()),
@@ -222,6 +222,91 @@ async def evaluate(request: EvaluateRequest):
         logger.error(f"Error in evaluation: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Error during evaluation: {str(e)}"
+        )
+
+
+class DeleteRequest(BaseModel):
+    table: TableType
+    basename: str
+
+
+@app.post("/delete", response_model=MessageResponse)
+async def delete_object(request: DeleteRequest):
+    try:
+        logger.info(f"Request to delete {request.table}/{request.basename}")
+        table_dir = dir_from_table[request.table]
+        ext = ext_from_table[request.table]
+        file_path = (table_dir / request.basename).with_suffix(ext)
+        
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        
+        file_path.remove()
+        logger.info(f"Successfully deleted '{file_path}'")
+        return MessageResponse(
+            message=f"Successfully deleted {request.table}/{request.basename}"
+        )
+
+    except KeyError as ke:
+        error_msg = f"Invalid table or basename: {ke}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+    except FileNotFoundError as fnf:
+        error_msg = f"File not found: {fnf}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+    except Exception as ex:
+        error_msg = f"Error deleting object: {ex}"
+        logger.error(error_msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+
+class RenameRequest(BaseModel):
+    table: TableType
+    basename: str
+    newBasename: str
+
+
+@app.post("/rename", response_model=MessageResponse)
+async def rename_object(request: RenameRequest):
+    try:
+        logger.info(f"Request to rename {request.table}/{request.basename} to {request.newBasename}")
+        table_dir = dir_from_table[request.table]
+        ext = ext_from_table[request.table]
+        old_path = (table_dir / request.basename).with_suffix(ext)
+        new_path = (table_dir / request.newBasename).with_suffix(ext)
+        
+        if not old_path.exists():
+            raise FileNotFoundError(f"File not found: {old_path}")
+        
+        if new_path.exists():
+            raise FileExistsError(f"File already exists: {new_path}")
+        
+        old_path.rename(new_path)
+        logger.info(f"Successfully renamed '{old_path}' to '{new_path}'")
+        return MessageResponse(
+            message=f"Successfully renamed {request.table}/{request.basename} to {request.newBasename}"
+        )
+
+    except KeyError as ke:
+        error_msg = f"Invalid table or basename: {ke}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+    except FileNotFoundError as fnf:
+        error_msg = f"File not found: {fnf}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+    except FileExistsError as fee:
+        error_msg = f"File already exists: {fee}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error_msg)
+    except Exception as ex:
+        error_msg = f"Error renaming object: {ex}"
+        logger.error(error_msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
         )
 
 
