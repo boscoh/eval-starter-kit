@@ -1,7 +1,7 @@
 """Default models for each service."""
 
 chat_models = {
-    "bedrock": "apac.amazon.nova-pro-v1:0",
+    "bedrock": "amazon.nova-pro-v1:0",
     "openai": "gpt-4o",
     "ollama": "llama3.2",
 }

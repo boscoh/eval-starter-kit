@@ -1,7 +1,12 @@
 import json
 import logging
+import os
+import threading
+import time
+import webbrowser
 from typing import Any, Dict
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -314,7 +319,71 @@ async def rename_object(request: RenameRequest):
         )
 
 
+def is_in_container() -> bool:
+    """Check if running inside a container (Docker, Podman, Kubernetes, ECS, etc.)."""
+    if os.path.exists("/.dockerenv"):
+        return True
+    if os.path.exists("/run/.containerenv"):
+        return True
+    container_indicators = [
+        "docker",
+        "containerd",
+        "kubepods",
+        "crio",
+        "libpod",
+        "ecs",
+    ]
+    for cgroup_file in ["/proc/1/cgroup", "/proc/self/cgroup"]:
+        if os.path.exists(cgroup_file):
+            try:
+                with open(cgroup_file, "r") as f:
+                    content = f.read()
+                    if any(indicator in content for indicator in container_indicators):
+                        return True
+            except (OSError, IOError):
+                pass
+    return False
+
+
+def poll_and_open_browser(port: int, timeout_seconds: int = 300, interval_seconds: int = 1) -> None:
+    start_time = time.time()
+    url = f"http://localhost:{port}"
+    
+    while time.time() - start_time < timeout_seconds:
+        try:
+            response = httpx.get(url, timeout=2)
+            if response.status_code == 200:
+                logger.info(f"Server is live at {url}, opening browser...")
+                webbrowser.open(url)
+                return
+        except (httpx.RequestError, httpx.TimeoutException):
+            pass
+        
+        time.sleep(interval_seconds)
+    
+    logger.warning(f"Server did not respond within {timeout_seconds} seconds")
+
+
 if __name__ == "__main__":
+    import argparse
+
     import uvicorn
 
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, log_config=None)
+    parser = argparse.ArgumentParser(description="Run FastAPI server")
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port to run the server on"
+    )
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
+    args = parser.parse_args()
+
+    if not is_in_container():
+        poller_thread = threading.Thread(
+            target=poll_and_open_browser,
+            args=(args.port,),
+            daemon=True
+        )
+        poller_thread.start()
+    else:
+        logger.info("Running in container, skipping browser auto-open")
+
+    uvicorn.run("server:app", host="0.0.0.0", port=args.port, reload=args.reload, log_config=None)
