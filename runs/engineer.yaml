@@ -3,7 +3,7 @@ file_path: runs/engineer.yaml
 query_ref: engineer
 prompt_ref: candidate-summary
 service: bedrock
-model: apac.amazon.nova-pro-v1:0
+model: amazon.nova-pro-v1:0
 repeat: 3
 temperature: 0.5
 evaluators:
