@@ -6,26 +6,26 @@ texts:
   \ Engineering. \n\n**Key Qualifications:**\n- Master of Business Administration:\
   \ Decision Sciences, San Francisco State University\n- Bachelor of Science: Mathematical\
   \ Engineering, Yildiz Technical University\n\n**Notable Achievements:**\n- Reduced\
-  \ operational errors by 80% as Operations Manager.\n- Contributed to winning SF\
-  \ Fashion Tech Pitch Competition as Consultant.\n- Enhanced team's data analysis\
-  \ capabilities through SQL programming training.\n\n**Relevant Skills:**\n- Tutoring\
-  \ & Teaching: Mathematics, algebra, geometry, ESL students, problem solving\n- Business\
-  \ & Management: Leadership, operations management, project management, inventory\n\
+  \ operational errors by 80% as Operations Manager.\n- Contributed to winning the\
+  \ SF Fashion Tech Pitch Competition as a Consultant.\n- Grew user base to approximately\
+  \ 1M active users during consultancy role.\n\n**Relevant Skills:**\n- Tutoring &\
+  \ Teaching: Mathematics, algebra, geometry, ESL students, problem solving\n- Business\
+  \ & Management: Leadership, operations management, data analysis, inventory management\n\
   - Technical Skills: C, C++, MS Office Suite, Google Docs, SQL"
 - "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
-  \ experience in people management and leadership within Silicon Valley. Holds a\
-  \ Master of Business Administration in Decision Sciences and a Bachelor of Science\
-  \ in Mathematical Engineering. \n\n**Key Qualifications:**\n- Extensive experience\
-  \ in tutoring K-12 and college students in Mathematics.\n- Proven track record in\
-  \ problem-solving, creative lesson planning, and grading.\n- Skilled in designing\
-  \ and delivering course presentations and providing SQL programming training.\n\n\
-  **Notable Achievements:**\n- Reduced operational errors by 80% as Operations Manager.\n\
-  - Contributed to winning the SF Fashion Tech Pitch Competition and growing user\
-  \ base to 1M active users as a Consultant.\n- Enhanced team's data analysis capabilities\
-  \ through classroom instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching:\
-  \ Mathematics, algebra, geometry, ESL students, technology integration.\n- Business\
-  \ & Management: Account management, data analysis, leadership, operations management.\n\
-  - Technical Skills: C, C++, MS Office Suite, Google Docs, SQL."
+  \ experience in people management, leadership, and operations within Silicon Valley.\
+  \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
+  \ State University and a Bachelor of Science in Mathematical Engineering from Yildiz\
+  \ Technical University. \n\n**Key Qualifications:**\n- Extensive experience in tutoring\
+  \ K-12 and college students in Mathematics.\n- Proven track record in problem-solving,\
+  \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
+  \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
+  - Reduced operational errors by 80% as Operations Manager.\n- Contributed to winning\
+  \ the SF Fashion Tech Pitch Competition.\n- Grew user base to approximately 1M active\
+  \ users as a Consultant.\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics,\
+  \ algebra, geometry, ESL students, technology integration.\n- Business & Management:\
+  \ Account management, data analysis, leadership, operations management.\n- Technical\
+  \ Skills: C, C++, MS Office Suite, Google Docs, SQL."
 - "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
   \ experience in people management, leadership, and operations within Silicon Valley.\
   \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
@@ -45,9 +45,9 @@ evaluations:
 - name: equivalence
   values:
   - 0.5
+  - 0.5
   - 0.7
-  - 0.7
-  average: 0.6333333333333333
+  average: 0.5666666666666667
   standard_deviation: 0.11547005383792512
 - name: coherence
   values:
@@ -58,18 +58,18 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 4.5989580154418945
-  - 1.583066701889038
-  - 2.110995054244995
-  average: 2.7643399238586426
-  standard_deviation: 1.610603844146272
+  - 4.287264108657837
+  - 2.249748945236206
+  - 2.559138774871826
+  average: 3.032050609588623
+  standard_deviation: 1.0979987308074057
 - name: token_count
   values:
-  - 1491
-  - 1520
+  - 1496
+  - 1524
   - 1536
-  average: 1515.6666666666667
-  standard_deviation: 22.81081614790083
+  average: 1518.6666666666667
+  standard_deviation: 20.526405757787536
 - name: cost
   values:
   - 0.0

@@ -167,13 +167,17 @@ class SpeakerMcpClient:
             role = msg.get("role", "unknown")
             logger.info(f"- {role}: {truncated_content}")
 
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, query: str, history: Optional[List[Dict[str, Any]]] = None) -> str:
         """Returns a response to a user query by getting a completion with tool calls.
 
         Supports multi-step tool chaining (e.g., find correct name -> get_speaker_by_name)
         by iteratively executing returned tool calls and re-querying the model
         with tool outputs until no more tool calls are requested or a safety
         limit is reached.
+        
+        Args:
+            query: The user's query string
+            history: Optional list of previous messages with 'role' and 'content' keys
         """
         await self.connect()
 
@@ -205,8 +209,15 @@ class SpeakerMcpClient:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": str(query)},
         ]
+        
+        if history:
+            for msg in history:
+                role = msg.get("role", "user")
+                if role in ("user", "assistant", "tool"):
+                    messages.append(msg)
+        
+        messages.append({"role": "user", "content": str(query)})
 
         self.log_messages(messages)
 
@@ -329,13 +340,16 @@ async def amain(service):
         logger.info("----------------------------------------------")
         print("Type your query to pick a speaker.")
         print("Type 'quit', 'exit', or 'q' to end the conversation.")
+        conversation_history: List[Dict[str, Any]] = []
         while True:
             user_input = input("\nYou: ").strip()
             if user_input.lower() in ["quit", "exit", "q", ""]:
                 print("Goodbye!")
                 return
-            response = await client.process_query(query=user_input)
+            response = await client.process_query(query=user_input, history=conversation_history)
             print(f"\nResponse: {response}")
+            conversation_history.append({"role": "user", "content": user_input})
+            conversation_history.append({"role": "assistant", "content": response})
 
 
 if __name__ == "__main__":

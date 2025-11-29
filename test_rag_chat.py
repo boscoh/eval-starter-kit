@@ -169,17 +169,20 @@ async def setup_async_exception_handler():
 
 
 async def amain(service):
-    await setup_async_exception_handler()
-    async with SpeakerRagClient(service) as client:
-        print("Type your questions about speakers.")
-        print("Type 'quit', 'exit', or 'q' to end the conversation.")
-        while True:
-            user_input = input("Query: ").strip()
-            if user_input.lower() in ["quit", "exit", "q", ""]:
-                print("Goodbye!")
-                return
-            response = await client.process_query(query=user_input)
-            print(f"\n# Best Match\n\n{response}")
+     await setup_async_exception_handler()
+     async with SpeakerRagClient(service) as client:
+         print("Type your questions about speakers.")
+         print("Type 'quit', 'exit', or 'q' to end the conversation.")
+         conversation_history = []
+         while True:
+             user_input = input("Query: ").strip()
+             if user_input.lower() in ["quit", "exit", "q", ""]:
+                 print("Goodbye!")
+                 return
+             conversation_history.append({"role": "user", "content": user_input})
+             response = await client.process_query(query=user_input)
+             print(f"\n# Best Match\n\n{response}")
+             conversation_history.append({"role": "assistant", "content": response})
 
 
 if __name__ == "__main__":
