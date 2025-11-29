@@ -1,5 +1,5 @@
 ---
-file_path: runs/consultant.yaml
+file_path: runs/consultant-ollama-llama3.2.yaml
 query_ref: consultant
 prompt_ref: candidate-summary
 service: ollama
@@ -10,3 +10,5 @@ evaluators:
 - word_count
 - coherence
 - equivalence
+
+

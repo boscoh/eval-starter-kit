@@ -1,0 +1,14 @@
+---
+file_path: runs/consultant-groq-llama-3.3-70b.yaml
+query_ref: consultant
+prompt_ref: candidate-summary
+service: groq
+model: llama-3.3-70b-versatile
+repeat: 2
+temperature: 0.7
+evaluators:
+- word_count
+- coherence
+- equivalence
+
+

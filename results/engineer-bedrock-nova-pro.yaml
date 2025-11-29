@@ -1,17 +1,5 @@
 ---
 texts:
-- "**San Francisco, California** Senior Engineering Manager with 8 years of experience\
-  \ in corporate management and 3 years in tutoring Mathematics. Holds a Master of\
-  \ Business Administration in Decision Sciences and a Bachelor of Science in Mathematical\
-  \ Engineering. \n\n**Key Qualifications:**\n- Master of Business Administration:\
-  \ Decision Sciences, San Francisco State University\n- Bachelor of Science: Mathematical\
-  \ Engineering, Yildiz Technical University\n\n**Notable Achievements:**\n- Reduced\
-  \ operational errors by 80% as Operations Manager.\n- Contributed to winning the\
-  \ SF Fashion Tech Pitch Competition as a Consultant.\n- Grew user base to approximately\
-  \ 1M active users during consultancy role.\n\n**Relevant Skills:**\n- Tutoring &\
-  \ Teaching: Mathematics, algebra, geometry, ESL students, problem solving\n- Business\
-  \ & Management: Leadership, operations management, data analysis, inventory management\n\
-  - Technical Skills: C, C++, MS Office Suite, Google Docs, SQL"
 - "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
   \ experience in people management, leadership, and operations within Silicon Valley.\
   \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
@@ -21,11 +9,12 @@ texts:
   \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
   \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
   - Reduced operational errors by 80% as Operations Manager.\n- Contributed to winning\
-  \ the SF Fashion Tech Pitch Competition.\n- Grew user base to approximately 1M active\
-  \ users as a Consultant.\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics,\
-  \ algebra, geometry, ESL students, technology integration.\n- Business & Management:\
-  \ Account management, data analysis, leadership, operations management.\n- Technical\
-  \ Skills: C, C++, MS Office Suite, Google Docs, SQL."
+  \ the SF Fashion Tech Pitch Competition and growing user base to 1M active users\
+  \ as a Consultant.\n- Enhanced team's data analysis capabilities through classroom\
+  \ instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics, algebra,\
+  \ geometry, ESL students, technology integration.\n- Business & Management: Account\
+  \ management, data analysis, leadership, operations management.\n- Technical Skills:\
+  \ C, C++, MS Office Suite, Google Docs, SQL."
 - "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
   \ experience in people management, leadership, and operations within Silicon Valley.\
   \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
@@ -41,14 +30,29 @@ texts:
   \ algebra, geometry, ESL students, technology integration.\n- Business & Management:\
   \ Account management, data analysis, leadership, operations management.\n- Technical\
   \ Skills: C, C++, MS Office Suite, Google Docs, SQL."
+- "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
+  \ experience in people management, leadership, and operations within Silicon Valley.\
+  \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
+  \ State University and a Bachelor of Science in Mathematical Engineering from Yildiz\
+  \ Technical University. \n\n**Key Qualifications:**\n- Extensive experience in tutoring\
+  \ K-12 and college students in Mathematics.\n- Proven track record in problem-solving,\
+  \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
+  \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
+  - Reduced operational errors by 80% through defined KPI reports and analytical tools.\n\
+  - Contributed to winning the SF Fashion Tech Pitch Competition and growing user\
+  \ base to approximately 1M active users.\n- Enhanced team's data analysis capabilities\
+  \ through classroom instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching:\
+  \ Mathematics, algebra, geometry, ESL students, technology integration.\n- Business\
+  \ & Management: Account management, data analysis, leadership, operations management.\n\
+  - Technical Skills: C, C++, MS Office Suite, Google Docs, SQL."
 evaluations:
 - name: equivalence
   values:
-  - 0.5
-  - 0.5
   - 0.7
-  average: 0.5666666666666667
-  standard_deviation: 0.11547005383792512
+  - 0.7
+  - 0.7
+  average: 0.7
+  standard_deviation: 0.0
 - name: coherence
   values:
   - 0.8
@@ -58,18 +62,18 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 4.287264108657837
-  - 2.249748945236206
-  - 2.559138774871826
-  average: 3.032050609588623
-  standard_deviation: 1.0979987308074057
+  - 4.653185844421387
+  - 3.202666997909546
+  - 2.5678141117095947
+  average: 3.4745556513468423
+  standard_deviation: 1.0689417176812332
 - name: token_count
   values:
-  - 1496
-  - 1524
+  - 1534
   - 1536
-  average: 1518.6666666666667
-  standard_deviation: 20.526405757787536
+  - 1537
+  average: 1535.6666666666667
+  standard_deviation: 1.5275252316519468
 - name: cost
   values:
   - 0.0

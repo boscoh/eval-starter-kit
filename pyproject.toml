@@ -18,5 +18,6 @@ dependencies = [
     "aioboto3>=15.2.0",
     "mcp>=1.18.0",
     "numpy>=2.3.4",
+    "groq>=0.14.0",
 ]
 

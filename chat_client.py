@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import aioboto3
 import boto3
+import groq
 import ollama
 import openai
 from botocore.exceptions import ClientError, ProfileNotFound
@@ -24,7 +25,7 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     Gets a chat client that satisfies IChatClient interface.
 
     Args:
-        client_type: "openai", "ollama", or "bedrock"
+        client_type: "openai", "ollama", "bedrock", or "groq"
         **kwargs: Additional keyword arguments specific to the chat client type:
             - model: str
     """
@@ -35,6 +36,8 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
         return OllamaChatClient(**kwargs)
     if client_type == "bedrock":
         return BedrockChatClient(**kwargs)
+    if client_type == "groq":
+        return GroqChatClient(**kwargs)
     raise ValueError(f"Unknown chat client type: {client_type}")
 
 
@@ -572,6 +575,50 @@ class OpenAIChatClient(IChatClient):
         if model_key not in pricing:
             logger.warning(
                 f"Unknown OpenAI model '{self.model}', using default cost of 0.0 AUD"
+            )
+        return pricing.get(model_key, 0.0)
+
+
+class GroqChatClient(OpenAIChatClient):
+    """Groq chat client that inherits from OpenAI client (Groq uses OpenAI-compatible API)."""
+
+    async def connect(self):
+        if self.client and not self._closed:
+            return
+
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "GROQ_API_KEY environment variable is not set. "
+                "Please set GROQ_API_KEY in your .env file or environment variables."
+            )
+
+        logger.info(f"Initializing 'groq:{self.model}'")
+        self.client = groq.AsyncGroq(api_key=api_key)
+        self._closed = False
+
+    async def embed(self, input: str) -> List[float]:
+        """Groq does not currently support embeddings."""
+        raise NotImplementedError(
+            "Groq does not currently support text embeddings. "
+            "Please use OpenAI or another provider for embedding generation."
+        )
+
+    def get_token_cost(self) -> float:
+        """Returns Groq model pricing per 1K tokens in AUD."""
+        pricing = {
+            "llama-3.3-70b-versatile": 0.00082,
+            "llama-3.1-70b-versatile": 0.00082,
+            "llama-3.1-8b-instant": 0.00008,
+            "llama3-70b-8192": 0.00082,
+            "llama3-8b-8192": 0.00008,
+            "mixtral-8x7b-32768": 0.00036,
+            "gemma2-9b-it": 0.00030,
+        }
+        model_key = self.model.lower()
+        if model_key not in pricing:
+            logger.warning(
+                f"Unknown Groq model '{self.model}', using default cost of 0.0 AUD"
             )
         return pricing.get(model_key, 0.0)
 

@@ -155,9 +155,11 @@ async def fetch_object(request: FetchObjectRequest):
         logger.info(f"Request to fetch {request.table}/{request.basename}")
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
-        file_path = (table_dir / request.basename).with_suffix(ext)
+        f = Path(request.basename)
+        file_path = (table_dir / f) + ext
+        logger.info(f"Reading content from '{f}' -> '{f + ext}'")
         content = read_content(file_path)
-        logger.info(f"Successfully loaded '{file_path}'")
+        logger.info(f"Successfully loaded '{f + ext}'")
         return ContentResponse(content=content)
 
     except KeyError as ke:
@@ -193,7 +195,7 @@ async def save_object(request: SaveObjectRequest):
         table = request.table
         table_dir = dir_from_table[table]
         ext = ext_from_table[table]
-        file_path = (table_dir / request.basename).with_suffix(ext)
+        file_path = table_dir / f"{request.basename}{ext}"
         save_content(request.content, file_path)
         logger.info(f"Successfully saved to '{file_path}'")
         return MessageResponse(
@@ -218,7 +220,7 @@ async def evaluate(request: EvaluateRequest):
     try:
         basename = request.basename
         config = request.content
-        config_path = (dir_from_table["run"] / basename).with_suffix(".yaml")
+        config_path = dir_from_table["run"] / f"{basename}.yaml"
         logger.info(f"Running evaluation of runs/{basename}")
         run_config = RunConfig(**config)
         run_config.save(config_path)
@@ -243,7 +245,7 @@ async def delete_object(request: DeleteRequest):
         logger.info(f"Request to delete {request.table}/{request.basename}")
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
-        file_path = (table_dir / request.basename).with_suffix(ext)
+        file_path = table_dir / f"{request.basename}{ext}"
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -284,8 +286,8 @@ async def rename_object(request: RenameRequest):
         )
         table_dir = dir_from_table[request.table]
         ext = ext_from_table[request.table]
-        old_path = (table_dir / request.basename).with_suffix(ext)
-        new_path = (table_dir / request.newBasename).with_suffix(ext)
+        old_path = table_dir / f"{request.basename}{ext}"
+        new_path = table_dir / f"{request.newBasename}{ext}"
 
         if not old_path.exists():
             raise FileNotFoundError(f"File not found: {old_path}")
@@ -345,10 +347,12 @@ def is_in_container() -> bool:
     return False
 
 
-def poll_and_open_browser(port: int, timeout_seconds: int = 300, interval_seconds: int = 1) -> None:
+def poll_and_open_browser(
+    port: int, timeout_seconds: int = 300, interval_seconds: int = 1
+) -> None:
     start_time = time.time()
     url = f"http://localhost:{port}"
-    
+
     while time.time() - start_time < timeout_seconds:
         try:
             response = httpx.get(url, timeout=2)
@@ -358,9 +362,9 @@ def poll_and_open_browser(port: int, timeout_seconds: int = 300, interval_second
                 return
         except (httpx.RequestError, httpx.TimeoutException):
             pass
-        
+
         time.sleep(interval_seconds)
-    
+
     logger.warning(f"Server did not respond within {timeout_seconds} seconds")
 
 
@@ -378,12 +382,16 @@ if __name__ == "__main__":
 
     if not is_in_container():
         poller_thread = threading.Thread(
-            target=poll_and_open_browser,
-            args=(args.port,),
-            daemon=True
+            target=poll_and_open_browser, args=(args.port,), daemon=True
         )
         poller_thread.start()
     else:
         logger.info("Running in container, skipping browser auto-open")
 
-    uvicorn.run("server:app", host="0.0.0.0", port=args.port, reload=args.reload, log_config=None)
+    uvicorn.run(
+        "server:app",
+        host="0.0.0.0",
+        port=args.port,
+        reload=args.reload,
+        log_config=None,
+    )

@@ -1,0 +1,69 @@
+---
+texts:
+- >-
+  San Francisco, CA Senior Engineering Manager with 8 years of experience in people
+  management and leadership within Silicon Valley's corporate environment. Holds an
+  MBA in Decision Sciences from San Francisco State University and a BSc in Mathematical
+  Engineering from Yildiz Technical University. Extensive tutoring experience with
+  3 years in Mathematics for K-12 and college students, focusing on problem-solving
+  and creative lesson planning. Proven track record in operational excellence, data
+  analysis, and process improvement, with notable achievements in reducing operational
+  errors by 80% and contributing to a significant user base growth. Skilled in SQL,
+  C, C++, and proficient in MS Office Suite and Google Docs.
+- >-
+  San Francisco, CA-based Senior Engineering Manager with over 8 years of experience
+  in people management and leadership, complemented by a robust background in mathematics
+  tutoring and corporate operations. Holds an MBA in Decision Sciences from San Francisco
+  State University and a BSc in Mathematical Engineering from Yildiz Technical University.
+  Proven track record in problem-solving, creative lesson planning, and training,
+  with significant experience in SQL programming and data analysis. Demonstrated ability
+  to enhance team capabilities and drive operational excellence through innovative
+  strategies and effective communication. Skilled in tutoring K-12 and college students,
+  with a focus on algebra, geometry, and statistics. Proficient in C, C++, MS Office
+  Suite, Google Docs, and SQL.
+- >-
+  San Francisco, CA Senior Engineering Manager with over 8 years of experience in
+  people management, leadership, and innovation within Silicon Valley's corporate
+  environment. Holds a Master of Business Administration in Decision Sciences from
+  San Francisco State University and a Bachelor of Science in Mathematical Engineering
+  from Yildiz Technical University. Proven track record in operational excellence,
+  data analysis, and process improvement. Extensive tutoring experience in Mathematics,
+  enhancing students' problem-solving skills and academic performance. Skilled in
+  SQL, statistical analysis, and project management, with a strong background in developing
+  and implementing analytical tools and optimisation techniques.
+evaluations:
+- name: equivalence
+  values:
+  - 0.5
+  - 0.7
+  - 0.7
+  average: 0.6333333333333333
+  standard_deviation: 0.11547005383792512
+- name: coherence
+  values:
+  - 0.8
+  - 0.9
+  - 0.8
+  average: 0.8333333333333334
+  standard_deviation: 0.05773502691896256
+- name: elapsed_seconds
+  values:
+  - 3.459959030151367
+  - 2.8653459548950195
+  - 2.004477024078369
+  average: 2.7765940030415854
+  standard_deviation: 0.7317886643143056
+- name: token_count
+  values:
+  - 1392
+  - 1403
+  - 1377
+  average: 1390.6666666666667
+  standard_deviation: 13.051181300301261
+- name: cost
+  values:
+  - 0.00522
+  - 0.0052612499999999994
+  - 0.005163749999999999
+  average: 0.005214999999999999
+  standard_deviation: 4.8941929876129944e-05

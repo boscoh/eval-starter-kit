@@ -1,0 +1,254 @@
+---
+texts:
+- >-
+  Here is a rewritten version of the candidate's information in a concise, recruiter-friendly
+  format:
+
+
+  **San Francisco, CA**
+
+
+  **Senior Engineering Manager & Math Tutor**
+
+
+  3+ years of experience tutoring K-12 and college students in Mathematics, with 8+
+  years of professional experience in people management, leadership, documentation,
+  multi-tasking, innovation, and creativity.
+
+
+  **Key Strengths:**
+
+
+  * Strong problem-solving and analytical skills
+
+  * Proven track record of improving student outcomes through creative lesson planning
+  and grading
+
+  * Effective communication and presentation skills, with expertise in MS PowerPoint
+  and Google Docs
+
+
+  **Experience:**
+
+
+  * **Math Tutor (09/2015 - Current)**: Tutored students in Algebra, Geometry, and
+  Statistics, with a focus on English language learners.
+
+  * **Teaching Assistant (09/2005 - 05/2007)**: Assisted in operations analysis and
+  mathematics-related work, grading exam papers, and evaluating class assignments.
+
+  * **Operations Manager (10/2011 - 01/2013)**: Supervised team of logistics analysts
+  and warehouse staff globally, defining KPI reports and analytical tools to reduce
+  operational errors by 80%.
+
+  * **Consultant (01/2013 - 02/2014)**: Supported marketing, content, and quality
+  testing areas for a startup, contributing to the growth of user base to approximately
+  1M active users.
+
+
+  **Education:**
+
+
+  * **Master of Business Administration: Decision Sciences, San Francisco State University
+  (2007)**
+
+  * **Bachelor of Science: Mathematical Engineering, Yildiz Technical University (2004)**
+
+
+  **Skills:**
+
+
+  * Mathematics, algebra, geometry, English, content management, documentation
+
+  * Business and management: account management, customer care and satisfaction, data
+  analysis, forecasting, inventory, quantitative analysis, leadership, operations
+  management, procurement, project management
+
+  * Technical skills: C, C++, MS Office Suite, Google Docs, SQL
+- >-
+  Here is a rewritten version of the candidate summary in a concise and recruiter-friendly
+  format:
+
+
+  **SENIOR ENGINEERING MANAGER 3**
+
+
+  Results-driven leader with 8 years of experience in people management, leadership,
+  and innovation. Proven track record of driving operational excellence and delivering
+  high-quality results.
+
+
+  **Key Strengths:**
+
+
+  * Strategic problem solver with expertise in data analysis, forecasting, and optimization
+
+  * Effective communicator and presenter with experience in creating engaging course
+  materials and presentations
+
+  * Strong leader with a proven ability to motivate and train teams
+
+
+  **Relevant Experience:**
+
+
+  * **Operational Excellence Lead**, Google Express (2004-2005): Analyzed data using
+  statistical analysis tools to drive process improvements
+
+  * **Consultant** (2013-2014): Supported 77Looks application from pre-launch to production,
+  contributing to user growth and winning a pitch competition
+
+  * **Operations Manager** (2011-2013): Supervised logistics teams globally, reducing
+  operational errors by 80% through data analysis and process improvements
+
+
+  **Education:**
+
+
+  * Master of Business Administration: Decision Sciences, San Francisco State University
+  (2007)
+
+  * Bachelor of Science: Mathematical Engineering, Yildiz Technical University (2004)
+
+
+  **Teaching Experience:**
+
+
+  * Volunteer Math Tutor (2015-Present): Tutored students in Algebra, Geometry, and
+  Statistics, with a focus on English language learners
+
+  * Teaching Assistant (2005-2007): Edited thesis papers, graded exam papers, and
+  assisted in operations analysis
+
+
+  **Skills:**
+
+
+  * Data Analysis and Forecasting
+
+  * Leadership and Team Management
+
+  * Communication and Presentation
+
+  * Problem Solving and Optimization
+
+  * Mathematics and Statistics
+- >-
+  Here is a rewritten version of the candidate's summary:
+
+
+  **Senior Engineering Manager & Math Tutor**
+
+
+  Based in [City, State], I bring 3 years of experience tutoring K-12 and college
+  students in Mathematics, complemented by 8 years of professional expertise in people
+  management, leadership, innovation, and creativity.
+
+
+  **Key Strengths:**
+
+
+  * **Problem-Solving**: Assisted students with class assignments, helping them develop
+  quantitative problem-solving skills.
+
+  * **Creative Lesson Planning**: Designed engaging flashcard games to enhance learning
+  for college-level mathematics courses.
+
+  * **Grading & Presentation**: Evaluated exam papers and created informative presentations
+  using Microsoft PowerPoint.
+
+
+  **Education:**
+
+
+  * Master of Business Administration (Decision Sciences), San Francisco State University,
+  City, State (2007)
+
+  * Bachelor of Science in Mathematical Engineering, Yildiz Technical University,
+  City, Turkey (2004)
+
+
+  **Teaching Experience:**
+
+
+  * Volunteer Math Tutor (09/2015 - Current) at [Company Name], City, State
+
+  * Volunteer Math Tutor (04/2015 - 05/2015) at [Company Name], City, State
+
+  * Teaching Assistant (09/2005 - 05/2007) at [Company Name], City, State
+
+
+  **Corporate Experience:**
+
+
+  * Operational Excellence Lead, Google Express (11/2004 - 04/2005)
+
+  * Consultant (01/2013 - 02/2014)
+
+  * Operations Manager (10/2011 - 01/2013)
+
+  * Senior Analyst (10/2010 - 10/2011)
+
+  * Account Manager (07/2010 - 10/2010)
+
+
+  **Skills:**
+
+
+  * Tutoring & Teaching: Mathematics, algebra, geometry, English
+
+  * Business & Management: Account management, customer care and satisfaction, data
+  analysis, forecasting, inventory, quantitative analysis, leadership, operations
+  management
+
+  * Technical Skills: C, C++, MS Office Suite, Google Docs, SQL
+
+
+  I made the following changes to improve clarity and concision:
+
+
+  * Removed unnecessary words and phrases
+
+  * Reorganized sections for better flow
+
+  * Emphasized key strengths and qualifications
+
+  * Standardized formatting throughout
+
+  * Removed redundant or unnecessary information
+evaluations:
+- name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 30.524250030517578
+  - 27.059240102767944
+  - 34.25161409378052
+  average: 30.611701409022015
+  standard_deviation: 3.5969843917301443
+- name: token_count
+  values:
+  - 1121
+  - 1099
+  - 1142
+  average: 1120.6666666666667
+  standard_deviation: 21.501937897160186
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

@@ -4,6 +4,7 @@ chat_models = {
     "bedrock": "amazon.nova-pro-v1:0",
     "openai": "gpt-4o",
     "ollama": "llama3.2",
+    "groq": "llama-3.3-70b-versatile",
 }
 
 embed_models = {

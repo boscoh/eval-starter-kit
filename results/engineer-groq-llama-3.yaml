@@ -1,0 +1,64 @@
+---
+texts:
+- >-
+  San Francisco, California, Senior Engineering Manager with 8 years of professional
+  experience in leadership, people management, and operations. Holds an MBA in Decision
+  Sciences and a Bachelor of Science in Mathematical Engineering. Proven track record
+  of utilising problem-solving skills to assist students in mathematics and providing
+  creative lesson planning to motivate students. Experienced in data analysis, business
+  forecasting, and project management, with skills in SQL programming, Microsoft PowerPoint,
+  and Google Docs.
+- >-
+  San Francisco, California, Senior Engineering Manager with 8 years of professional
+  experience in leadership, people management, and operations. Holds a Master of Business
+  Administration in Decision Sciences and a Bachelor of Science in Mathematical Engineering.
+  Proven track record of utilising problem-solving skills to assist students in understanding
+  mathematical concepts and achieve higher grades. Experienced in creative lesson
+  planning, grading, and presentation design, with a strong background in data analysis,
+  business forecasting, and supply chain management. Skilled in SQL programming, Microsoft
+  PowerPoint, and Google Docs, with excellent communication and leadership abilities.
+- >-
+  San Francisco, California Senior Engineering Manager with 8 years of professional
+  experience in leadership, people management, and operations. Holds an MBA in Decision
+  Sciences and a Bachelor of Science in Mathematical Engineering. Proven track record
+  of utilising data analysis tools, optimisation techniques, and creativity to drive
+  process improvements and team performance. Experienced in tutoring mathematics to
+  students of all ages, with a strong ability to adapt teaching methods to individual
+  needs. Skilled in SQL programming, Microsoft Office Suite, and Google Docs, with
+  excellent presentation and problem-solving skills.
+evaluations:
+- name: equivalence
+  values:
+  - 0.7
+  - 0.8
+  - 0.8
+  average: 0.7666666666666667
+  standard_deviation: 0.05773502691896263
+- name: coherence
+  values:
+  - 0.8
+  - 0.9
+  - 0.9
+  average: 0.8666666666666667
+  standard_deviation: 0.05773502691896256
+- name: elapsed_seconds
+  values:
+  - 0.47263264656066895
+  - 0.47098278999328613
+  - 0.7067348957061768
+  average: 0.550116777420044
+  standard_deviation: 0.13563777769592825
+- name: token_count
+  values:
+  - 1380
+  - 1404
+  - 1399
+  average: 1394.3333333333333
+  standard_deviation: 12.662279942148386
+- name: cost
+  values:
+  - 0.0011316
+  - 0.0011512800000000002
+  - 0.0011471799999999998
+  average: 0.0011433533333333333
+  standard_deviation: 1.0383069552561732e-05
