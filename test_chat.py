@@ -4,14 +4,18 @@ Test interactive chat loop with LLM providers.
 """
 
 import asyncio
+import json
 import os
 
 from dotenv import load_dotenv
 
 from chat_client import get_chat_client
-from config import chat_models
 
 load_dotenv()
+
+with open("config.json") as f:
+    config = json.load(f)
+    chat_models = config["chat_models"]
 
 
 async def setup_async_exception_handler():

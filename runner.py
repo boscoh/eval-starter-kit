@@ -1,13 +1,13 @@
 import asyncio
 import logging
-import sys
 from statistics import mean, stdev
 
 from path import Path
 
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
-from schemas import RESULTS_DIR, RunConfig, RunResult
+import schemas
+from schemas import RunConfig, RunResult, set_evals_dir
 from yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class Runner:
         )
         self._cost_per_token = self._chat_client.get_token_cost()
         self._evaluation_runner = EvaluationRunner(self._chat_client, self._config)
-        RESULTS_DIR.makedirs_p()
+        schemas.RESULTS_DIR.makedirs_p()
 
     async def run(self):
         try:
@@ -84,7 +84,7 @@ class Runner:
 
             eval_results = {"texts": response_texts, "evaluations": evaluations}
             results_path = (
-                RESULTS_DIR / Path(self._config.file_path).name
+                schemas.RESULTS_DIR / Path(self._config.file_path).name
             ).with_suffix(".yaml")
             save_yaml(eval_results, results_path)
 
@@ -100,14 +100,31 @@ async def run_all(file_paths):
 
 
 if __name__ == "__main__":
+    import argparse
+
     from setup_logger import setup_logging
 
     setup_logging()
-    if len(sys.argv) == 1:
-        logger.info("Usage: python runner.py <config_file_path>")
-        logger.info("No file path provided, run all in `./runs/*.yaml`")
-        file_paths = Path("runs").glob("*.yaml")
+    
+    parser = argparse.ArgumentParser(description="Run LLM evaluations")
+    parser.add_argument(
+        "config_file",
+        nargs="?",
+        help="Path to config file (if not provided, runs all configs in evals/runs/)",
+    )
+    parser.add_argument(
+        "--evals-dir",
+        default="evals-consultant",
+        help="Base directory for evals (default: evals-consultant)",
+    )
+    args = parser.parse_args()
+    
+    set_evals_dir(args.evals_dir)
+    
+    if args.config_file:
+        file_paths = [Path(args.config_file)]
     else:
-        file_paths = [Path(sys.argv[1])]
+        logger.info(f"No file path provided, run all in `./{schemas.RUNS_DIR}/*.yaml`")
+        file_paths = schemas.RUNS_DIR.glob("*.yaml")
 
     asyncio.run(run_all(file_paths))

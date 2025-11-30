@@ -9,17 +9,14 @@ from yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 
-PROMPTS_DIR = Path("prompts")
-QUERIES_DIR = Path("queries")
-RESULTS_DIR = Path("results")
-RUNS_DIR = Path("runs")
+EVALS_DIR_NAME = "evals-consultant"
 
-dir_from_table = {
-    "result": RESULTS_DIR,
-    "run": RUNS_DIR,
-    "prompt": PROMPTS_DIR,
-    "query": QUERIES_DIR,
-}
+PROMPTS_DIR = None
+QUERIES_DIR = None
+RESULTS_DIR = None
+RUNS_DIR = None
+
+dir_from_table = {}
 
 ext_from_table = {
     "result": ".yaml",
@@ -30,8 +27,30 @@ ext_from_table = {
 
 TableType = Literal["result", "run", "prompt", "query"]
 
-for d in dir_from_table.values():
-    d.makedirs_p()
+
+def set_evals_dir(evals_dir: str = EVALS_DIR_NAME):
+    """Set the base evals directory and update all path references."""
+    global PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, dir_from_table
+    
+    PROMPTS_DIR = Path(evals_dir) / "prompts"
+    QUERIES_DIR = Path(evals_dir) / "queries"
+    RESULTS_DIR = Path(evals_dir) / "results"
+    RUNS_DIR = Path(evals_dir) / "runs"
+    
+    dir_from_table = {
+        "result": RESULTS_DIR,
+        "run": RUNS_DIR,
+        "prompt": PROMPTS_DIR,
+        "query": QUERIES_DIR,
+    }
+    
+    for d in dir_from_table.values():
+        d.makedirs_p()
+    
+    logger.info(f"Evals directory set to: {evals_dir}")
+
+
+set_evals_dir()
 
 
 class RunConfig(BaseModel):
@@ -41,8 +60,8 @@ class RunConfig(BaseModel):
     prompt: str = ""
     input: str = ""
     output: str = ""
-    service: str = "ollama"
-    model: str = "llama3.2"
+    service: str = ""
+    model: str = ""
     repeat: int = 1
     temperature: float = 0.0
     evaluators: List[str] = Field(default_factory=lambda: ["CoherenceEvaluator"])

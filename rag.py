@@ -13,9 +13,12 @@ from path import Path
 from pydash import py_
 
 from chat_client import get_chat_client
-from config import embed_models
 
 logger = logging.getLogger(__name__)
+
+with open("config.json") as f:
+    config = json.load(f)
+    embed_models = config["embed_models"]
 
 data_dir = Path(__file__).parent / "data"
 

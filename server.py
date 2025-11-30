@@ -13,7 +13,6 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
-from config import chat_models
 from evaluator import EvaluationRunner
 from runner import Runner
 from schemas import (
@@ -21,6 +20,7 @@ from schemas import (
     TableType,
     dir_from_table,
     ext_from_table,
+    set_evals_dir,
 )
 from setup_logger import setup_logging
 from yaml_utils import load_yaml, save_yaml
@@ -28,6 +28,10 @@ from yaml_utils import load_yaml, save_yaml
 logger = logging.getLogger(__name__)
 
 setup_logging()
+
+with open("config.json") as f:
+    config = json.load(f)
+    chat_models = config["chat_models"]
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -92,6 +96,32 @@ def serve_index():
     except Exception as ex:
         logger.error(f"Error serving index.html: {ex}")
         raise HTTPException(status_code=500, detail=f"Error serving index.html: {ex}")
+
+
+@app.get("/graph", response_class=HTMLResponse)
+def serve_graph():
+    """Serves the graph visualization page (graph.html)"""
+    graph_path = Path("./graph.html")
+    logger.info(f"Serving graph page from: {graph_path}")
+    try:
+        html_content = graph_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=html_content)
+    except Exception as ex:
+        logger.error(f"Error serving graph.html: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error serving graph.html: {ex}")
+
+
+@app.get("/graph-data.js")
+def serve_graph_data():
+    """Serves the graph data JavaScript file"""
+    graph_data_path = Path("./graph-data.js")
+    logger.info(f"Serving graph data from: {graph_data_path}")
+    try:
+        js_content = graph_data_path.read_text(encoding="utf-8")
+        return HTMLResponse(content=js_content, media_type="application/javascript")
+    except Exception as ex:
+        logger.error(f"Error serving graph-data.js: {ex}")
+        raise HTTPException(status_code=500, detail=f"Error serving graph-data.js: {ex}")
 
 
 @app.get("/defaults")
@@ -221,7 +251,7 @@ async def evaluate(request: EvaluateRequest):
         basename = request.basename
         config = request.content
         config_path = dir_from_table["run"] / f"{basename}.yaml"
-        logger.info(f"Running evaluation of runs/{basename}")
+        logger.info(f"Running evaluation of {basename}")
         run_config = RunConfig(**config)
         run_config.save(config_path)
         await Runner(config_path).run()
@@ -378,7 +408,14 @@ if __name__ == "__main__":
         "--port", type=int, default=8000, help="Port to run the server on"
     )
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
+    parser.add_argument(
+        "--evals-dir",
+        default="evals-consultant",
+        help="Base directory for evals (default: evals-consultant)",
+    )
     args = parser.parse_args()
+    
+    set_evals_dir(args.evals_dir)
 
     if not is_in_container():
         poller_thread = threading.Thread(

@@ -1,0 +1,158 @@
+---
+texts:
+- >-
+  Here's a concise candidate summary based on the provided information:
+
+
+  **Systems Analyst Consultant**
+
+
+  Highly experienced Systems Analyst with 24+ years of expertise in software development
+  lifecycle (SDLC), computer systems validation (CSV), and data communications. Proven
+  problem-solving skills and technical leadership. Skilled in multiple programming
+  languages, databases, and system architectures.
+
+
+  **Key Strengths:**
+
+
+  - Expertise in SDLC processes and GxP/SOX compliance
+
+  - Strong analytical and problem-solving skills
+
+  - Project leadership and organizational expertise
+
+  - Excellent communication and reporting capabilities
+
+
+  **Relevant Skills:**
+
+
+  - Programming Languages: C, C++, VBA, Assembly, HTML
+
+  - Databases: MS Access, Documentum DCM/D2, relational databases
+
+  - Systems: VAX/VMS, Windows, client/server architectures
+
+  - Methodologies: SDLC, CSV, GxP, SOX compliance
+
+
+  **Experience:**
+
+
+  - Consultant (1999-2015)
+    - Applied knowledge of SDLC processes and GxP/SOX compliance
+    - Conducted root cause analysis for recurring issues
+    - Delivered Level 2 production support via ITSM and email requests
+  - Systems Programmer (1985-1990)
+    - Designed, developed, and supported real-time client/server applications
+
+  **Education:**
+
+
+  - M.S. Computer Science (Data Communications), Villanova University (1996)
+
+  - B.A. Computer Science, LaSalle University (1985)
+
+
+  This summary aims to concisely highlight the candidate's key strengths, skills,
+  and experience while maintaining clarity and professionalism.
+- >-
+  Here's a professional candidate summary:
+
+
+  **Systems Analyst**
+
+
+  Results-driven consultant with 25+ years of experience supporting multiple departments
+  across the enterprise in various environments and technologies. Proven expertise
+  in Software Development Lifecycle (SDLC) and Computer Systems Validation (CSV),
+  with a strong analytical mindset and problem-solving skills.
+
+
+  **Key Strengths:**
+
+
+  * SDLC and CSV process implementation
+
+  * Project leadership, technical, and analytical expertise
+
+  * System analysis, general application support, software development, data communications,
+  and system administration
+
+  * Strong communication and organizational skills
+
+
+  **Relevant Experience:**
+
+
+  * Consultant (1999-2015): Led projects across McNeil Consumer Healthcare, applying
+  SDLC processes and GxP/SOX compliance to deliver expert consulting services.
+
+  * Consultant (1990-1999): Contributed to electronic batch record applications and
+  provided relational database expertise across multiple projects.
+
+  * Systems Programmer (1985-1990): Designed, developed, and supported real-time client/server
+  applications, with a focus on messaging systems and system administration.
+
+
+  **Education:**
+
+
+  * M.S. Computer Science (Data Communications), 1996, Villanova University
+
+  * B.A. Computer Science, 1985, LaSalle University
+
+
+  **Technical Skills:**
+
+
+  * Programming languages: C, C++, VBA, Assembly, HTML
+
+  * Databases: MS Access, Documentum DCM/D2, relational databases
+
+  * Systems: VAX/VMS, Windows, client/server architectures
+
+  * Methodologies: SDLC, CSV, GxP, SOX compliance
+
+
+  This summary highlights the candidate's extensive experience in systems analysis,
+  software development, and project leadership, while showcasing their technical expertise
+  and analytical mindset.
+evaluations:
+- name: word_count
+  values:
+  - 1.0
+  - 1.0
+  average: 1.0
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 26.549606800079346
+  - 25.054296016693115
+  average: 25.80195140838623
+  standard_deviation: 1.0573443949137722
+- name: token_count
+  values:
+  - 728
+  - 750
+  average: 739
+  standard_deviation: 15.556349186104045
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

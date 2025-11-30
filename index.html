@@ -115,6 +115,9 @@
             li.nav-item
               a.nav-link(data-bs-toggle="tab" href="#prompts-tab")
                 | Prompts
+            li.nav-item
+              a.nav-link(data-bs-toggle="tab" href="#graph-tab")
+                | Graph
 
           // Tab content
           .tab-content.h-100
@@ -408,6 +411,14 @@
                         v-if="isSavingPrompt" role="status" aria-hidden="true"
                       )
                       | {{ isSavingPrompt ? ' saving...' : 'save' }}
+
+            /// Graph tab
+            #graph-tab.tab-pane.fade.h-100
+              iframe(
+                src="/graph"
+                style="width: 100%; height: 100%; border: none;"
+                title="Performance Graph"
+              )
 
         // Modals
 
@@ -738,10 +749,20 @@
           showNotification("Evaluation completed successfully!", "success");
         } catch (error) {
           console.error("Failed to run evaluation:", error);
-          showNotification(
-            "Evaluation failed. Check console for details",
-            "danger",
-          );
+          let errorMessage = "Evaluation failed. Check console for details";
+          
+          try {
+            if (error.response) {
+              const errorData = await error.response.json();
+              if (errorData.detail) {
+                errorMessage = `Evaluation failed: ${errorData.detail}`;
+              }
+            }
+          } catch (parseError) {
+            console.error("Could not parse error response:", parseError);
+          }
+          
+          showNotification(errorMessage, "danger");
         } finally {
           isEvaluating.value = false;
         }

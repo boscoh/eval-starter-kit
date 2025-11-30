@@ -1,9 +1,9 @@
 ---
-file_path: runs/engineer-bedrock-nova-pro.yaml
+file_path: evals-engineer/runs/engineer-groq-llama-3.3-70b.yaml
 query_ref: engineer
 prompt_ref: candidate-summary
-service: bedrock
-model: amazon.nova-pro-v1:0
+service: groq
+model: llama-3.3-70b-versatile
 repeat: 3
 temperature: 0.5
 evaluators:

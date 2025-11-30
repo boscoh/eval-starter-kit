@@ -1,13 +1,25 @@
-# TODO: Edit/Delete Runs, Prompts, Queries in UI
+# Issue Tracking
 
-## High Priority
-- [ ] Add delete buttons (trash icons) to runs/queries/prompts list items in index.html
-- [ ] Add delete confirmation modal to index.html template
-- [ ] Implement deleteRun(), deleteQuery(), deletePrompt() methods in Vue setup
-- [ ] Add POST /delete endpoint in server.py to remove files and return message
+This project now uses [Beads (bd)](https://github.com/steveyegge/beads) for issue tracking.
 
-## Medium Priority
-- [ ] Add POST /rename endpoint in server.py (optional - for edit functionality)
+## Quick Commands
 
-## Low Priority
-- [ ] Add rename modal and renameRun/renameQuery/renamePrompt methods (optional)
+```bash
+bd ready                              # Show issues ready to work
+bd list --status=open                 # List all open issues
+bd update <id> --status=in_progress  # Claim work
+bd close <id>                         # Mark complete
+```
+
+For complete workflow documentation, see `.cursor/rules/beads.mdc`
+
+---
+
+## Recently Completed ✓
+
+- Add delete/rename functionality for runs, queries, and prompts in UI
+- Split evals directory into evals-engineer and evals-consultant
+- Make evals-dir configurable via --evals-dir argument
+- Convert config.py to config.json
+- Improve error propagation from server to UI
+- Incorporate graph.html as iframe in index.html

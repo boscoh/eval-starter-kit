@@ -1,0 +1,57 @@
+---
+texts:
+- >-
+  Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience specialising
+  in SDLC and CSV. Holds an M.S. in Computer Science (Data Communications) and a B.A.
+  in Computer Science. Proficient in Documentum DCM/D2, MS Access, VBA, and C/C++
+  programming. Extensive expertise in supporting GxP/SOX-compliant applications, document
+  management, and payroll systems. Proven track record in project leadership, application
+  upgrades, and system administration across diverse environments. Skilled in root
+  cause analysis, ITSM support, and developing communication solutions for large enterprises.
+- >-
+  Philadelphia, PA Systems Analyst with over 30 years of experience in diverse technological
+  environments. Holds an M.S. in Computer Science with a focus on Data Communications
+  from Villanova University. Extensive expertise in Software Development Lifecycle
+  (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance. Proficient in
+  Documentum DCM/D2, MS Access, VBA, C, and C++. Proven track record in project leadership,
+  application support, and system administration. Experienced in developing client/server
+  messaging and document management applications, as well as supporting FDA-validated
+  manufacturing systems. Skilled in troubleshooting, root cause analysis, and providing
+  Level 2 production support.
+evaluations:
+- name: word_count
+  values:
+  - 1.0
+  - 1.0
+  average: 1.0
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.9
+  - 0.9
+  average: 0.9
+  standard_deviation: 0.0
+- name: equivalence
+  values:
+  - 0.7
+  - 0.8
+  average: 0.75
+  standard_deviation: 0.07071067811865482
+- name: elapsed_seconds
+  values:
+  - 2.066483974456787
+  - 1.5230560302734375
+  average: 1.7947700023651123
+  standard_deviation: 0.38426158441831115
+- name: token_count
+  values:
+  - 935
+  - 950
+  average: 942.5
+  standard_deviation: 10.606601717798213
+- name: cost
+  values:
+  - 0.0035062500000000003
+  - 0.0035625
+  average: 0.003534375
+  standard_deviation: 3.977475644174321e-05

@@ -1,0 +1,67 @@
+---
+texts:
+- >-
+  San Francisco, California, Senior Engineering Manager with 8 years of professional
+  experience in leadership, documentation, and innovation. Holds a Master of Business
+  Administration in Decision Sciences and a Bachelor of Science in Mathematical Engineering.
+  Proven track record of utilising problem-solving skills to assist students in understanding
+  quantitative problems and achieve higher grades. Experienced in designing and delivering
+  presentations, evaluating exam papers, and providing training in SQL programming.
+  Skilled in data analysis, forecasting, inventory management, and optimisation techniques.
+  Possesses excellent leadership and management skills, with experience in supervising
+  teams and defining KPI reports. Proficient in a range of technical skills, including
+  C, C++, MS Office Suite, Google Docs, and SQL.
+- >-
+  San Francisco, California, Senior Engineering Manager with 8 years of professional
+  experience in leadership, documentation, and innovation. Holds a Master of Business
+  Administration in Decision Sciences and a Bachelor of Science in Mathematical Engineering.
+  Proven track record of utilising problem-solving skills to assist students in understanding
+  quantitative problems and achieve higher grades. Experienced in designing engaging
+  lesson plans, evaluating student performance, and providing effective presentations.
+  Skilled in SQL programming, data analysis, and technical skills such as C, C++,
+  MS Office Suite, and Google Docs.
+- >-
+  San Francisco, California Senior Engineering Manager with 8 years of professional
+  experience in leadership, documentation, and innovation. Holds an MBA in Decision
+  Sciences and a Bachelor of Science in Mathematical Engineering. Proven track record
+  of utilising problem-solving skills to assist students in understanding quantitative
+  problems and achieving higher grades. Experienced in creating engaging lesson plans,
+  evaluating student performance, and designing presentations. Skilled in SQL programming,
+  data analysis, and technical skills such as C, C++, MS Office Suite, and Google
+  Docs.
+evaluations:
+- name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.9
+  - 0.8
+  - 0.8
+  average: 0.8333333333333334
+  standard_deviation: 0.05773502691896256
+- name: elapsed_seconds
+  values:
+  - 0.6164698600769043
+  - 0.8258602619171143
+  - 0.5246357917785645
+  average: 0.655655304590861
+  standard_deviation: 0.15438804891856042
+- name: token_count
+  values:
+  - 1433
+  - 1397
+  - 1392
+  average: 1407.3333333333333
+  standard_deviation: 22.368132093076824
+- name: cost
+  values:
+  - 0.00117506
+  - 0.00114554
+  - 0.00114144
+  average: 0.0011540133333333333
+  standard_deviation: 1.8341868316322913e-05

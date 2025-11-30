@@ -1,5 +1,5 @@
 ---
-file_path: runs/engineer-ollama-llama3.2.yaml
+file_path: evals-engineer/runs/engineer-ollama-llama3.2.yaml
 query_ref: engineer
 prompt_ref: candidate-summary
 service: ollama

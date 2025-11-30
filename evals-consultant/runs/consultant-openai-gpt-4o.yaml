@@ -1,5 +1,5 @@
 ---
-file_path: runs/consultant-openai-gpt-4o.yaml
+file_path: evals-consultant/runs/consultant-openai-gpt-4o.yaml
 query_ref: consultant
 prompt_ref: candidate-summary
 service: openai
@@ -10,5 +10,3 @@ evaluators:
 - word_count
 - coherence
 - equivalence
-
-

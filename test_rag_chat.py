@@ -11,12 +11,15 @@ from textwrap import dedent
 from dotenv import load_dotenv
 
 from chat_client import get_chat_client
-from config import chat_models
 from rag import RAGService
 from setup_logger import setup_logging
 
 load_dotenv()
 setup_logging()
+
+with open("config.json") as f:
+    config = json.load(f)
+    chat_models = config["chat_models"]
 
 logger = logging.getLogger(__name__)
 

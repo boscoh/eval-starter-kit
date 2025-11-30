@@ -16,11 +16,14 @@ from mcp.client.stdio import stdio_client
 from path import Path
 
 from chat_client import IChatClient, get_chat_client
-from config import chat_models
 from setup_logger import setup_logging
 
 load_dotenv()
 setup_logging()
+
+with open("config.json") as f:
+    config = json.load(f)
+    chat_models = config["chat_models"]
 
 logger = logging.getLogger(__name__)
 
