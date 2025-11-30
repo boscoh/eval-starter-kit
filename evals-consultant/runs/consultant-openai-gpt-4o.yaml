@@ -4,8 +4,8 @@ query_ref: consultant
 prompt_ref: candidate-summary
 service: openai
 model: gpt-4o
-repeat: 2
-temperature: 0.7
+repeat: 3
+temperature: 0.5
 evaluators:
 - word_count
 - coherence

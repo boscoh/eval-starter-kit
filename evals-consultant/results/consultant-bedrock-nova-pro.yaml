@@ -1,57 +1,82 @@
 ---
 texts:
+- "[City, State] Systems Analyst Consultant with over 25 years of experience in the\
+  \ IT sector. Holds an M.S. in Computer Science (Data Communications) and a B.A.\
+  \ in Computer Science. Proficient in multiple programming languages including C,\
+  \ C++, VBA, Assembly, and HTML. \n\nKey qualifications include expertise in Software\
+  \ Development Lifecycle (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance.\
+  \ Strong background in project leadership, system administration, and data communications.\
+  \ \n\nNotable professional experience involves providing consulting expertise in\
+  \ supporting various enterprise applications, conducting issue analysis, delivering\
+  \ Level 2 production support, and developing VBA automation in Access/Excel. \n\n\
+  Relevant skills encompass systems analysis, application support, software development,\
+  \ and network administration. Demonstrated ability in conducting root cause analysis,\
+  \ escalating issues to Level 3/Core teams, and supporting FDA-validated manufacturing\
+  \ applications."
 - >-
   [City, State] Systems Analyst Consultant with 30 years of experience in software
   development, system administration, and project leadership. Holds an M.S. in Computer
   Science (Data Communications) and a B.A. in Computer Science. Proficient in C, C++,
   VBA, Assembly, and HTML. Extensive experience with MS Access, Documentum DCM/D2,
-  and various relational databases. Expert in SDLC, CSV, GxP, and SOX compliance.
-  Notable for developing client/server applications, supporting FDA-validated manufacturing
-  applications, and leading application upgrades. Strong analytical, problem-solving,
+  and relational databases. Skilled in SDLC, CSV, GxP, and SOX compliance. Demonstrated
+  expertise in document management, data communications, and system administration.
+  Notable for developing and supporting client/server applications, conducting root
+  cause analysis, and providing Level 2 production support. Strong analytical, problem-solving,
   and communication skills.
-- >-
-  [City, State] Systems Analyst Consultant with 30+ years of experience in software
-  development, system administration, and project leadership. Holds an M.S. in Computer
-  Science (Data Communications) and a B.A. in Computer Science. Proficient in C, C++,
-  VBA, Assembly, and HTML. Expertise in SDLC, CSV, GxP, and SOX compliance. Demonstrated
-  skills in Documentum DCM/D2, MS Access, and relational databases. Notable experience
-  includes supporting McNeil Consumer Healthcare, conducting root cause analysis,
-  and developing VBA automation in Access/Excel. Strong analytical, problem-solving,
-  and communication skills.
+- "[City, State] Systems Analyst Consultant with over 25 years of experience in various\
+  \ environments and technologies. Holds an M.S. in Computer Science (Data Communications)\
+  \ and a B.A. in Computer Science. \n\nKey qualifications include expertise in Software\
+  \ Development Lifecycle (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance.\
+  \ Proficient in Documentum DCM and D2, MS Access, VBA, C, C++, HTML, and Assembly\
+  \ language programming. \n\nNotable professional experience includes roles as a\
+  \ Consultant from January 1999 to November 2015, providing consulting expertise\
+  \ in supporting multiple departments across the enterprise. Responsibilities involved\
+  \ project leadership, application upgrades, and Level 2 production support. \n\n\
+  Additionally, has a strong background in system administration, data communications,\
+  \ and developing VBA automation in Access/Excel. Supported FDA-validated manufacturing\
+  \ applications and assisted in Windows OS rollouts and upgrades. \n\nRelevant skills\
+  \ encompass analytical and problem-solving techniques, organisational and communication\
+  \ skills, and extensive experience in systems analysis and general application support."
 evaluations:
 - name: word_count
   values:
   - 1.0
   - 1.0
+  - 1.0
   average: 1.0
   standard_deviation: 0.0
-- name: coherence
-  values:
-  - 0.9
-  - 0.8
-  average: 0.8500000000000001
-  standard_deviation: 0.07071067811865474
 - name: equivalence
   values:
   - 0.8
+  - 0.9
   - 0.8
-  average: 0.8
+  average: 0.8333333333333334
+  standard_deviation: 0.05773502691896256
+- name: coherence
+  values:
+  - 0.9
+  - 0.9
+  - 0.9
+  average: 0.9
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 3.4530222415924072
-  - 1.3285012245178223
-  average: 2.3907617330551147
-  standard_deviation: 1.5022632179467799
+  - 4.071686744689941
+  - 1.7420120239257812
+  - 2.8224871158599854
+  average: 2.8787286281585693
+  standard_deviation: 1.1658552255409398
 - name: token_count
   values:
-  - 981
-  - 983
-  average: 982
-  standard_deviation: 1.4142135623730951
+  - 1036
+  - 996
+  - 1074
+  average: 1035.3333333333333
+  standard_deviation: 39.0042732701602
 - name: cost
   values:
-  - 0.0
-  - 0.0
-  average: 0.0
-  standard_deviation: 0.0
+  - 0.001259776
+  - 0.001211136
+  - 0.001305984
+  average: 0.0012589653333333333
+  standard_deviation: 4.742919629651481e-05

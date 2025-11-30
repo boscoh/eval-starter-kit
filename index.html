@@ -130,14 +130,27 @@
               .d-flex.flex-row
 
                 //// Run tab - left column
-                .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 250px;")
+                .d-flex.flex-column.scrollable-column.border-end(style="flex: 0 0 400px;")
                   .px-3.pt-4
 
-                    button.btn.btn-success(
-                      data-bs-toggle="modal"
-                      data-bs-target="#create-run-modal"
-                      @click="newRunName = ''"
-                    ) + new
+                    .d-flex.gap-2.mb-2
+                      button.btn.btn-success(
+                        data-bs-toggle="modal"
+                        data-bs-target="#create-run-modal"
+                        @click="newRunName = ''"
+                      ) + new
+                      button.btn.btn-primary(
+                        @click="runAllEvaluations"
+                        :disabled="isRunningAll"
+                        title="Run all evaluations"
+                      )
+                        span.spinner-border.spinner-border-sm.me-1(
+                          v-if="isRunningAll"
+                          role="status"
+                          aria-hidden="true"
+                        )
+                        i.fas.fa-play-circle.me-1(v-else)
+                        | {{ isRunningAll ? 'running...' : 'run all' }}
 
                     ul.list-group
                       li.list-group-item.d-flex.justify-content-between.align-items-center(
@@ -146,6 +159,18 @@
                       )
                         .flex-grow-1(@click="chooseRun(f)" role="button")
                           | {{f}}
+                        button.btn.btn-sm.btn-link.text-success(
+                          @click.stop="runEvaluationForRun(f)"
+                          :disabled="isEvaluatingByRun[f]"
+                          title="Run evaluation"
+                          style="text-decoration: none;"
+                        )
+                          span.spinner-border.spinner-border-sm(
+                            v-if="isEvaluatingByRun[f]"
+                            role="status"
+                            aria-hidden="true"
+                          )
+                          i.fas.fa-play(v-else)
                         button.btn.btn-sm.btn-link.text-dark(
                           @click.stop="openRenameDialog('run', f)"
                           title="Rename run"
@@ -160,20 +185,10 @@
                           i.fas.fa-trash
 
                   //// Run tab - central column
-                .d-flex.flex-column.scrollable-column.border.flex-grow-1(style="max-width: 20em")
+                .d-flex.flex-column.scrollable-column.border.flex-grow-1
                   .px-3.pt-4
 
                     h3.mt-3 Run config: {{selectedRunName}}
-
-                    .mt-4
-                    button.btn.btn-success(@click="runEvaluation" :disabled="isEvaluating")
-                      span.spinner-border.spinner-border-sm(
-                        v-if="isEvaluating"
-                        role="status"
-                        aria-hidden="true"
-                      )
-                      | {{ isEvaluating ? ' evaluating...' : 'evaluate' }}
-
 
                     h5.mt-4 Repeat
                     .form-group
@@ -224,6 +239,15 @@
                           label.form-check-label(:for="'evaluator-' + evaluator")
                             | {{ evaluator }}
 
+                    .mt-3
+                    button.btn.btn-success(@click="saveRunConfig" :disabled="isSavingRunConfig")
+                      span.spinner-border.spinner-border-sm(
+                        v-if="isSavingRunConfig"
+                        role="status"
+                        aria-hidden="true"
+                      )
+                      | {{ isSavingRunConfig ? ' saving...' : 'save' }}
+
                     hr
 
                     h3.mt-3 Results
@@ -251,7 +275,7 @@
                       textarea.form-control(rows="8" v-model="sampleOutput" readonly)
 
                 //// Run tab - right column
-                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
+                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1(style="max-width: 500px;")
                   .px-3.pt-4
 
                     .d-flex.flex-row.align-items-end
@@ -599,7 +623,9 @@
       const runResult = ref({});
       const selectedRunName = ref("");
       const newRunName = ref("");
-      const isEvaluating = ref(false);
+      const isEvaluatingByRun = ref({});
+      const isRunningAll = ref(false);
+      const isSavingRunConfig = ref(false);
       const sampleOutput = ref("");
 
       const promptRefs = ref([]);
@@ -630,6 +656,10 @@
         const svc = _.get(runConfig, "value.service");
         const modelsMap = _.get(defaults, "value.models", {}) || {};
         return svc && modelsMap[svc] ? modelsMap[svc] : [];
+      });
+
+      const isEvaluating = computed(() => {
+        return isEvaluatingByRun.value[selectedRunName.value] || false;
       });
 
       // Keep model consistent with selected service
@@ -778,22 +808,35 @@
 
       async function runEvaluation() {
         if (!selectedRunName.value) return;
+        await runEvaluationForRun(selectedRunName.value);
+      }
 
-        isEvaluating.value = true;
-        runResult.value = {};
-        sampleOutput.value = "";
-        showNotification("Starting evaluation...", "info");
+      async function runEvaluationForRun(runName) {
+        if (!runName) return;
+
+        isEvaluatingByRun.value[runName] = true;
+        
+        if (selectedRunName.value === runName) {
+          runResult.value = {};
+          sampleOutput.value = "";
+        }
+        
+        showNotification(`Starting evaluation for ${runName}...`, "info");
 
         try {
-          console.log("Running evaluation with config:", runConfig.value);
+          const config = await fetchObject("run", runName);
+          console.log("Running evaluation with config:", config);
           await ky.post(`/evaluate`, {
             json: {
-              basename: selectedRunName.value,
-              content: deepSnakeCaseKeys(runConfig.value),
+              basename: runName,
+              content: deepSnakeCaseKeys(config),
             },
             timeout: 600000,
           });
-          await loadRunResult(selectedRunName.value);
+          
+          if (selectedRunName.value === runName) {
+            await loadRunResult(runName);
+          }
           
           // Reload graph data after successful evaluation
           try {
@@ -803,16 +846,16 @@
             console.warn("Could not reload graphs:", graphError);
           }
           
-          showNotification("Evaluation completed successfully!", "success");
+          showNotification(`Evaluation for ${runName} completed successfully!`, "success");
         } catch (error) {
           console.error("Failed to run evaluation:", error);
-          let errorMessage = "Evaluation failed. Check console for details";
+          let errorMessage = `Evaluation for ${runName} failed. Check console for details`;
           
           try {
             if (error.response) {
               const errorData = await error.response.json();
               if (errorData.detail) {
-                errorMessage = `Evaluation failed: ${errorData.detail}`;
+                errorMessage = `Evaluation for ${runName} failed: ${errorData.detail}`;
               }
             }
           } catch (parseError) {
@@ -821,7 +864,45 @@
           
           showNotification(errorMessage, "danger");
         } finally {
-          isEvaluating.value = false;
+          isEvaluatingByRun.value[runName] = false;
+        }
+      }
+
+      async function runAllEvaluations() {
+        if (!runNames.value || runNames.value.length === 0) {
+          showNotification("No runs to evaluate", "warning");
+          return;
+        }
+
+        isRunningAll.value = true;
+        showNotification(`Starting evaluation for all ${runNames.value.length} runs...`, "info");
+
+        const evaluationPromises = runNames.value.map(runName => runEvaluationForRun(runName));
+        
+        try {
+          await Promise.all(evaluationPromises);
+          showNotification("All evaluations completed!", "success");
+        } catch (error) {
+          console.error("Error in batch evaluation:", error);
+          showNotification("Some evaluations failed. Check individual notifications.", "warning");
+        } finally {
+          isRunningAll.value = false;
+        }
+      }
+
+      async function saveRunConfig() {
+        if (!selectedRunName.value) return;
+
+        isSavingRunConfig.value = true;
+
+        try {
+          await saveObject("run", selectedRunName.value, runConfig.value);
+          showNotification("Run config saved successfully!");
+        } catch (error) {
+          console.error("Failed to save run config:", error);
+          showNotification("Failed to save run config", "danger");
+        } finally {
+          isSavingRunConfig.value = false;
         }
       }
 
@@ -1122,11 +1203,17 @@
         renameOldName,
         renameNewName,
         performanceGraphs,
+        isEvaluatingByRun,
+        isRunningAll,
+        isSavingRunConfig,
 
         // Methods
         chooseRun,
         createRun,
         runEvaluation,
+        runEvaluationForRun,
+        runAllEvaluations,
+        saveRunConfig,
         chooseQueryOfRun,
         choosePromptOfRun,
         chooseSelectedPrompt,

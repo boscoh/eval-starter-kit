@@ -1,99 +1,135 @@
 ---
 texts:
 - >-
-  Here's a concise candidate summary based on the provided information:
+  Here's a concise candidate summary:
 
 
-  **Systems Analyst Consultant**
+  **Highly Experienced Systems Analyst**
 
 
-  Highly experienced Systems Analyst with 24+ years of expertise in software development
-  lifecycle (SDLC), computer systems validation (CSV), and data communications. Proven
-  problem-solving skills and technical leadership. Skilled in multiple programming
-  languages, databases, and system architectures.
+  Results-driven consultant with 25+ years of experience in supporting multiple departments
+  across various technologies and environments. Proven expertise in SDLC, CSV, and
+  GxP/SOX compliance. Skilled in programming languages like C, C++, VBA, and Assembly,
+  with strong analytical and problem-solving skills.
 
 
-  **Key Strengths:**
+  **Key Strengths**
 
 
-  - Expertise in SDLC processes and GxP/SOX compliance
+  * Expertise in Software Development Lifecycle (SDLC) and Computer Systems Validation
+  (CSV)
 
-  - Strong analytical and problem-solving skills
+  * Strong technical and analytical skills
 
-  - Project leadership and organizational expertise
+  * Proficient in MS Access, Documentum DCM/D2, relational databases, and client/server
+  architectures
 
-  - Excellent communication and reporting capabilities
-
-
-  **Relevant Skills:**
-
-
-  - Programming Languages: C, C++, VBA, Assembly, HTML
-
-  - Databases: MS Access, Documentum DCM/D2, relational databases
-
-  - Systems: VAX/VMS, Windows, client/server architectures
-
-  - Methodologies: SDLC, CSV, GxP, SOX compliance
+  * Experience in project leadership, system administration, data communications,
+  document management, and Microsoft Access/Excel VBA automation
 
 
-  **Experience:**
+  **Notable Achievements**
 
 
-  - Consultant (1999-2015)
-    - Applied knowledge of SDLC processes and GxP/SOX compliance
-    - Conducted root cause analysis for recurring issues
-    - Delivered Level 2 production support via ITSM and email requests
-  - Systems Programmer (1985-1990)
-    - Designed, developed, and supported real-time client/server applications
+  * Successfully implemented GxP-compliant document management applications across
+  multiple departments
 
-  **Education:**
+  * Conducted issue analysis and root cause analysis for recurring issues
 
+  * Developed and tested VBA automation in Access/Excel
 
-  - M.S. Computer Science (Data Communications), Villanova University (1996)
-
-  - B.A. Computer Science, LaSalle University (1985)
-
-
-  This summary aims to concisely highlight the candidate's key strengths, skills,
-  and experience while maintaining clarity and professionalism.
+  * Supported FDA-validated manufacturing applications and SOX-compliant payroll applications
 - >-
-  Here's a professional candidate summary:
+  Here is a concise and recruiter-friendly candidate summary based on the provided
+  information:
 
 
   **Systems Analyst**
 
 
-  Results-driven consultant with 25+ years of experience supporting multiple departments
-  across the enterprise in various environments and technologies. Proven expertise
-  in Software Development Lifecycle (SDLC) and Computer Systems Validation (CSV),
-  with a strong analytical mindset and problem-solving skills.
+  Highly motivated and self-driven Systems Analyst with 25+ years of experience in
+  various environments and technologies. Proven expertise in Software Development
+  Lifecycle (SDLC) and Computer Systems Validation (CSV). Skilled in programming languages
+  C, C++, VBA, Assembly, HTML and databases MS Access, Documentum DCM/D2.
+
+
+  **Key Strengths**
+
+
+  * Strong analytical and problem-solving skills
+
+  * Experience with project leadership, system administration, data communications,
+  document management, and software development
+
+  * Proven track record of delivering high-quality solutions under tight deadlines
+
+
+  **Professional Experience**
+
+
+  * Consultant (1999-2015): Provided consulting expertise to McNeil Consumer Healthcare,
+  supporting shop floor, document management, timekeeper, and business process applications.
+
+  * Systems Programmer (1985-1990): Designed, developed, tested, and supported real-time
+  client/server applications.
+
+
+  **Education**
+
+
+  * M.S. Computer Science (Data Communications), 1996
+
+  * B.A. Computer Science, 1985
+
+
+  **Technical Skills**
+
+
+  * Programming languages: C, C++, VBA, Assembly, HTML
+
+  * Databases: MS Access, Documentum DCM/D2, relational databases
+
+  * Systems: VAX/VMS, Windows, client/server architectures
+
+  * Methodologies: SDLC, CSV, GxP, SOX compliance
+
+
+  This summary highlights the candidate's key strengths, experience, and technical
+  skills, making it easy for recruiters to quickly understand their qualifications
+  and value as a Systems Analyst.
+- >-
+  Here's a concise candidate summary:
+
+
+  **Systems Analyst & Consultant**
+
+
+  Highly experienced Systems Analyst with over 25 years of expertise in various environments
+  and technologies. Proven track record in Software Development Lifecycle (SDLC) and
+  Computer Systems Validation (CSV). Skilled in project leadership, problem-solving,
+  and system administration.
 
 
   **Key Strengths:**
 
 
-  * SDLC and CSV process implementation
+  * SDLC process expertise
 
-  * Project leadership, technical, and analytical expertise
+  * GxP/SOX compliance knowledge
 
-  * System analysis, general application support, software development, data communications,
-  and system administration
+  * Strong analytical and problem-solving skills
 
-  * Strong communication and organizational skills
+  * Excellent communication and organizational abilities
 
 
   **Relevant Experience:**
 
 
-  * Consultant (1999-2015): Led projects across McNeil Consumer Healthcare, applying
-  SDLC processes and GxP/SOX compliance to deliver expert consulting services.
+  * Consultant (1999-2015): Provided consulting services to McNeil Consumer Healthcare
+  across shop floor, document management, timekeeper, and business process apps.
 
-  * Consultant (1990-1999): Contributed to electronic batch record applications and
-  provided relational database expertise across multiple projects.
-
-  * Systems Programmer (1985-1990): Designed, developed, and supported real-time client/server
-  applications, with a focus on messaging systems and system administration.
+  * Systems Programmer (1985-1990): Designed, developed, tested, and supported real-time
+  client/server applications.
 
 
   **Education:**
@@ -107,21 +143,15 @@ texts:
   **Technical Skills:**
 
 
-  * Programming languages: C, C++, VBA, Assembly, HTML
+  * Programming Languages: C, C++, VBA, Assembly, HTML
 
   * Databases: MS Access, Documentum DCM/D2, relational databases
 
   * Systems: VAX/VMS, Windows, client/server architectures
-
-  * Methodologies: SDLC, CSV, GxP, SOX compliance
-
-
-  This summary highlights the candidate's extensive experience in systems analysis,
-  software development, and project leadership, while showcasing their technical expertise
-  and analytical mindset.
 evaluations:
 - name: word_count
   values:
+  - 1.0
   - 1.0
   - 1.0
   average: 1.0
@@ -130,28 +160,33 @@ evaluations:
   values:
   - 0.8
   - 0.8
+  - 0.8
   average: 0.8
   standard_deviation: 0.0
 - name: equivalence
   values:
   - 0.8
   - 0.8
+  - 0.8
   average: 0.8
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 26.549606800079346
-  - 25.054296016693115
-  average: 25.80195140838623
-  standard_deviation: 1.0573443949137722
+  - 19.774267196655273
+  - 23.44047498703003
+  - 19.33083200454712
+  average: 20.84852472941081
+  standard_deviation: 2.2556181626949323
 - name: token_count
   values:
-  - 728
-  - 750
-  average: 739
-  standard_deviation: 15.556349186104045
+  - 678
+  - 737
+  - 683
+  average: 699.3333333333334
+  standard_deviation: 32.715949219506584
 - name: cost
   values:
+  - 0.0
   - 0.0
   - 0.0
   average: 0.0

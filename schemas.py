@@ -31,22 +31,22 @@ TableType = Literal["result", "run", "prompt", "query"]
 def set_evals_dir(evals_dir: str = EVALS_DIR_NAME):
     """Set the base evals directory and update all path references."""
     global PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, dir_from_table
-    
+
     PROMPTS_DIR = Path(evals_dir) / "prompts"
     QUERIES_DIR = Path(evals_dir) / "queries"
     RESULTS_DIR = Path(evals_dir) / "results"
     RUNS_DIR = Path(evals_dir) / "runs"
-    
+
     dir_from_table = {
         "result": RESULTS_DIR,
         "run": RUNS_DIR,
         "prompt": PROMPTS_DIR,
         "query": QUERIES_DIR,
     }
-    
+
     for d in dir_from_table.values():
         d.makedirs_p()
-    
+
     logger.info(f"Evals directory set to: {evals_dir}")
 
 

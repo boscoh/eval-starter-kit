@@ -1,56 +1,72 @@
 ---
 texts:
 - >-
-  Philadelphia, Pennsylvania Systems Analyst with over 25 years of experience in software
-  development, systems validation, and project leadership. Holds an M.S. in Computer
-  Science with a focus on Data Communications. Skilled in SDLC, CSV, GxP, and SOX
-  compliance, with expertise in programming languages such as C, C++, VBA, and Assembly.
-  Proven track record of providing technical support, conducting issue analysis, and
-  delivering training, with strong analytical, problem-solving, and communication
-  skills. Proficient in MS Access, Documentum DCM/D2, and relational databases, with
-  experience in system administration, data communications, and network administration.
+  Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in software
+  development, systems analysis, and project leadership. Holds an M.S. in Computer
+  Science (Data Communications) and a B.A. in Computer Science. Skilled in SDLC, CSV,
+  GxP, and SOX compliance, with expertise in Documentum DCM and D2, MS Access, VBA,
+  C, C++, and HTML. Proven ability to apply analytical and problem-solving skills
+  to deliver high-quality solutions, having led projects and provided consulting expertise
+  in various environments and technologies. Proficient in system administration, data
+  communications, and network administration, with a strong background in designing,
+  developing, and testing client/server applications.
 - >-
   Philadelphia, Pennsylvania Systems Analyst with over 25 years of experience in software
   development, systems validation, and project leadership. Holds an M.S. in Computer
-  Science with a focus on Data Communications. Skilled in SDLC, CSV, and GxP/SOX compliance,
-  with expertise in programming languages such as C, C++, and VBA. Proven ability
-  to analyse issues, develop solutions, and provide technical support in fast-paced
-  environments. Proficient in document management systems, including Documentum DCM
-  and D2, and experienced in designing, developing, and testing software applications.
+  Science and possesses expertise in SDLC, CSV, and GxP/SOX compliance. Proven track
+  record of delivering technical solutions, leading projects, and providing application
+  support, with strong technical, analytical, and problem-solving skills. Proficient
+  in programming languages such as C, C++, VBA, and Assembly, with experience in MS
+  Access, Documentum DCM/D2, and relational databases.
+- >-
+  Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in software
+  development, systems analysis, and project leadership. Holds an M.S. in Computer
+  Science with a focus on Data Communications. Skilled in SDLC, CSV, and compliance
+  frameworks such as GxP and SOX. Proficient in a range of programming languages,
+  including C, C++, VBA, and Assembly, with experience in document management systems
+  like Documentum DCM and D2. Proven ability to lead projects, analyse issues, and
+  develop effective solutions, with strong technical, analytical, and communication
+  skills.
 evaluations:
 - name: word_count
   values:
   - 1.0
   - 1.0
+  - 1.0
   average: 1.0
-  standard_deviation: 0.0
-- name: coherence
-  values:
-  - 0.9
-  - 0.9
-  average: 0.9
   standard_deviation: 0.0
 - name: equivalence
   values:
   - 0.8
   - 0.8
+  - 0.8
   average: 0.8
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.9
+  - 0.9
+  - 0.9
+  average: 0.9
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 0.574141263961792
-  - 0.5441508293151855
-  average: 0.5591460466384888
-  standard_deviation: 0.021206439709347397
+  - 0.5825710296630859
+  - 0.4081227779388428
+  - 0.4734070301055908
+  average: 0.48803361256917316
+  standard_deviation: 0.08813909925983024
 - name: token_count
   values:
-  - 986
-  - 972
-  average: 979
-  standard_deviation: 9.899494936611665
+  - 998
+  - 966
+  - 974
+  average: 979.3333333333334
+  standard_deviation: 16.65332799572906
 - name: cost
   values:
-  - 0.00080852
-  - 0.0007970399999999999
-  average: 0.0008027799999999999
-  standard_deviation: 8.11758584802158e-06
+  - 0.0008982
+  - 0.0008694
+  - 0.0008766
+  average: 0.0008814
+  standard_deviation: 1.498799519615619e-05
