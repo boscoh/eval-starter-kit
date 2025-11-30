@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from evaluator import EvaluationRunner
 from runner import Runner
 from schemas import (
+    EVALS_DIR_NAME,
     RunConfig,
     TableType,
     dir_from_table,
@@ -157,6 +158,7 @@ def get_defaults():
 
     return {
         "content": {
+            "evals_dir": EVALS_DIR_NAME,
             "evaluators": EvaluationRunner.evaluators(),
             "run_config": {
                 "promptRef": "",

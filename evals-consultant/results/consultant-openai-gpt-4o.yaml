@@ -2,33 +2,32 @@
 texts:
 - >-
   [City, State] Systems Analyst with over 30 years of experience in software development
-  and systems administration. Holds an M.S. in Computer Science with a focus on Data
-  Communications. Proficient in programming languages including C, C++, VBA, and Assembly,
-  and skilled in using Documentum DCM/D2 and MS Access. Extensive expertise in SDLC,
-  CSV, and compliance with GxP/SOX standards. Proven track record in project leadership,
-  supporting document management applications, and developing client/server messaging
-  solutions. Adept at problem-solving, conducting root cause analysis, and providing
-  Level 2 production support. Experienced in designing and implementing VBA automation
-  in Access/Excel and supporting FDA-validated manufacturing applications.
-- >-
-  Philadelphia, PA Systems Analyst with over 30 years of experience in diverse environments
-  and technologies. Holds an M.S. in Computer Science with a focus on Data Communications
-  from Villanova University. Extensive expertise in the Software Development Lifecycle
-  (SDLC) and Computer Systems Validation (CSV), with a strong background in supporting
-  GxP and SOX-compliant applications. Proficient in programming languages such as
-  C, C++, VBA, and Assembly, as well as in databases like MS Access and Documentum
-  DCM/D2. Demonstrated ability in project leadership, system administration, and problem-solving.
-  Notable for designing and supporting client/server messaging applications, and providing
-  robust IT solutions across various enterprise systems.
+  and systems analysis. Holds an M.S. in Computer Science from Villanova University.
+  Extensive expertise in the Software Development Lifecycle (SDLC) and Computer Systems
+  Validation (CSV), with a strong background in project leadership and technical problem-solving.
+  Proficient in programming languages such as C, C++, and VBA, and experienced with
+  document management systems like Documentum DCM/D2. Proven track record in supporting
+  GxP and SOX-compliant applications, providing Level 2 production support, and conducting
+  root cause analysis. Skilled in designing and developing client/server messaging
+  applications and communication solutions between VAX and IBM systems.
 - >-
   [City, State] Systems Analyst with over 30 years of experience in software development
-  and systems analysis. Holds an M.S. in Computer Science from Villanova University.
-  Extensive expertise in SDLC and CSV, with a strong track record in project leadership
-  and compliance with GxP/SOX standards. Proficient in programming languages including
-  C, C++, and VBA, and skilled in database management with MS Access and Documentum
-  DCM/D2. Demonstrated ability in designing and supporting client/server applications
-  and providing system administration. Experienced in FDA-validated manufacturing
-  applications and IT support for Windows OS rollouts.
+  and systems analysis. Holds an M.S. in Computer Science with a focus on Data Communications.
+  Proficient in SDLC and CSV, with extensive expertise in GxP/SOX compliance and document
+  management systems such as Documentum DCM/D2. Demonstrated success in project leadership,
+  application support, and ITSM. Skilled in programming languages including C, C++,
+  VBA, and Assembly. Experienced in designing and supporting client/server applications
+  and communication solutions for VAX and IBM systems. Strong analytical and problem-solving
+  abilities, complemented by effective organisational and communication skills.
+- >-
+  Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in software
+  development and systems analysis. Holds a Master's in Computer Science from Villanova
+  University. Extensive expertise in the Software Development Lifecycle (SDLC), Computer
+  Systems Validation (CSV), and GxP/SOX compliance. Proficient in programming languages
+  such as C, C++, VBA, and assembly, with strong skills in project leadership and
+  problem-solving. Demonstrated ability in supporting document management systems
+  and developing communication solutions between VAX and IBM systems. Skilled in system
+  administration, data communications, and Microsoft Access/Excel VBA automation.
 evaluations:
 - name: word_count
   values:
@@ -46,29 +45,29 @@ evaluations:
   standard_deviation: 0.0
 - name: equivalence
   values:
-  - 0.8
   - 0.7
+  - 0.8
   - 0.7
   average: 0.7333333333333333
   standard_deviation: 0.05773502691896263
 - name: elapsed_seconds
   values:
-  - 2.2909786701202393
-  - 1.7316689491271973
-  - 1.5927507877349854
-  average: 1.8717994689941406
-  standard_deviation: 0.369605148616309
+  - 2.156620979309082
+  - 1.8625898361206055
+  - 1.8810279369354248
+  average: 1.9667462507883708
+  standard_deviation: 0.16469456666364168
 - name: token_count
   values:
-  - 959
-  - 957
-  - 939
-  average: 951.6666666666666
-  standard_deviation: 11.015141094572204
+  - 958
+  - 947
+  - 935
+  average: 946.6666666666666
+  standard_deviation: 11.50362261782493
 - name: cost
   values:
-  - 0.0036442000000000002
-  - 0.0036366000000000002
-  - 0.0035682
-  average: 0.0036163333333333334
-  standard_deviation: 4.185753615937445e-05
+  - 0.009101
+  - 0.0089965
+  - 0.0088825
+  average: 0.008993333333333332
+  standard_deviation: 0.00010928441486933682

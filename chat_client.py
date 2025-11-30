@@ -565,19 +565,20 @@ class OpenAIChatClient(IChatClient):
     def get_token_cost(self) -> float:
         """Returns OpenAI model pricing per 1K tokens in AUD.
 
-        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
-        - gpt-4: $0.03 USD → $0.0456 AUD per 1K tokens (blended)
-        - gpt-4o: $0.0025 USD → $0.0038 AUD per 1K tokens (blended)
-        - gpt-4o-mini: $0.00015 USD → $0.000228 AUD per 1K tokens (blended)
-        - gpt-4-turbo: $0.01 USD → $0.0152 AUD per 1K tokens (blended)
-        - gpt-3.5-turbo: $0.0005 USD → $0.00076 AUD per 1K tokens (blended)
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024).
+        Blended rates assume 50% input / 50% output token mix:
+        - gpt-4: $0.045 USD → $0.0684 AUD per 1K tokens (blended: $0.03 in + $0.06 out)
+        - gpt-4o: $0.00625 USD → $0.0095 AUD per 1K tokens (blended: $0.0025 in + $0.01 out)
+        - gpt-4o-mini: $0.000375 USD → $0.00057 AUD per 1K tokens (blended: $0.00015 in + $0.0006 out)
+        - gpt-4-turbo: $0.02 USD → $0.0304 AUD per 1K tokens (blended: $0.01 in + $0.03 out)
+        - gpt-3.5-turbo: $0.001 USD → $0.00152 AUD per 1K tokens (blended: $0.0005 in + $0.0015 out)
         """
         pricing = {
-            "gpt-4": 0.0456,
-            "gpt-4o": 0.0038,
-            "gpt-4o-mini": 0.000228,
-            "gpt-4-turbo": 0.0152,
-            "gpt-3.5-turbo": 0.00076,
+            "gpt-4": 0.0684,
+            "gpt-4o": 0.0095,
+            "gpt-4o-mini": 0.00057,
+            "gpt-4-turbo": 0.0304,
+            "gpt-3.5-turbo": 0.00152,
         }
         model_key = self.model.lower()
         if model_key not in pricing:
@@ -615,19 +616,20 @@ class GroqChatClient(OpenAIChatClient):
     def get_token_cost(self) -> float:
         """Returns Groq model pricing per 1K tokens in AUD.
 
-        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
-        - llama-3.3-70b: $0.00059 USD → $0.00090 AUD per 1K tokens (blended)
-        - llama-3.1-70b: $0.00059 USD → $0.00090 AUD per 1K tokens (blended)
-        - llama-3.1-8b: $0.00005 USD → $0.000076 AUD per 1K tokens (blended)
-        - mixtral-8x7b: $0.00024 USD → $0.00036 AUD per 1K tokens (blended)
-        - gemma2-9b: $0.0002 USD → $0.0003 AUD per 1K tokens (blended)
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024).
+        Blended rates assume 50% input / 50% output token mix:
+        - llama-3.3-70b: $0.00069 USD → $0.001049 AUD per 1K tokens (blended: $0.00059 in + $0.00079 out)
+        - llama-3.1-70b: $0.00069 USD → $0.001049 AUD per 1K tokens (blended: $0.00059 in + $0.00079 out)
+        - llama-3.1-8b: $0.000065 USD → $0.0001 AUD per 1K tokens (blended: $0.00005 in + $0.00008 out)
+        - mixtral-8x7b: $0.00024 USD → $0.00036 AUD per 1K tokens (estimated blended)
+        - gemma2-9b: $0.0002 USD → $0.0003 AUD per 1K tokens (estimated blended)
         """
         pricing = {
-            "llama-3.3-70b-versatile": 0.00090,
-            "llama-3.1-70b-versatile": 0.00090,
-            "llama-3.1-8b-instant": 0.000076,
-            "llama3-70b-8192": 0.00090,
-            "llama3-8b-8192": 0.000076,
+            "llama-3.3-70b-versatile": 0.001049,
+            "llama-3.1-70b-versatile": 0.001049,
+            "llama-3.1-8b-instant": 0.0001,
+            "llama3-70b-8192": 0.001049,
+            "llama3-8b-8192": 0.0001,
             "mixtral-8x7b-32768": 0.00036,
             "gemma2-9b-it": 0.0003,
         }
@@ -1008,31 +1010,32 @@ class BedrockChatClient(IChatClient):
     def get_token_cost(self) -> float:
         """Returns Bedrock model pricing per 1K tokens in AUD based on model type.
 
-        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
-        - Claude Opus: $0.015 USD → $0.0228 AUD per 1K tokens (blended)
-        - Claude Sonnet: $0.003 USD → $0.00456 AUD per 1K tokens (blended)
-        - Claude Haiku: $0.00025 USD → $0.00038 AUD per 1K tokens (blended)
-        - Amazon Nova Pro: $0.0008 USD → $0.001216 AUD per 1K tokens (blended)
-        - Amazon Nova Lite: $0.00006 USD → $0.000091 AUD per 1K tokens (blended)
-        - Amazon Nova Micro: $0.000035 USD → $0.000053 AUD per 1K tokens (blended)
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024).
+        Blended rates assume 50% input / 50% output token mix:
+        - Claude Opus: $0.015 USD → $0.0228 AUD per 1K tokens (estimated blended)
+        - Claude Sonnet: $0.009 USD → $0.01368 AUD per 1K tokens (blended: $0.003 in + $0.015 out)
+        - Claude Haiku: $0.00025 USD → $0.00038 AUD per 1K tokens (estimated blended)
+        - Amazon Nova Pro: $0.002 USD → $0.00304 AUD per 1K tokens (blended: $0.0008 in + $0.0032 out)
+        - Amazon Nova Lite: $0.00006 USD → $0.000091 AUD per 1K tokens (estimated blended)
+        - Amazon Nova Micro: $0.000035 USD → $0.000053 AUD per 1K tokens (estimated blended)
         """
         model_lower = self.model.lower()
 
         if "opus" in model_lower:
             return 0.0228
         elif "sonnet" in model_lower:
-            return 0.00456
+            return 0.01368
         elif "haiku" in model_lower:
             return 0.00038
         elif "nova-pro" in model_lower or "novapro" in model_lower:
-            return 0.001216
+            return 0.00304
         elif "nova-lite" in model_lower or "novalite" in model_lower:
             return 0.000091
         elif "nova-micro" in model_lower or "novamicro" in model_lower:
             return 0.000053
         elif "nova" in model_lower:
             logger.info(f"Using Nova Pro pricing for model '{self.model}'")
-            return 0.001216
+            return 0.00304
         else:
             logger.warning(
                 f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD"

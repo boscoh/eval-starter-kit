@@ -105,7 +105,9 @@
 
           // Title
           .d-flex.justify-content-between.align-items-center.mt-3
-            .display-4.fw-bold.mx-3.my-2 Eval Starter Kit
+            .display-4.fw-bold.mx-3.my-2 
+              | Eval Starter Kit
+              span.text-muted.ms-3(v-if="defaults.evalsDir") [{{ defaults.evalsDir }}]
 
           // Tab navigation
           ul.nav.nav-tabs.mt-3
@@ -275,7 +277,7 @@
                       textarea.form-control(rows="8" v-model="sampleOutput" readonly)
 
                 //// Run tab - right column
-                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1(style="max-width: 500px;")
+                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
                   .px-3.pt-4
 
                     .d-flex.flex-row.align-items-end

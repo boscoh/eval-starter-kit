@@ -1,42 +1,32 @@
 ---
 texts:
-- "[City, State] Systems Analyst Consultant with over 25 years of experience in the\
-  \ IT sector. Holds an M.S. in Computer Science (Data Communications) and a B.A.\
-  \ in Computer Science. Proficient in multiple programming languages including C,\
-  \ C++, VBA, Assembly, and HTML. \n\nKey qualifications include expertise in Software\
-  \ Development Lifecycle (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance.\
-  \ Strong background in project leadership, system administration, and data communications.\
-  \ \n\nNotable professional experience involves providing consulting expertise in\
-  \ supporting various enterprise applications, conducting issue analysis, delivering\
-  \ Level 2 production support, and developing VBA automation in Access/Excel. \n\n\
-  Relevant skills encompass systems analysis, application support, software development,\
-  \ and network administration. Demonstrated ability in conducting root cause analysis,\
-  \ escalating issues to Level 3/Core teams, and supporting FDA-validated manufacturing\
-  \ applications."
 - >-
   [City, State] Systems Analyst Consultant with 30 years of experience in software
   development, system administration, and project leadership. Holds an M.S. in Computer
   Science (Data Communications) and a B.A. in Computer Science. Proficient in C, C++,
-  VBA, Assembly, and HTML. Extensive experience with MS Access, Documentum DCM/D2,
-  and relational databases. Skilled in SDLC, CSV, GxP, and SOX compliance. Demonstrated
-  expertise in document management, data communications, and system administration.
-  Notable for developing and supporting client/server applications, conducting root
-  cause analysis, and providing Level 2 production support. Strong analytical, problem-solving,
+  VBA, Assembly, and HTML. Skilled in MS Access, Documentum DCM/D2, and relational
+  databases. Extensive experience with SDLC, CSV, GxP, and SOX compliance. Notable
+  for developing and supporting client/server applications, conducting root cause
+  analysis, and delivering Level 2 production support. Strong analytical, problem-solving,
   and communication skills.
-- "[City, State] Systems Analyst Consultant with over 25 years of experience in various\
-  \ environments and technologies. Holds an M.S. in Computer Science (Data Communications)\
-  \ and a B.A. in Computer Science. \n\nKey qualifications include expertise in Software\
-  \ Development Lifecycle (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance.\
-  \ Proficient in Documentum DCM and D2, MS Access, VBA, C, C++, HTML, and Assembly\
-  \ language programming. \n\nNotable professional experience includes roles as a\
-  \ Consultant from January 1999 to November 2015, providing consulting expertise\
-  \ in supporting multiple departments across the enterprise. Responsibilities involved\
-  \ project leadership, application upgrades, and Level 2 production support. \n\n\
-  Additionally, has a strong background in system administration, data communications,\
-  \ and developing VBA automation in Access/Excel. Supported FDA-validated manufacturing\
-  \ applications and assisted in Windows OS rollouts and upgrades. \n\nRelevant skills\
-  \ encompass analytical and problem-solving techniques, organisational and communication\
-  \ skills, and extensive experience in systems analysis and general application support."
+- >-
+  [City, State] Systems Analyst with 30 years of experience in software development,
+  system administration, and project leadership. M.S. in Computer Science (Data Communications)
+  and B.A. in Computer Science. Proficient in C, C++, VBA, Assembly, and HTML. Expertise
+  in SDLC, CSV, GxP, and SOX compliance. Strong analytical, problem-solving, and communication
+  skills. Extensive experience in Documentum DCM/D2, MS Access, and relational databases.
+  Skilled in Windows OS rollouts, network administration, and VBA automation in Access/Excel.
+  Notable for supporting FDA-validated manufacturing applications and conducting root
+  cause analysis for recurring issues.
+- >-
+  [City, State] Systems Analyst Consultant with 30 years of experience in software
+  development, system administration, and project leadership. Holds an M.S. in Computer
+  Science (Data Communications) and a B.A. in Computer Science. Proficient in C, C++,
+  VBA, Assembly, and HTML. Expertise in SDLC, CSV, GxP, and SOX compliance. Strong
+  background in Documentum DCM/D2, MS Access, and relational databases. Notable experience
+  includes supporting McNeil Consumer Healthcare, developing client/server messaging
+  applications, and providing system administration support. Skilled in data communications,
+  network administration, and Microsoft Access/Excel VBA automation.
 evaluations:
 - name: word_count
   values:
@@ -48,35 +38,35 @@ evaluations:
 - name: equivalence
   values:
   - 0.8
-  - 0.9
   - 0.8
-  average: 0.8333333333333334
-  standard_deviation: 0.05773502691896256
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
 - name: coherence
   values:
+  - 0.8
   - 0.9
   - 0.9
-  - 0.9
-  average: 0.9
-  standard_deviation: 0.0
+  average: 0.8666666666666667
+  standard_deviation: 0.05773502691896256
 - name: elapsed_seconds
   values:
-  - 4.071686744689941
-  - 1.7420120239257812
-  - 2.8224871158599854
-  average: 2.8787286281585693
-  standard_deviation: 1.1658552255409398
+  - 4.39232325553894
+  - 2.176481008529663
+  - 2.056988000869751
+  average: 2.8752640883127847
+  standard_deviation: 1.315169583121732
 - name: token_count
   values:
-  - 1036
-  - 996
-  - 1074
-  average: 1035.3333333333333
-  standard_deviation: 39.0042732701602
+  - 983
+  - 991
+  - 986
+  average: 986.6666666666666
+  standard_deviation: 4.041451884327381
 - name: cost
   values:
-  - 0.001259776
-  - 0.001211136
-  - 0.001305984
-  average: 0.0012589653333333333
-  standard_deviation: 4.742919629651481e-05
+  - 0.0029883200000000005
+  - 0.00301264
+  - 0.00299744
+  average: 0.002999466666666667
+  standard_deviation: 1.2286013728355027e-05
