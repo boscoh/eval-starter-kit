@@ -563,13 +563,21 @@ class OpenAIChatClient(IChatClient):
             raise RuntimeError(f"Error generating embedding: {str(e)}")
 
     def get_token_cost(self) -> float:
-        """Returns OpenAI model pricing per 1K tokens in AUD."""
+        """Returns OpenAI model pricing per 1K tokens in AUD.
+
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
+        - gpt-4: $0.03 USD → $0.0456 AUD per 1K tokens (blended)
+        - gpt-4o: $0.0025 USD → $0.0038 AUD per 1K tokens (blended)
+        - gpt-4o-mini: $0.00015 USD → $0.000228 AUD per 1K tokens (blended)
+        - gpt-4-turbo: $0.01 USD → $0.0152 AUD per 1K tokens (blended)
+        - gpt-3.5-turbo: $0.0005 USD → $0.00076 AUD per 1K tokens (blended)
+        """
         pricing = {
-            "gpt-4": 0.045,
-            "gpt-4o": 0.00375,
-            "gpt-4o-mini": 0.000225,
-            "gpt-4-turbo": 0.015,
-            "gpt-3.5-turbo": 0.00075,
+            "gpt-4": 0.0456,
+            "gpt-4o": 0.0038,
+            "gpt-4o-mini": 0.000228,
+            "gpt-4-turbo": 0.0152,
+            "gpt-3.5-turbo": 0.00076,
         }
         model_key = self.model.lower()
         if model_key not in pricing:
@@ -605,15 +613,23 @@ class GroqChatClient(OpenAIChatClient):
         )
 
     def get_token_cost(self) -> float:
-        """Returns Groq model pricing per 1K tokens in AUD."""
+        """Returns Groq model pricing per 1K tokens in AUD.
+
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
+        - llama-3.3-70b: $0.00059 USD → $0.00090 AUD per 1K tokens (blended)
+        - llama-3.1-70b: $0.00059 USD → $0.00090 AUD per 1K tokens (blended)
+        - llama-3.1-8b: $0.00005 USD → $0.000076 AUD per 1K tokens (blended)
+        - mixtral-8x7b: $0.00024 USD → $0.00036 AUD per 1K tokens (blended)
+        - gemma2-9b: $0.0002 USD → $0.0003 AUD per 1K tokens (blended)
+        """
         pricing = {
-            "llama-3.3-70b-versatile": 0.00082,
-            "llama-3.1-70b-versatile": 0.00082,
-            "llama-3.1-8b-instant": 0.00008,
-            "llama3-70b-8192": 0.00082,
-            "llama3-8b-8192": 0.00008,
+            "llama-3.3-70b-versatile": 0.00090,
+            "llama-3.1-70b-versatile": 0.00090,
+            "llama-3.1-8b-instant": 0.000076,
+            "llama3-70b-8192": 0.00090,
+            "llama3-8b-8192": 0.000076,
             "mixtral-8x7b-32768": 0.00036,
-            "gemma2-9b-it": 0.00030,
+            "gemma2-9b-it": 0.0003,
         }
         model_key = self.model.lower()
         if model_key not in pricing:
@@ -990,15 +1006,33 @@ class BedrockChatClient(IChatClient):
             raise RuntimeError(f"Error generating embedding: {str(e)}")
 
     def get_token_cost(self) -> float:
-        """Returns Bedrock model pricing per 1K tokens in AUD based on model type."""
+        """Returns Bedrock model pricing per 1K tokens in AUD based on model type.
+
+        USD prices converted to AUD using 1.52 exchange rate (Dec 2024):
+        - Claude Opus: $0.015 USD → $0.0228 AUD per 1K tokens (blended)
+        - Claude Sonnet: $0.003 USD → $0.00456 AUD per 1K tokens (blended)
+        - Claude Haiku: $0.00025 USD → $0.00038 AUD per 1K tokens (blended)
+        - Amazon Nova Pro: $0.0008 USD → $0.001216 AUD per 1K tokens (blended)
+        - Amazon Nova Lite: $0.00006 USD → $0.000091 AUD per 1K tokens (blended)
+        - Amazon Nova Micro: $0.000035 USD → $0.000053 AUD per 1K tokens (blended)
+        """
         model_lower = self.model.lower()
 
         if "opus" in model_lower:
-            return 0.0225
+            return 0.0228
         elif "sonnet" in model_lower:
-            return 0.0045
+            return 0.00456
         elif "haiku" in model_lower:
-            return 0.000375
+            return 0.00038
+        elif "nova-pro" in model_lower or "novapro" in model_lower:
+            return 0.001216
+        elif "nova-lite" in model_lower or "novalite" in model_lower:
+            return 0.000091
+        elif "nova-micro" in model_lower or "novamicro" in model_lower:
+            return 0.000053
+        elif "nova" in model_lower:
+            logger.info(f"Using Nova Pro pricing for model '{self.model}'")
+            return 0.001216
         else:
             logger.warning(
                 f"Unknown Bedrock model '{self.model}', using default cost of 0.0 AUD"

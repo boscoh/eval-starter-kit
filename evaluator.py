@@ -133,6 +133,12 @@ class CoherenceEvaluator:
 
             response = await self.chat_client.get_completion(messages)
 
+            # Check if the response contains an error
+            if "error" in response.get("metadata", {}):
+                error_msg = response["metadata"]["error"]
+                logger.error(f"Chat client error in coherence evaluation: {error_msg}")
+                raise RuntimeError(f"Chat client error: {error_msg}")
+
             result.update(
                 {
                     "text": response.get("text", ""),
@@ -145,6 +151,7 @@ class CoherenceEvaluator:
 
         except Exception:
             logging.error("Error in coherence evaluation", exc_info=True)
+            raise
 
         return result
 
@@ -224,6 +231,12 @@ class EquivalenceEvaluator:
 
             response = await self.chat_client.get_completion(messages)
 
+            # Check if the response contains an error
+            if "error" in response.get("metadata", {}):
+                error_msg = response["metadata"]["error"]
+                logger.error(f"Chat client error in equivalence evaluation: {error_msg}")
+                raise RuntimeError(f"Chat client error: {error_msg}")
+
             result.update(
                 {
                     "text": response.get("text", ""),
@@ -237,6 +250,7 @@ class EquivalenceEvaluator:
         except Exception as e:
             logger.error(f"Error in semantic equivalence evaluation: {e}")
             result["text"] = str(e)
+            raise
 
         return result
 

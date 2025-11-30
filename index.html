@@ -49,13 +49,16 @@
       window.ky = ky;
     </script>
 
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
     <!-- Custom styles -->
     <style>
       body {
         overflow-y: hidden;
       }
       .scrollable-column {
-        height: calc(100vh - 182px);
+        height: calc(100vh - 140px);
         overflow-y: auto;
       }
 
@@ -102,7 +105,7 @@
 
           // Title
           .d-flex.justify-content-between.align-items-center.mt-3
-            .display-2.mx-3.my-3 Eval Starter Kit
+            .display-4.fw-bold.mx-3.my-2 Eval Starter Kit
 
           // Tab navigation
           ul.nav.nav-tabs.mt-3
@@ -414,11 +417,11 @@
 
             /// Graph tab
             #graph-tab.tab-pane.fade.h-100
-              iframe(
-                src="/graph"
-                style="width: 100%; height: 100%; border: none;"
-                title="Performance Graph"
-              )
+              .scrollable-column
+                .container-fluid.p-3
+                  template(v-for="graph in performanceGraphs" :key="graph.id")
+                    .w-100.mb-5
+                      div(:id="graph.id")
 
         // Modals
 
@@ -619,6 +622,8 @@
       const renameItemType = ref("");
       const renameOldName = ref("");
       const renameNewName = ref("");
+      
+      const performanceGraphs = ref([]);
 
       // Derived values
       const filteredModels = computed(() => {
@@ -637,6 +642,40 @@
           }
         },
       );
+
+      // Graph rendering
+      async function loadGraphData() {
+        try {
+          if (!window.ky) {
+            throw new Error("Ky module not loaded yet");
+          }
+          const data = await window.ky.get("/api/graph-data").json();
+          console.log("Loaded graph data:", data);
+          performanceGraphs.value = data.graphs || [];
+          return true;
+        } catch (error) {
+          console.error("Failed to load graph data:", error);
+          let errorMsg = "Failed to load graph data";
+          if (error.message) {
+            errorMsg += `: ${error.message}`;
+          }
+          showNotification(errorMsg, "danger");
+          return false;
+        }
+      }
+
+      function plotGraphs() {
+        if (!performanceGraphs.value || performanceGraphs.value.length === 0) {
+          console.warn("No graphs to plot");
+          return;
+        }
+        for (let graph of performanceGraphs.value) {
+          const element = document.getElementById(graph.id);
+          if (element) {
+            Plotly.newPlot(element, graph);
+          }
+        }
+      }
 
       // Lifecycle hooks
       // Initialize toast when a new notification is added
@@ -657,6 +696,15 @@
         await loadQueryRefs();
         defaults.value = await getJson("/defaults");
         await chooseRun(runNames.value[0]);
+        
+        // Load and plot graphs when Graph tab is shown
+        const graphTab = document.querySelector('a[href="#graph-tab"]');
+        if (graphTab) {
+          graphTab.addEventListener('shown.bs.tab', async () => {
+            await loadGraphData();
+            setTimeout(() => plotGraphs(), 100);
+          });
+        }
       });
 
       // Methods
@@ -746,6 +794,15 @@
             timeout: 600000,
           });
           await loadRunResult(selectedRunName.value);
+          
+          // Reload graph data after successful evaluation
+          try {
+            await loadGraphData();
+            setTimeout(() => plotGraphs(), 100);
+          } catch (graphError) {
+            console.warn("Could not reload graphs:", graphError);
+          }
+          
           showNotification("Evaluation completed successfully!", "success");
         } catch (error) {
           console.error("Failed to run evaluation:", error);
@@ -1064,6 +1121,7 @@
         renameItemType,
         renameOldName,
         renameNewName,
+        performanceGraphs,
 
         // Methods
         chooseRun,

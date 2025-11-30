@@ -4,9 +4,9 @@ from statistics import mean, stdev
 
 from path import Path
 
+import schemas
 from chat_client import get_chat_client
 from evaluator import EvaluationRunner
-import schemas
 from schemas import RunConfig, RunResult, set_evals_dir
 from yaml_utils import save_yaml
 
@@ -29,7 +29,7 @@ class Runner:
             logger.info(f"Connected to chat client: {self._chat_client}")
         except Exception as e:
             logger.error(f"Error connecting to chat client: {e}")
-            return
+            raise RuntimeError(f"Failed to connect to chat client: {e}") from e
 
         try:
             fields = self._config.evaluators + [
@@ -50,6 +50,12 @@ class Runner:
                     ],
                     temperature=self._config.temperature,
                 )
+
+                # Check if the response contains an error
+                if "error" in response.get("metadata", {}):
+                    error_msg = response["metadata"]["error"]
+                    logger.error(f"Chat client error: {error_msg}")
+                    raise RuntimeError(f"Chat client error: {error_msg}")
 
                 response_texts.append(response["text"])
 
@@ -105,7 +111,7 @@ if __name__ == "__main__":
     from setup_logger import setup_logging
 
     setup_logging()
-    
+
     parser = argparse.ArgumentParser(description="Run LLM evaluations")
     parser.add_argument(
         "config_file",
@@ -118,9 +124,9 @@ if __name__ == "__main__":
         help="Base directory for evals (default: evals-consultant)",
     )
     args = parser.parse_args()
-    
+
     set_evals_dir(args.evals_dir)
-    
+
     if args.config_file:
         file_paths = [Path(args.config_file)]
     else:

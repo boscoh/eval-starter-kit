@@ -98,30 +98,53 @@ def serve_index():
         raise HTTPException(status_code=500, detail=f"Error serving index.html: {ex}")
 
 
-@app.get("/graph", response_class=HTMLResponse)
-def serve_graph():
-    """Serves the graph visualization page (graph.html)"""
-    graph_path = Path("./graph.html")
-    logger.info(f"Serving graph page from: {graph_path}")
+@app.get("/api/graph-data")
+def get_graph_data():
+    """Dynamically generates graph data from current results directory"""
     try:
-        html_content = graph_path.read_text(encoding="utf-8")
-        return HTMLResponse(content=html_content)
-    except Exception as ex:
-        logger.error(f"Error serving graph.html: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error serving graph.html: {ex}")
+        from graph import extract_evaluation_data, generate_plotly_graph
 
+        logger.info(f"Generating dynamic graph data from {dir_from_table['result']}")
 
-@app.get("/graph-data.js")
-def serve_graph_data():
-    """Serves the graph data JavaScript file"""
-    graph_data_path = Path("./graph-data.js")
-    logger.info(f"Serving graph data from: {graph_data_path}")
-    try:
-        js_content = graph_data_path.read_text(encoding="utf-8")
-        return HTMLResponse(content=js_content, media_type="application/javascript")
+        results_dir = dir_from_table["result"]
+        evaluators_data = extract_evaluation_data(results_dir)
+
+        if not evaluators_data:
+            return {"graphs": [], "evaluationData": {}}
+
+        eval_type = "Evaluation"
+        if "consultant" in str(results_dir).lower():
+            eval_type = "Consultant"
+        elif "engineer" in str(results_dir).lower():
+            eval_type = "Engineer"
+
+        evaluator_labels = {
+            "elapsed_seconds": "Elapsed Time (seconds)",
+            "token_count": "Token Count",
+            "cost": "Cost ($)",
+            "coherence": "Coherence Score (0-1)",
+            "equivalence": "Equivalence Score (0-1)",
+            "word_count": "Word Count Score (0-1)",
+        }
+
+        graphs = []
+        for eval_name, data in evaluators_data.items():
+            if not data:
+                continue
+
+            graph_id = f"{eval_type.lower()}-{eval_name.replace('_', '-')}-graph"
+            eval_display_name = eval_name.replace("_", " ").title()
+            x_axis_label = evaluator_labels.get(eval_name, eval_display_name)
+
+            graph = generate_plotly_graph(data, graph_id, x_axis_label)
+            graphs.append(graph)
+
+        return {"graphs": graphs, "evaluationData": evaluators_data}
     except Exception as ex:
-        logger.error(f"Error serving graph-data.js: {ex}")
-        raise HTTPException(status_code=500, detail=f"Error serving graph-data.js: {ex}")
+        logger.error(f"Error generating graph data: {ex}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"Error generating graph data: {str(ex)}"
+        )
 
 
 @app.get("/defaults")
@@ -414,7 +437,7 @@ if __name__ == "__main__":
         help="Base directory for evals (default: evals-consultant)",
     )
     args = parser.parse_args()
-    
+
     set_evals_dir(args.evals_dir)
 
     if not is_in_container():
