@@ -376,6 +376,7 @@ async def rename_object(request: RenameRequest):
         )
 
 
+
 def is_in_container() -> bool:
     """Check if running inside a container (Docker, Podman, Kubernetes, ECS, etc.)."""
     if os.path.exists("/.dockerenv"):

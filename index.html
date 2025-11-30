@@ -105,7 +105,7 @@
 
           // Title
           .d-flex.justify-content-between.align-items-center.mt-3
-            .display-4.fw-bold.mx-3.my-2 
+            h2.fw-bold.mx-3.my-2 
               | Eval Starter Kit
               span.text-muted.ms-3(v-if="defaults.evalsDir") [{{ defaults.evalsDir }}]
 
@@ -137,9 +137,7 @@
 
                     .d-flex.gap-2.mb-2
                       button.btn.btn-success(
-                        data-bs-toggle="modal"
-                        data-bs-target="#create-run-modal"
-                        @click="newRunName = ''"
+                        @click="openCreateModal('Create New Eval', 'Eval Name', 'eval-name', createRun)"
                       ) + new
                       button.btn.btn-primary(
                         @click="runAllEvaluations"
@@ -174,6 +172,12 @@
                           )
                           i.fas.fa-play(v-else)
                         button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openCreateModal('Duplicate Run', 'New Name', 'new-name', (name) => duplicateRun(f, name), getNextCopyName(f, runNames))"
+                          title="Duplicate run"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-copy
+                        button.btn.btn-sm.btn-link.text-dark(
                           @click.stop="openRenameDialog('run', f)"
                           title="Rename run"
                           style="text-decoration: none;"
@@ -190,7 +194,7 @@
                 .d-flex.flex-column.scrollable-column.border.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-3 Run config: {{selectedRunName}}
+                    h3 Run [{{selectedRunName}}]
 
                     h5.mt-4 Repeat
                     .form-group
@@ -281,7 +285,7 @@
                   .px-3.pt-4
 
                     .d-flex.flex-row.align-items-end
-                      h5.mt-3 Prompt:
+                      h5 Prompt:
                       .ms-2.form-group
                         select.form-select(v-model="runConfig.promptRef" @change="e => choosePromptOfRun(e.target.value)")
                           option(value="" disabled)
@@ -338,8 +342,7 @@
                     h3 Queries
 
                     button.btn.btn-success(
-                      data-bs-toggle="modal"
-                      data-bs-target="#create-query-modal"
+                      @click="openCreateModal('Create New Query', 'Query Name', 'query-name', createQuery)"
                     ) + new
 
                     ul.list-group
@@ -350,6 +353,12 @@
                       )
                         .flex-grow-1(@click="chooseSelectedQuery(query)" role="button")
                           | {{query}}
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openCreateModal('Duplicate Query', 'New Name', 'new-name', (name) => duplicateQuery(query, name), getNextCopyName(query, queryRefs))"
+                          title="Duplicate query"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-copy
                         button.btn.btn-sm.btn-link.text-dark(
                           @click.stop="openRenameDialog('query', query)"
                           title="Rename query"
@@ -367,7 +376,7 @@
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 query[{{selectedQueryRef}}] - input
+                    h3 Query [{{selectedQueryRef}}] - input
 
                     textarea.form-control(rows="25" v-model="selectedQuery.input")
 
@@ -384,7 +393,7 @@
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 query[{{selectedQueryRef}}] - output
+                    h3 Query [{{selectedQueryRef}}] - output
 
                     textarea.form-control(rows="25" v-model="selectedQuery.output")
 
@@ -399,8 +408,7 @@
                     h3 Prompts
 
                     button.btn.btn-success(
-                      data-bs-toggle="modal"
-                      data-bs-target="#create-prompt-modal"
+                      @click="openCreateModal('Create New System Prompt', 'System Prompt Name', 'prompt-name', createPrompt)"
                     ) + new
 
                     ul.list-group
@@ -411,6 +419,12 @@
                       )
                         .flex-grow-1(@click="chooseSelectedPrompt(promptName)" role="button")
                           | {{promptName}}
+                        button.btn.btn-sm.btn-link.text-dark(
+                          @click.stop="openCreateModal('Duplicate Prompt', 'New Name', 'new-name', (name) => duplicatePrompt(promptName, name), getNextCopyName(promptName, promptRefs))"
+                          title="Duplicate prompt"
+                          style="text-decoration: none;"
+                        )
+                          i.fas.fa-copy
                         button.btn.btn-sm.btn-link.text-dark(
                           @click.stop="openRenameDialog('prompt', promptName)"
                           title="Rename prompt"
@@ -428,7 +442,7 @@
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
 
-                    h3.mt-5 {{selectedPromptRef}}
+                    h3 Prompt [{{selectedPromptRef}}]
 
                     textarea.form-control(rows="25" v-model="selectedPrompt")
 
@@ -451,71 +465,26 @@
 
         // Modals
 
-        // Create Eval Modal
-        .modal.fade(id="create-run-modal" tabindex="-1")
+        // Generic Create Modal
+        .modal.fade(id="create-modal" tabindex="-1")
           .modal-dialog
             .modal-content
               .modal-header
-                h5.modal-title Create New Eval
+                h5.modal-title {{ createModalTitle }}
                 button.btn-close(data-bs-dismiss="modal" aria-label="Close")
               .modal-body
                 .form-group.mb-3
-                  label.form-label Eval Name
+                  label.form-label {{ createModalLabel }}
                   input.form-control(
                     type="text"
-                    v-model="newRunName"
-                    placeholder="eval-name"
-                    @keyup.enter="createRun"
+                    v-model="createModalValue"
+                    :placeholder="createModalPlaceholder"
+                    @keyup.enter="submitCreate"
                     autofocus
                   )
               .modal-footer
                 button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
-                button.btn.btn-primary(@click="createRun" :disabled="!newRunName") Create
-
-        // Create Query Modal
-        .modal.fade(id="create-query-modal" tabindex="-1")
-          .modal-dialog
-            .modal-content
-              .modal-header
-                h5.modal-title Create New Query
-                button.btn-close(data-bs-dismiss="modal" aria-label="Close")
-              .modal-body
-                .form-group.mb-3
-                  label.form-label Query Name
-                  input.form-control(
-                    type="text"
-                    v-model="newQueryRef"
-                    placeholder="query-name"
-                    @keyup.enter="createQuery"
-                    autofocus
-                  )
-              .modal-footer
-                button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
-                button.btn.btn-primary(@click="createQuery" :disabled="!newQueryRef") Create
-
-        // Create Prompt Modal
-        .modal.fade(id="create-prompt-modal" tabindex="-1")
-          .modal-dialog
-            .modal-content
-              .modal-header
-                h5.modal-title Create New System Prompt
-                button.btn-close(data-bs-dismiss="modal" aria-label="Close")
-              .modal-body
-                .form-group.mb-3
-                  label.form-label System Prompt Name
-                  input.form-control(
-                    type="text"
-                    v-model="newPromptRef"
-                    placeholder="prompt-name"
-                    @keyup.enter="createPrompt"
-                    autofocus
-                  )
-              .modal-footer
-                button.btn.btn-secondary(data-bs-dismiss="modal") Cancel
-                button.btn.btn-primary(
-                  @click="createPrompt"
-                  :disabled="!newPromptRef"
-                ) Create
+                button.btn.btn-primary(@click="submitCreate" :disabled="!createModalValue") Create
 
         // Delete Confirmation Modal
         .modal.fade(id="delete-confirm-modal" tabindex="-1")
@@ -650,6 +619,12 @@
       const renameItemType = ref("");
       const renameOldName = ref("");
       const renameNewName = ref("");
+      
+      const createModalTitle = ref("");
+      const createModalLabel = ref("");
+      const createModalPlaceholder = ref("");
+      const createModalValue = ref("");
+      const createModalCallback = ref(null);
       
       const performanceGraphs = ref([]);
 
@@ -908,61 +883,52 @@
         }
       }
 
-      async function createRun() {
-        if (!newRunName.value) return;
+      async function createRun(name) {
+        if (!name) return;
 
         try {
-          await saveObject("run", newRunName.value, defaults.value.runConfig);
+          await saveObject("run", name, defaults.value.runConfig);
           await loadRunNames();
-          await chooseRun(newRunName.value);
-          newRunName.value = ""; // Clear the input field
+          await chooseRun(name);
           showNotification("Evaluation created successfully!");
         } catch (error) {
           console.error("Failed to create evaluation:", error);
           showNotification("Failed to create evaluation", "danger");
         }
-
-        closeBootstrapModal("create-run-modal");
       }
 
-      async function createPrompt() {
-        if (!newPromptRef.value) return;
+      async function createPrompt(name) {
+        if (!name) return;
 
         try {
           await saveObject(
             "prompt",
-            newPromptRef.value,
+            name,
             "A sample prompt to deal with input",
           );
           await loadPromptRefs();
-          await chooseSelectedPrompt(newPromptRef.value);
-          newPromptRef.value = ""; // Clear the input field
+          await chooseSelectedPrompt(name);
           showNotification("Prompt created successfully!");
         } catch (error) {
           console.error("Failed to create prompt:", error);
           showNotification("Failed to create prompt", "danger");
         }
-
-        closeBootstrapModal("create-prompt-modal");
       }
 
-      async function createQuery() {
-        if (!newQueryRef.value) return;
+      async function createQuery(name) {
+        if (!name) return;
         try {
-          await saveObject("query", newQueryRef.value, {
+          await saveObject("query", name, {
             input: "Sample input",
             output: "Expected output",
           });
           await loadQueryRefs();
-          await chooseSelectedQuery(newQueryRef.value);
-          newQueryRef.value = ""; // Clear the input field
+          await chooseSelectedQuery(name);
           showNotification("Query created successfully!");
         } catch (error) {
           console.error("Failed to create query:", error);
           showNotification("Failed to create query", "danger");
         }
-
-        closeBootstrapModal("create-query-modal");
       }
 
       async function chooseSelectedPrompt(promptName) {
@@ -1177,25 +1143,119 @@
         }
       }
 
+      function getNextCopyName(baseName, existingNames) {
+        // Remove existing "(digit)" suffix if present
+        const baseNameClean = baseName.replace(/\s*\(\d+\)$/, '');
+        
+        // Find all existing copies
+        const pattern = new RegExp(`^${baseNameClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\((\\d+)\\)$`);
+        let maxNum = 0;
+        
+        for (const name of existingNames) {
+          const match = name.match(pattern);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        }
+        
+        // Also check if base name exists without suffix
+        if (existingNames.includes(baseNameClean)) {
+          maxNum = Math.max(maxNum, 0);
+        }
+        
+        // Keep incrementing until we find an available name
+        let candidateName;
+        let num = maxNum + 1;
+        do {
+          candidateName = `${baseNameClean} (${num})`;
+          num++;
+        } while (existingNames.includes(candidateName));
+        
+        return candidateName;
+      }
+
+      async function duplicateRun(oldName, newName) {
+        if (!newName) return;
+        try {
+          const data = await fetchObject("run", oldName);
+          await saveObject("run", newName, data);
+          await loadRunNames();
+          selectedRunName.value = newName;
+          await loadRunConfig(newName);
+          showNotification("Run duplicated successfully!");
+        } catch (error) {
+          console.error("Failed to duplicate run:", error);
+          showNotification("Failed to duplicate run", "danger");
+        }
+      }
+
+      async function duplicateQuery(oldName, newName) {
+        if (!newName) return;
+        try {
+          const data = await fetchObject("query", oldName);
+          await saveObject("query", newName, data);
+          await loadQueryRefs();
+          selectedQueryRef.value = newName;
+          await chooseSelectedQuery(newName);
+          showNotification("Query duplicated successfully!");
+        } catch (error) {
+          console.error("Failed to duplicate query:", error);
+          showNotification("Failed to duplicate query", "danger");
+        }
+      }
+
+      async function duplicatePrompt(oldName, newName) {
+        if (!newName) return;
+        try {
+          const data = await fetchObject("prompt", oldName);
+          await saveObject("prompt", newName, data);
+          await loadPromptRefs();
+          selectedPromptRef.value = newName;
+          await chooseSelectedPrompt(newName);
+          showNotification("Prompt duplicated successfully!");
+        } catch (error) {
+          console.error("Failed to duplicate prompt:", error);
+          showNotification("Failed to duplicate prompt", "danger");
+        }
+      }
+
+      function openCreateModal(title, label, placeholder, callback, defaultValue = "") {
+        createModalTitle.value = title;
+        createModalLabel.value = label;
+        createModalPlaceholder.value = placeholder;
+        createModalValue.value = defaultValue;
+        createModalCallback.value = callback;
+        
+        const modal = new bootstrap.Modal(
+          document.getElementById("create-modal")
+        );
+        modal.show();
+      }
+
+      async function submitCreate() {
+        if (!createModalValue.value || !createModalCallback.value) return;
+        await createModalCallback.value(createModalValue.value);
+        createModalValue.value = "";
+        closeBootstrapModal("create-modal");
+      }
+
       // Expose methods and state to template
       return {
         // State
         runNames,
         defaults,
         selectedRunName,
-        newRunName,
         runConfig,
         runResult,
         isEvaluating,
         sampleOutput,
         promptRefs,
         selectedPromptRef,
-        newPromptRef,
         selectedPrompt,
         isSavingPrompt,
         queryRefs,
         selectedQueryRef,
-        newQueryRef,
         selectedQuery,
         notifications,
         filteredModels,
@@ -1204,6 +1264,10 @@
         renameItemType,
         renameOldName,
         renameNewName,
+        createModalTitle,
+        createModalLabel,
+        createModalPlaceholder,
+        createModalValue,
         performanceGraphs,
         isEvaluatingByRun,
         isRunningAll,
@@ -1229,6 +1293,12 @@
         confirmDelete,
         openRenameDialog,
         confirmRename,
+        getNextCopyName,
+        duplicateRun,
+        duplicateQuery,
+        duplicatePrompt,
+        openCreateModal,
+        submitCreate,
       };
     }
 
