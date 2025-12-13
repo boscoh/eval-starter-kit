@@ -194,7 +194,15 @@
                 .d-flex.flex-column.scrollable-column.border.flex-grow-1
                   .px-3.pt-4
 
-                    h3 Run [{{selectedRunName}}]
+                    .d-flex.align-items-center
+                      h3.mb-0 Run [{{selectedRunName}}]
+                      button.btn.btn-success.ms-3(@click="saveRunConfig" :disabled="isSavingRunConfig")
+                        span.spinner-border.spinner-border-sm(
+                          v-if="isSavingRunConfig"
+                          role="status"
+                          aria-hidden="true"
+                        )
+                        | {{ isSavingRunConfig ? ' saving...' : 'save' }}
 
                     h5.mt-4 Repeat
                     .form-group
@@ -244,15 +252,6 @@
                           )
                           label.form-check-label(:for="'evaluator-' + evaluator")
                             | {{ evaluator }}
-
-                    .mt-3
-                    button.btn.btn-success(@click="saveRunConfig" :disabled="isSavingRunConfig")
-                      span.spinner-border.spinner-border-sm(
-                        v-if="isSavingRunConfig"
-                        role="status"
-                        aria-hidden="true"
-                      )
-                      | {{ isSavingRunConfig ? ' saving...' : 'save' }}
 
                     hr
 
@@ -372,30 +371,26 @@
                         )
                           i.fas.fa-trash
 
-                //// Queries tab - central column
+                //// Queries tab - right section (input and output columns)
                 .d-flex.flex-column.scrollable-column.flex-grow-1
                   .px-3.pt-4
-
-                    h3 Query [{{selectedQueryRef}}] - input
-
-                    textarea.form-control(rows="25" v-model="selectedQuery.input")
-
-                    .mt-3
-                    button.btn.btn-success(
-                      @click="saveQuery" :disabled="isSavingPrompt"
-                    )
-                      span.spinner-border.spinner-border-sm(Z
-                      v-if="isSavingPrompt" role="status" aria-hidden="true"
+                    .d-flex.align-items-center
+                      h3.mb-0 Query [{{selectedQueryRef}}]
+                      button.btn.btn-success.ms-3(
+                        @click="saveQuery" :disabled="isSavingPrompt"
                       )
-                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
+                        span.spinner-border.spinner-border-sm(
+                          v-if="isSavingPrompt" role="status" aria-hidden="true"
+                        )
+                        | {{ isSavingPrompt ? ' saving...' : 'save' }}
 
-                //// Queries tab - right column
-                .d-flex.flex-column.scrollable-column.flex-grow-1
-                  .px-3.pt-4
-
-                    h3 Query [{{selectedQueryRef}}] - output
-
-                    textarea.form-control(rows="25" v-model="selectedQuery.output")
+                  .d-flex.flex-row.flex-grow-1.px-3.pb-3.gap-3
+                    .d-flex.flex-column.flex-grow-1
+                      h5 Input
+                      textarea.form-control.flex-grow-1(style="resize: none; min-height: 200px;" v-model="selectedQuery.input")
+                    .d-flex.flex-column.flex-grow-1
+                      h5 Output
+                      textarea.form-control.flex-grow-1(style="resize: none; min-height: 200px;" v-model="selectedQuery.output")
 
             /// Prompts tab
             #prompts-tab.tab-pane.fade.h-100
@@ -440,20 +435,19 @@
 
                 //// Prompts tab - right column
                 .d-flex.flex-column.scrollable-column.flex-grow-1
-                  .px-3.pt-4
+                  .d-flex.flex-column.h-100.px-3.pt-4.pb-3
 
-                    h3 Prompt [{{selectedPromptRef}}]
-
-                    textarea.form-control(rows="25" v-model="selectedPrompt")
-
-                    .mt-3
-                    button.btn.btn-success(
-                      @click="savePrompt" :disabled="isSavingPrompt"
-                    )
-                      span.spinner-border.spinner-border-sm(
-                        v-if="isSavingPrompt" role="status" aria-hidden="true"
+                    .d-flex.align-items-center
+                      h3.mb-0 Prompt [{{selectedPromptRef}}]
+                      button.btn.btn-success.ms-3(
+                        @click="savePrompt" :disabled="isSavingPrompt"
                       )
-                      | {{ isSavingPrompt ? ' saving...' : 'save' }}
+                        span.spinner-border.spinner-border-sm(
+                          v-if="isSavingPrompt" role="status" aria-hidden="true"
+                        )
+                        | {{ isSavingPrompt ? ' saving...' : 'save' }}
+
+                    textarea.form-control.flex-grow-1.mt-3(style="resize: none; min-height: 200px;" v-model="selectedPrompt")
 
             /// Graph tab
             #graph-tab.tab-pane.fade.h-100
