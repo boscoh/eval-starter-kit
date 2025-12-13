@@ -40,7 +40,6 @@ def setup_logging(level: Union[int, str] = logging.INFO) -> None:
         ("uvicorn.access", logging.WARNING, True),
         ("uvicorn.error", logging.INFO, True),
         ("uvicorn.server", logging.INFO, True),
-        ("mcp.server", logging.WARNING, True),
     ]
 
     for name, lvl, propagate in logger_configs:

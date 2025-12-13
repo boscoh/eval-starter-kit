@@ -4,11 +4,11 @@ from statistics import mean, stdev
 
 from path import Path
 
-import schemas
-from chat_client import get_chat_client
-from evaluator import EvaluationRunner
-from schemas import RunConfig, RunResult, set_evals_dir
-from yaml_utils import save_yaml
+import tinyeval.schemas as schemas
+from tinyeval.chat_client import get_chat_client
+from tinyeval.evaluator import EvaluationRunner
+from tinyeval.schemas import RunConfig, RunResult, set_evals_dir
+from tinyeval.yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -105,32 +105,31 @@ async def run_all(file_paths):
         await Runner(run_config).run()
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
-    from setup_logger import setup_logging
+    from .setup_logger import setup_logging
 
     setup_logging()
 
     parser = argparse.ArgumentParser(description="Run LLM evaluations")
     parser.add_argument(
-        "config_file",
-        nargs="?",
-        help="Path to config file (if not provided, runs all configs in evals/runs/)",
-    )
-    parser.add_argument(
-        "--evals-dir",
-        default="evals-consultant",
-        help="Base directory for evals (default: evals-consultant)",
+        "evals_dir",
+        help="Base directory for evals (e.g., evals-consultant, evals-engineer)",
     )
     args = parser.parse_args()
 
     set_evals_dir(args.evals_dir)
 
-    if args.config_file:
-        file_paths = [Path(args.config_file)]
-    else:
-        logger.info(f"No file path provided, run all in `./{schemas.RUNS_DIR}/*.yaml`")
-        file_paths = schemas.RUNS_DIR.glob("*.yaml")
+    logger.info(f"Running all configs in `./{schemas.RUNS_DIR}/*.yaml`")
+    file_paths = list(schemas.RUNS_DIR.glob("*.yaml"))
+
+    if not file_paths:
+        logger.warning(f"No config files found in {schemas.RUNS_DIR}")
+        return
 
     asyncio.run(run_all(file_paths))
+
+
+if __name__ == "__main__":
+    main()

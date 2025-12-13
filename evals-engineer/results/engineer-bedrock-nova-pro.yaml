@@ -1,57 +1,50 @@
 ---
 texts:
-- "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
-  \ experience in people management, leadership, and operations within Silicon Valley.\
-  \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
-  \ State University and a Bachelor of Science in Mathematical Engineering from Yildiz\
-  \ Technical University. \n\n**Key Qualifications:**\n- Extensive experience in tutoring\
-  \ K-12 and college students in Mathematics.\n- Proven track record in problem-solving,\
-  \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
-  \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
-  - Reduced operational errors by 80% as Operations Manager.\n- Contributed to winning\
-  \ the SF Fashion Tech Pitch Competition and growing user base to 1M active users\
-  \ as a Consultant.\n- Enhanced team's data analysis capabilities through classroom\
-  \ instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics, algebra,\
-  \ geometry, ESL students, technology integration.\n- Business & Management: Account\
-  \ management, data analysis, leadership, operations management.\n- Technical Skills:\
-  \ C, C++, MS Office Suite, Google Docs, SQL."
-- "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
-  \ experience in people management, leadership, and operations within Silicon Valley.\
-  \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
-  \ State University and a Bachelor of Science in Mathematical Engineering from Yildiz\
-  \ Technical University. \n\n**Key Qualifications:**\n- Extensive experience in tutoring\
-  \ K-12 and college students in Mathematics.\n- Proven track record in problem-solving,\
-  \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
-  \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
-  - Reduced operational errors by 80% through defined KPI reports and analytical tools.\n\
-  - Contributed to winning the SF Fashion Tech Pitch Competition and growing user\
-  \ base to 1M active users.\n- Enhanced team's data analysis capabilities through\
-  \ classroom instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics,\
-  \ algebra, geometry, ESL students, technology integration.\n- Business & Management:\
-  \ Account management, data analysis, leadership, operations management.\n- Technical\
-  \ Skills: C, C++, MS Office Suite, Google Docs, SQL."
-- "**San Francisco, California** Senior Engineering Manager with 8 years of professional\
-  \ experience in people management, leadership, and operations within Silicon Valley.\
-  \ Holds a Master of Business Administration in Decision Sciences from San Francisco\
-  \ State University and a Bachelor of Science in Mathematical Engineering from Yildiz\
-  \ Technical University. \n\n**Key Qualifications:**\n- Extensive experience in tutoring\
-  \ K-12 and college students in Mathematics.\n- Proven track record in problem-solving,\
-  \ creative lesson planning, and grading.\n- Skilled in designing and delivering\
-  \ course presentations and providing SQL programming training.\n\n**Notable Achievements:**\n\
-  - Reduced operational errors by 80% through defined KPI reports and analytical tools.\n\
-  - Contributed to winning the SF Fashion Tech Pitch Competition and growing user\
-  \ base to approximately 1M active users.\n- Enhanced team's data analysis capabilities\
-  \ through classroom instruction.\n\n**Relevant Skills:**\n- Tutoring & Teaching:\
-  \ Mathematics, algebra, geometry, ESL students, technology integration.\n- Business\
-  \ & Management: Account management, data analysis, leadership, operations management.\n\
-  - Technical Skills: C, C++, MS Office Suite, Google Docs, SQL."
+- "**City, State** Senior Engineering Manager with 8 years of professional experience\
+  \ in people management and leadership, combined with 3 years of experience as a\
+  \ Math tutor for K-12 and college students. Holds a Master of Business Administration\
+  \ in Decision Sciences and a Bachelor of Science in Mathematical Engineering. \n\
+  \n**Key Qualifications:**\n- Master of Business Administration: Decision Sciences,\
+  \ San Francisco State University\n- Bachelor of Science: Mathematical Engineering,\
+  \ Yildiz Technical University\n\n**Notable Achievements:**\n- Reduced operational\
+  \ errors by 80% as Operations Manager\n- Grew user base to approximately 1M active\
+  \ users as Consultant\n- Provided SQL programming training to enhance team data\
+  \ analysis capabilities\n\n**Relevant Skills:**\n- Tutoring & Teaching: Mathematics,\
+  \ algebra, geometry, ESL students\n- Business & Management: Leadership, operations\
+  \ management, project management\n- Technical Skills: C, C++, MS Office Suite, Google\
+  \ Docs, SQL"
+- "London, England **Senior Engineering Manager** with 8 years of experience in operations\
+  \ management, leadership, and data analysis. Master of Business Administration in\
+  \ Decision Sciences from San Francisco State University. Proven track record in\
+  \ people management, process improvement, and system optimization. \n\n**Key Qualifications:**\n\
+  - MBA in Decision Sciences with a focus on Operations Management and Project Management.\n\
+  - Bachelor of Science in Mathematical Engineering from Yildiz Technical University.\n\
+  - Extensive experience in tutoring Mathematics at various levels, enhancing student\
+  \ understanding and performance.\n- Strong background in SQL programming and data\
+  \ analysis, improving team capabilities through training and development.\n\n**Notable\
+  \ Achievements:**\n- Reduced operational errors by 80% through defined KPI reports\
+  \ and analytical tools.\n- Contributed to the growth of a user base to approximately\
+  \ 1M active users as a consultant.\n- Enhanced data analysis capabilities within\
+  \ teams through SQL training and workflow process development.\n\n**Relevant Skills:**\n\
+  - Tutoring and teaching Mathematics, algebra, geometry, and statistics.\n- Business\
+  \ and management skills including account management, data analysis, leadership,\
+  \ and project management.\n- Technical proficiency in C, C++, MS Office Suite, Google\
+  \ Docs, and SQL."
+- >-
+  **San Francisco, California** Senior Engineering Manager with 8 years of professional
+  experience in people management, leadership, and operations within Silicon Valley.
+  Master of Business Administration in Decision Sciences from San Francisco State
+  University. Proven track record in problem-solving, creative lesson planning, and
+  training. Skilled in SQL programming, data analysis, and process improvement. Extensive
+  experience in tutoring Mathematics at various levels, from K-12 to college. Proficient
+  in Microsoft Office Suite and Google Docs.
 evaluations:
 - name: equivalence
   values:
-  - 0.7
-  - 0.7
-  - 0.7
-  average: 0.7
+  - 0.5
+  - 0.5
+  - 0.5
+  average: 0.5
   standard_deviation: 0.0
 - name: coherence
   values:
@@ -62,22 +55,22 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 4.653185844421387
-  - 3.202666997909546
-  - 2.5678141117095947
-  average: 3.4745556513468423
-  standard_deviation: 1.0689417176812332
+  - 3.8466579914093018
+  - 3.074280261993408
+  - 1.6140599250793457
+  average: 2.844999392827352
+  standard_deviation: 1.1338213347654125
 - name: token_count
   values:
-  - 1534
-  - 1536
-  - 1537
-  average: 1535.6666666666667
-  standard_deviation: 1.5275252316519468
+  - 1503
+  - 1550
+  - 1409
+  average: 1487.3333333333333
+  standard_deviation: 71.79368588764149
 - name: cost
   values:
-  - 0.0
-  - 0.0
-  - 0.0
-  average: 0.0
-  standard_deviation: 0.0
+  - 0.004569119999999999
+  - 0.004712000000000001
+  - 0.00428336
+  average: 0.004521493333333334
+  standard_deviation: 0.0002182528050984305

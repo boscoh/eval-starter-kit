@@ -3,7 +3,7 @@ import re
 import textwrap
 from typing import Any, Dict
 
-from schemas import RunConfig
+from tinyeval.schemas import RunConfig
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +234,9 @@ class EquivalenceEvaluator:
             # Check if the response contains an error
             if "error" in response.get("metadata", {}):
                 error_msg = response["metadata"]["error"]
-                logger.error(f"Chat client error in equivalence evaluation: {error_msg}")
+                logger.error(
+                    f"Chat client error in equivalence evaluation: {error_msg}"
+                )
                 raise RuntimeError(f"Chat client error: {error_msg}")
 
             result.update(

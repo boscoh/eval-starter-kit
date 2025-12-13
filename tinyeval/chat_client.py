@@ -1,3 +1,12 @@
+"""
+Simple chat client abstraction for LLM providers.
+
+- Async only, with proper async context management
+- No streaming, only conversation with tools and embeddings
+- Mostly OpenAI JSON structure, but without choices, and easier token usage metadata
+- No langchain, litellm etc., just vendor-provided Python packages
+"""
+
 import json
 import logging
 import os

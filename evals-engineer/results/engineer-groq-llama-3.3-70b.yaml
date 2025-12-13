@@ -2,66 +2,63 @@
 texts:
 - >-
   San Francisco, California, Senior Engineering Manager with 8 years of professional
-  experience in leadership, documentation, and innovation. Holds a Master of Business
-  Administration in Decision Sciences and a Bachelor of Science in Mathematical Engineering.
-  Proven track record of utilising problem-solving skills to assist students in understanding
-  quantitative problems and achieve higher grades. Experienced in designing and delivering
-  presentations, evaluating exam papers, and providing training in SQL programming.
-  Skilled in data analysis, forecasting, inventory management, and optimisation techniques.
-  Possesses excellent leadership and management skills, with experience in supervising
-  teams and defining KPI reports. Proficient in a range of technical skills, including
-  C, C++, MS Office Suite, Google Docs, and SQL.
-- >-
-  San Francisco, California, Senior Engineering Manager with 8 years of professional
-  experience in leadership, documentation, and innovation. Holds a Master of Business
-  Administration in Decision Sciences and a Bachelor of Science in Mathematical Engineering.
-  Proven track record of utilising problem-solving skills to assist students in understanding
-  quantitative problems and achieve higher grades. Experienced in designing engaging
-  lesson plans, evaluating student performance, and providing effective presentations.
-  Skilled in SQL programming, data analysis, and technical skills such as C, C++,
-  MS Office Suite, and Google Docs.
-- >-
-  San Francisco, California Senior Engineering Manager with 8 years of professional
   experience in leadership, documentation, and innovation. Holds an MBA in Decision
   Sciences and a Bachelor of Science in Mathematical Engineering. Proven track record
-  of utilising problem-solving skills to assist students in understanding quantitative
-  problems and achieving higher grades. Experienced in creating engaging lesson plans,
-  evaluating student performance, and designing presentations. Skilled in SQL programming,
-  data analysis, and technical skills such as C, C++, MS Office Suite, and Google
-  Docs.
+  in problem-solving, having assisted students in mathematics and developed creative
+  lesson plans to enhance learning. Skilled in data analysis, having utilised statistical
+  tools and provided recommendations for system improvements. Experienced in operations
+  management, having supervised teams and defined KPI reports to reduce operational
+  errors. Proficient in technical skills, including SQL, C, and MS Office Suite.
+- >-
+  San Francisco, California Senior Engineering Manager with 8 years of professional
+  experience in leadership, people management, and operations. Holds an MBA in Decision
+  Sciences and a Bachelor of Science in Mathematical Engineering. Proven track record
+  of utilising problem-solving skills to assist students in understanding mathematical
+  concepts and achieve higher grades. Experienced in designing and delivering presentations,
+  evaluating exam papers, and providing training in SQL programming. Possesses strong
+  technical skills, including proficiency in C, C++, MS Office Suite, Google Docs,
+  and SQL.
+- >-
+  San Francisco, California Senior Engineering Manager with 8 years of professional
+  experience in leadership, people management, and documentation. Holds a Master of
+  Business Administration in Decision Sciences and a Bachelor of Science in Mathematical
+  Engineering. Proven track record of utilising problem-solving skills to assist students
+  in understanding mathematical concepts, with 3 years of experience as a Math tutor
+  for K-12 and college students. Skilled in data analysis, operations management,
+  and presentation design, with expertise in SQL programming and Microsoft PowerPoint.
 evaluations:
 - name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  - 0.7
+  average: 0.7666666666666667
+  standard_deviation: 0.05773502691896263
+- name: coherence
   values:
   - 0.8
   - 0.8
   - 0.8
   average: 0.8
   standard_deviation: 0.0
-- name: coherence
-  values:
-  - 0.9
-  - 0.8
-  - 0.8
-  average: 0.8333333333333334
-  standard_deviation: 0.05773502691896256
 - name: elapsed_seconds
   values:
-  - 0.6164698600769043
-  - 0.8258602619171143
-  - 0.5246357917785645
-  average: 0.655655304590861
-  standard_deviation: 0.15438804891856042
+  - 3.662188768386841
+  - 0.48337602615356445
+  - 0.4624147415161133
+  average: 1.535993178685506
+  standard_deviation: 1.8413692210180086
 - name: token_count
   values:
-  - 1433
-  - 1397
-  - 1392
-  average: 1407.3333333333333
-  standard_deviation: 22.368132093076824
+  - 1404
+  - 1393
+  - 1391
+  average: 1396
+  standard_deviation: 7.0
 - name: cost
   values:
-  - 0.00117506
-  - 0.00114554
-  - 0.00114144
-  average: 0.0011540133333333333
-  standard_deviation: 1.8341868316322913e-05
+  - 0.001472796
+  - 0.001461257
+  - 0.001459159
+  average: 0.001464404
+  standard_deviation: 7.342999999999948e-06

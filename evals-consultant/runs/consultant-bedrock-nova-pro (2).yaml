@@ -1,0 +1,12 @@
+---
+file_path: null
+query_ref: consultant
+prompt_ref: candidate-summary
+service: bedrock
+model: amazon.nova-pro-v1:0
+repeat: 3
+temperature: 0.5
+evaluators:
+- word_count
+- equivalence
+- coherence

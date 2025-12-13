@@ -9,5 +9,3 @@ temperature: 0.5
 evaluators:
 - equivalence
 - coherence
-
-

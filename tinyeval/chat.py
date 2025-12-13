@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-Test interactive chat loop with LLM providers.
+Interactive chat loop with LLM providers.
 """
 
 import asyncio
 import json
-import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-from chat_client import get_chat_client
+from tinyeval.chat_client import get_chat_client
 
 load_dotenv()
 
-with open("config.json") as f:
+config_path = Path(__file__).parent / "config.json"
+with open(config_path) as f:
     config = json.load(f)
     chat_models = config["chat_models"]
 
@@ -48,11 +49,14 @@ async def amain(service):
             conversation_history.append({"role": "assistant", "content": response_text})
 
 
-if __name__ == "__main__":
-    service = os.getenv("LLM_SERVICE", "openai")  # "bedrock", "ollama", "openai"
+def main(service: str = "openai"):
     try:
         asyncio.run(amain(service))
     except KeyboardInterrupt:
         print("\nGoodbye!")
     except Exception as e:
         print(f"\n\nUnexpected error: {e}")
+
+
+if __name__ == "__main__":
+    main()

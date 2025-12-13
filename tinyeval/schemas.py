@@ -1,15 +1,16 @@
 import copy
 import logging
+import os
 from typing import List, Literal, Optional
 
 from path import Path
 from pydantic import BaseModel, Field
 
-from yaml_utils import load_yaml, save_yaml
+from tinyeval.yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 
-EVALS_DIR_NAME = "evals-consultant"
+EVALS_DIR_NAME = os.getenv("EVALS_DIR", "evals-consultant")
 
 PROMPTS_DIR = None
 QUERIES_DIR = None
@@ -28,10 +29,20 @@ ext_from_table = {
 TableType = Literal["result", "run", "prompt", "query"]
 
 
-def set_evals_dir(evals_dir: str = EVALS_DIR_NAME):
+def set_evals_dir(evals_dir: str = None):
     """Set the base evals directory and update all path references."""
-    global PROMPTS_DIR, QUERIES_DIR, RESULTS_DIR, RUNS_DIR, dir_from_table
+    global \
+        PROMPTS_DIR, \
+        QUERIES_DIR, \
+        RESULTS_DIR, \
+        RUNS_DIR, \
+        dir_from_table, \
+        EVALS_DIR_NAME
 
+    if evals_dir is None:
+        evals_dir = os.getenv("EVALS_DIR", EVALS_DIR_NAME)
+
+    EVALS_DIR_NAME = evals_dir
     PROMPTS_DIR = Path(evals_dir) / "prompts"
     QUERIES_DIR = Path(evals_dir) / "queries"
     RESULTS_DIR = Path(evals_dir) / "results"
