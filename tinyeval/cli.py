@@ -3,7 +3,9 @@
 import asyncio
 import logging
 import os
+import shutil
 import threading
+from pathlib import Path
 
 import typer
 import uvicorn
@@ -73,6 +75,49 @@ def run(
         return
 
     asyncio.run(run_all(file_paths))
+
+
+@app.command()
+def demo(
+    base_dir: str = typer.Argument(
+        "sample-evals", help="Directory for demo evals"
+    ),
+    port: int = typer.Option(8000, help="Port to run the server on"),
+) -> None:
+    """Create sample evaluations and launch UI."""
+    setup_logging()
+    
+    demo_dir = Path(base_dir)
+    sample_evals_path = Path(__file__).parent.parent / "sample-evals"
+    
+    if demo_dir.exists():
+        logger.info(f"Using existing {base_dir}")
+    else:
+        if not sample_evals_path.exists():
+            logger.error(f"sample-evals template not found at {sample_evals_path}")
+            raise typer.Exit(1)
+        logger.info(f"Creating {base_dir} from template")
+        shutil.copytree(sample_evals_path, demo_dir)
+    
+    evals_dir.set_base(base_dir)
+    os.environ["EVALS_DIR"] = base_dir
+    
+    if not is_in_container():
+        poller_thread = threading.Thread(
+            target=poll_and_open_browser, args=(port,), daemon=True
+        )
+        poller_thread.start()
+    else:
+        logger.info("Running in container, skipping browser auto-open")
+    
+    uvicorn.run(
+        "tinyeval.server:app",
+        host="0.0.0.0",
+        port=port,
+        reload=False,
+        reload_dirs=[base_dir],
+        log_config=None,
+    )
 
 
 @app.command()

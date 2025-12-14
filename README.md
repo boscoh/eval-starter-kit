@@ -361,7 +361,18 @@ uv run tinyeval ui my-evals
 uv run tinyeval ui [EVALS_DIR]       # Start web UI (default: evals-consultant)
 uv run tinyeval run EVALS_DIR        # Run all evaluations in directory
 uv run tinyeval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
+uv run tinyeval demo                 # Create sample-evals and run if not exists
 ```
+
+### Demo
+
+Create sample evaluations and launch the UI:
+```bash
+uv run tinyeval demo
+# Creates sample-evals directory and opens the web UI at http://localhost:8000
+```
+
+The demo includes evaluations for all supported services (OpenAI, Bedrock, Ollama, Groq) using the same prompt and test case for easy comparison.
 
 ### Interactive Chat
 
