@@ -3,18 +3,18 @@ texts:
 - >-
   The sentence "The quick brown fox jumps over the lazy dog" is well-known for containing
   every letter of the English alphabet, making it useful for testing typewriters,
-  fonts, and keyboards. It originated in the late 1800s and continues to be popular
-  for testing purposes today.
+  fonts, and keyboards. It originated in the late 1800s and continues to be used for
+  testing purposes today.
 - >-
-  The sentence "The quick brown fox jumps over the lazy dog" is notable for containing
+  The sentence "The quick brown fox jumps over the lazy dog" is well-known for including
   every letter of the English alphabet, making it useful for testing typewriters,
-  fonts, and keyboards. It has been in use since the late 1800s and continues to be
-  popular for testing purposes.
+  fonts, and keyboards. Originating in the late 1800s, it continues to be popular
+  for such purposes.
 - >-
-  The sentence "The quick brown fox jumps over the lazy dog" is well-known for containing
+  The sentence "The quick brown fox jumps over the lazy dog" is famous for containing
   every letter of the English alphabet, making it useful for testing typewriters,
-  fonts, and keyboards. First used in the late 1800s, it continues to be popular for
-  such testing today.
+  fonts, and keyboards. It originated in the late 1800s and continues to be used for
+  testing purposes today.
 evaluations:
 - name: word_count
   values:
@@ -39,22 +39,22 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 0.9760849475860596
-  - 1.069018840789795
-  - 1.0207529067993164
-  average: 1.021952231725057
-  standard_deviation: 0.04647855324457668
+  - 1.0306291580200195
+  - 0.8112566471099854
+  - 1.2115848064422607
+  average: 1.0178235371907551
+  standard_deviation: 0.20047106208181042
 - name: token_count
   values:
   - 191
-  - 192
-  - 192
-  average: 191.66666666666666
+  - 191
+  - 190
+  average: 190.66666666666666
   standard_deviation: 0.5773502691896257
 - name: cost
   values:
   - 0.0018145
-  - 0.0018239999999999999
-  - 0.0018239999999999999
-  average: 0.0018208333333333332
+  - 0.0018145
+  - 0.001805
+  average: 0.0018113333333333332
   standard_deviation: 5.484827557301421e-06

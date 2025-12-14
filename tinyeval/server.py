@@ -8,20 +8,13 @@ from typing import Any, Dict
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
-from . import schemas
 from .evaluator import EvaluationRunner
 from .runner import Runner
-from .schemas import (
-    RunConfig,
-    TableType,
-    ext_from_table,
-    set_evals_dir,
-)
+from .schemas import RunConfig, TableType, evals_dir, ext_from_table
 from .setup_logger import setup_logging
 from .yaml_utils import load_yaml, save_yaml
 
@@ -71,9 +64,10 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup_event():
     """Initialize evals_dir from environment variable on server startup."""
-    evals_dir = os.getenv("EVALS_DIR", "evals-consultant")
-    set_evals_dir(evals_dir)
-    logger.info(f"Server initialized with evals_dir: {evals_dir}")
+    base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+    evals_dir.set_base(base_dir)
+    logger.info(f"Server initialized with evals_dir: {base_dir}")
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -104,10 +98,10 @@ def get_graph_data():
         from .graph import extract_evaluation_data, generate_plotly_graph
 
         logger.info(
-            f"Generating dynamic graph data from {schemas.dir_from_table['result']}"
+            f"Generating dynamic graph data from {evals_dir.results}"
         )
 
-        results_dir = schemas.dir_from_table["result"]
+        results_dir = evals_dir.results
         evaluators_data = extract_evaluation_data(results_dir)
 
         if not evaluators_data:
@@ -158,7 +152,7 @@ def get_defaults():
 
     return {
         "content": {
-            "evals_dir": schemas.EVALS_DIR_NAME,
+            "evals_dir": evals_dir.name,
             "evaluators": EvaluationRunner.evaluators(),
             "run_config": {
                 "promptRef": "",
@@ -188,7 +182,7 @@ class ContentResponse(BaseModel):
 async def list_objects(table):
     """Response: { "content": ["string"] }"""
     try:
-        table_dir = schemas.dir_from_table[table]
+        table_dir = evals_dir.get_dir(table)
         ext = ext_from_table[table]
         logger.info(f"Request for names in: {table_dir}")
         basenames = [f.stem for f in table_dir.iterdir() if f.suffix == ext]
@@ -208,7 +202,7 @@ class FetchObjectRequest(BaseModel):
 async def fetch_object(request: FetchObjectRequest):
     try:
         logger.info(f"Request to fetch {request.table}/{request.basename}")
-        table_dir = schemas.dir_from_table[request.table]
+        table_dir = evals_dir.get_dir(request.table)
         ext = ext_from_table[request.table]
         f = Path(request.basename)
         file_path = (table_dir / f) + ext
@@ -248,7 +242,7 @@ async def save_object(request: SaveObjectRequest):
     try:
         logger.info(f"Request to save {request.table}/{request.basename}")
         table = request.table
-        table_dir = schemas.dir_from_table[table]
+        table_dir = evals_dir.get_dir(table)
         ext = ext_from_table[table]
         file_path = table_dir / f"{request.basename}{ext}"
         save_content(request.content, file_path)
@@ -275,7 +269,7 @@ async def evaluate(request: EvaluateRequest):
     try:
         basename = request.basename
         config = request.content
-        config_path = schemas.dir_from_table["run"] / f"{basename}.yaml"
+        config_path = evals_dir.runs / f"{basename}.yaml"
         logger.info(f"Running evaluation of {basename}")
         run_config = RunConfig(**config)
         run_config.save(config_path)
@@ -298,7 +292,7 @@ class DeleteRequest(BaseModel):
 async def delete_object(request: DeleteRequest):
     try:
         logger.info(f"Request to delete {request.table}/{request.basename}")
-        table_dir = schemas.dir_from_table[request.table]
+        table_dir = evals_dir.get_dir(request.table)
         ext = ext_from_table[request.table]
         file_path = table_dir / f"{request.basename}{ext}"
 
@@ -339,7 +333,7 @@ async def rename_object(request: RenameRequest):
         logger.info(
             f"Request to rename {request.table}/{request.basename} to {request.newBasename}"
         )
-        table_dir = schemas.dir_from_table[request.table]
+        table_dir = evals_dir.get_dir(request.table)
         ext = ext_from_table[request.table]
         old_path = table_dir / f"{request.basename}{ext}"
         new_path = table_dir / f"{request.newBasename}{ext}"
@@ -440,7 +434,7 @@ def main():
     )
     args = parser.parse_args()
 
-    set_evals_dir(args.evals_dir)
+    evals_dir.set_base(args.evals_dir)
 
     if not is_in_container():
         poller_thread = threading.Thread(

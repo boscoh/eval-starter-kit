@@ -4,10 +4,9 @@ from statistics import mean, stdev
 
 from path import Path
 
-import tinyeval.schemas as schemas
 from tinyeval.chat_client import get_chat_client
 from tinyeval.evaluator import EvaluationRunner
-from tinyeval.schemas import RunConfig, RunResult, set_evals_dir
+from tinyeval.schemas import RunConfig, RunResult, evals_dir
 from tinyeval.yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
@@ -21,17 +20,19 @@ class Runner:
         )
         self._cost_per_token = self._chat_client.get_token_cost()
         self._evaluation_runner = EvaluationRunner(self._chat_client, self._config)
-        schemas.RESULTS_DIR.makedirs_p()
 
     async def run(self):
         try:
+            evals_dir.results.makedirs_p()
+            results_filename = Path(self._config.file_path).stem + ".yaml"
+            results_path = evals_dir.results / results_filename
+            if results_path.exists():
+                results_path.remove()
+                logger.info(f"Removed existing results file: {results_path}")
+
             await self._chat_client.connect()
             logger.info(f"Connected to chat client: {self._chat_client}")
-        except Exception as e:
-            logger.error(f"Error connecting to chat client: {e}")
-            raise RuntimeError(f"Failed to connect to chat client: {e}") from e
 
-        try:
             fields = self._config.evaluators + [
                 "elapsed_seconds",
                 "token_count",
@@ -89,12 +90,12 @@ class Runner:
             evaluations = [result.model_dump() for result in eval_results_dict.values()]
 
             eval_results = {"texts": response_texts, "evaluations": evaluations}
-            results_path = (
-                schemas.RESULTS_DIR / Path(self._config.file_path).name
-            ).with_suffix(".yaml")
             save_yaml(eval_results, results_path)
 
             logger.info(f"Results saved to: {results_path}")
+        except Exception as e:
+            logger.error(f"Error during run: {e}")
+            raise
         finally:
             await self._chat_client.close()
 
@@ -102,7 +103,10 @@ class Runner:
 async def run_all(file_paths):
     for run_config in file_paths:
         logger.info(f"Running job: {run_config}")
-        await Runner(run_config).run()
+        try:
+            await Runner(run_config).run()
+        except Exception as e:
+            logger.error(f"Job failed: {run_config} - {e}")
 
 
 def main():
@@ -119,13 +123,13 @@ def main():
     )
     args = parser.parse_args()
 
-    set_evals_dir(args.evals_dir)
+    evals_dir.set_base(args.evals_dir)
 
-    logger.info(f"Running all configs in `./{schemas.RUNS_DIR}/*.yaml`")
-    file_paths = list(schemas.RUNS_DIR.glob("*.yaml"))
+    logger.info(f"Running all configs in `./{evals_dir.runs}/*.yaml`")
+    file_paths = list(evals_dir.runs.glob("*.yaml"))
 
     if not file_paths:
-        logger.warning(f"No config files found in {schemas.RUNS_DIR}")
+        logger.warning(f"No config files found in {evals_dir.runs}")
         return
 
     asyncio.run(run_all(file_paths))

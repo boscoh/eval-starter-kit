@@ -8,7 +8,7 @@ A lightweight evaluation framework for LLM testing. Supports local models (Ollam
 
 Clone the repository:
 ```bash
-git clone https://github.com/boscoh/eval-starter-kit
+git clone https://github.com/boscoh/tinyeval
 cd tinyeval
 ```
 

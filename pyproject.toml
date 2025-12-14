@@ -5,10 +5,23 @@ build-backend = "hatchling.build"
 [project]
 name = "tinyeval"
 version = "0.1.0"
-description = "Minimal evaluation framework"
+description = "Minimal evaluation framework for LLM testing with local and cloud providers"
 readme = "README.md"
 requires-python = ">=3.13"
+authors = [{name = "Bosco Ho", email = "boscoh@gmail.com"}]
+license = {text = "MIT"}
+keywords = ["llm", "evaluation", "testing", "openai", "ollama", "aws", "bedrock", "groq"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 package-mode = true
+urls = {Homepage = "https://github.com/boscoh/tinyeval", Repository = "https://github.com/boscoh/tinyeval"}
 dependencies = [
     "openai>=1.0.0",
     "httpx>=0.28.1",

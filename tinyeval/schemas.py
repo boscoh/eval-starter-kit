@@ -10,14 +10,7 @@ from tinyeval.yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 
-EVALS_DIR_NAME = os.getenv("EVALS_DIR", "evals-consultant")
-
-PROMPTS_DIR = None
-QUERIES_DIR = None
-RESULTS_DIR = None
-RUNS_DIR = None
-
-dir_from_table = {}
+TableType = Literal["result", "run", "prompt", "query"]
 
 ext_from_table = {
     "result": ".yaml",
@@ -26,42 +19,51 @@ ext_from_table = {
     "query": ".yaml",
 }
 
-TableType = Literal["result", "run", "prompt", "query"]
+
+class EvalsDir:
+    def __init__(self, base_dir: str = None):
+        if base_dir is None:
+            base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+        self._base = Path(base_dir)
+
+    @property
+    def name(self) -> str:
+        return str(self._base)
+
+    @property
+    def prompts(self) -> Path:
+        return self._base / "prompts"
+
+    @property
+    def queries(self) -> Path:
+        return self._base / "queries"
+
+    @property
+    def results(self) -> Path:
+        return self._base / "results"
+
+    @property
+    def runs(self) -> Path:
+        return self._base / "runs"
+
+    def get_dir(self, table: TableType) -> Path:
+        return {
+            "result": self.results,
+            "run": self.runs,
+            "prompt": self.prompts,
+            "query": self.queries,
+        }[table]
+
+    def set_base(self, base_dir: str = None):
+        if base_dir is None:
+            base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+        self._base = Path(base_dir)
+        for d in [self.prompts, self.queries, self.results, self.runs]:
+            d.makedirs_p()
+        logger.info(f"Evals directory set to: {self._base}")
 
 
-def set_evals_dir(evals_dir: str = None):
-    """Set the base evals directory and update all path references."""
-    global \
-        PROMPTS_DIR, \
-        QUERIES_DIR, \
-        RESULTS_DIR, \
-        RUNS_DIR, \
-        dir_from_table, \
-        EVALS_DIR_NAME
-
-    if evals_dir is None:
-        evals_dir = os.getenv("EVALS_DIR", EVALS_DIR_NAME)
-
-    EVALS_DIR_NAME = evals_dir
-    PROMPTS_DIR = Path(evals_dir) / "prompts"
-    QUERIES_DIR = Path(evals_dir) / "queries"
-    RESULTS_DIR = Path(evals_dir) / "results"
-    RUNS_DIR = Path(evals_dir) / "runs"
-
-    dir_from_table = {
-        "result": RESULTS_DIR,
-        "run": RUNS_DIR,
-        "prompt": PROMPTS_DIR,
-        "query": QUERIES_DIR,
-    }
-
-    for d in dir_from_table.values():
-        d.makedirs_p()
-
-    logger.info(f"Evals directory set to: {evals_dir}")
-
-
-set_evals_dir()
+evals_dir = EvalsDir()
 
 
 class RunConfig(BaseModel):
@@ -84,14 +86,14 @@ class RunConfig(BaseModel):
         result.file_path = file_path
         logger.info(f"Loaded run config from '{file_path}'")
 
-        system_prompt_path = PROMPTS_DIR / f"{result.prompt_ref}.txt"
+        system_prompt_path = evals_dir.prompts / f"{result.prompt_ref}.txt"
         if system_prompt_path.exists():
             result.prompt = system_prompt_path.read_text()
             logger.info(f"Loaded system prompt from '{system_prompt_path}'")
         else:
             logger.warning(f"System prompt file not found: {system_prompt_path}")
 
-        query_path = QUERIES_DIR / f"{result.query_ref}.yaml"
+        query_path = evals_dir.queries / f"{result.query_ref}.yaml"
         try:
             query = load_yaml(query_path)
         except FileNotFoundError:

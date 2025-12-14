@@ -1,33 +1,32 @@
 ---
 texts:
 - >-
+  [City, State] Systems Analyst with over 30 years of experience in systems analysis
+  and application support. Holds an M.S. in Computer Science from Villanova University.
+  Proficient in SDLC, CSV, and GxP/SOX compliance, with extensive expertise in Documentum
+  DCM/D2, MS Access, and VBA. Demonstrated ability in project leadership, software
+  development, and systems administration. Notable for designing and developing client/server
+  applications and providing robust IT support across various platforms. Skilled in
+  problem-solving, communication, and delivering training.
+- >-
   [City, State] Systems Analyst with over 30 years of experience in software development
-  and systems analysis. Holds an M.S. in Computer Science with a focus on Data Communications
-  from Villanova University. Proficient in SDLC, CSV, and GxP/SOX compliance. Demonstrated
-  expertise in Documentum DCM/D2, VBA, C, C++, and assembly language programming.
-  Extensive experience in project leadership and providing Level 2 production support.
-  Skilled in developing client/server messaging applications and automation in Access/Excel.
-  Strong background in system administration and network management.
+  and systems analysis, specialising in SDLC and CSV. Holds an M.S. in Computer Science
+  from Villanova University. Extensive expertise in programming languages such as
+  C, C++, VBA, and Assembly, and proficient in document management systems like Documentum
+  DCM/D2. Demonstrated success in project leadership, application support, and compliance
+  with GxP and SOX standards. Skilled in developing communication solutions and supporting
+  FDA-validated manufacturing applications. Strong problem-solving and analytical
+  skills, with a history of providing Level 2 production support and conducting root
+  cause analysis.
 - >-
-  [City, State] Systems Analyst and Consultant with over 30 years of experience in
-  systems analysis, software development, and project leadership. Holds an M.S. in
-  Computer Science with a focus on Data Communications from Villanova University.
-  Extensive expertise in the Software Development Lifecycle (SDLC) and Computer Systems
-  Validation (CSV), with a strong background in GxP and SOX compliance. Proficient
-  in programming languages including C, C++, VBA, and assembly, and experienced in
-  managing Documentum DCM/D2 systems. Demonstrated ability to support and enhance
-  a variety of enterprise applications, conduct root cause analysis, and deliver effective
-  solutions in complex IT environments. Skilled in system and network administration,
-  data communications, and client/server architectures.
-- >-
-  Philadelphia, PA Systems Analyst with over 30 years of experience in diverse technological
-  environments. Holds an M.S. in Computer Science from Villanova University. Specialises
-  in SDLC and CSV, with extensive consulting experience in document management and
-  business process applications. Proficient in C, C++, VBA, and assembly language,
-  with strong project leadership and problem-solving skills. Experienced in supporting
-  GxP and SOX-compliant applications, and adept in systems analysis, software development,
-  and data communications. Skilled in network and system administration, with a history
-  of supporting enterprise-level IT environments.
+  [City, State] Systems Analyst with over 30 years of experience in software development
+  and systems analysis. Holds an M.S. in Computer Science (Data Communications) from
+  Villanova University. Specialises in SDLC, CSV, and GxP/SOX compliance. Extensive
+  background in supporting document management and business process applications,
+  including Documentum D2/DCM. Proficient in C, C++, VBA, and assembly language programming.
+  Demonstrated expertise in project leadership, issue analysis, and system administration.
+  Skilled in developing communication solutions and supporting FDA-validated manufacturing
+  applications.
 evaluations:
 - name: word_count
   values:
@@ -45,29 +44,29 @@ evaluations:
   standard_deviation: 0.0
 - name: equivalence
   values:
-  - 0.8
+  - 0.7
   - 0.8
   - 0.7
-  average: 0.7666666666666667
+  average: 0.7333333333333333
   standard_deviation: 0.05773502691896263
 - name: elapsed_seconds
   values:
-  - 2.078341245651245
-  - 2.0154061317443848
-  - 2.776683807373047
-  average: 2.2901437282562256
-  standard_deviation: 0.4225294588320078
+  - 1.996311902999878
+  - 1.5635769367218018
+  - 1.7661020755767822
+  average: 1.7753303050994873
+  standard_deviation: 0.2165150293282541
 - name: token_count
   values:
+  - 929
+  - 946
   - 933
-  - 965
-  - 934
-  average: 944
-  standard_deviation: 18.193405398660254
+  average: 936
+  standard_deviation: 8.888194417315589
 - name: cost
   values:
+  - 0.0088255
+  - 0.008987
   - 0.0088635
-  - 0.0091675
-  - 0.008872999999999999
-  average: 0.008968
-  standard_deviation: 0.0001728373512872729
+  average: 0.008892
+  standard_deviation: 8.443784696449823e-05

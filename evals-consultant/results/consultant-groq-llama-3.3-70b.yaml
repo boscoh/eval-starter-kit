@@ -1,32 +1,30 @@
 ---
 texts:
 - >-
-  Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in various
-  environments and technologies. Holds an M.S. in Computer Science and possesses expertise
-  in Software Development Lifecycle (SDLC) and Computer Systems Validation (CSV).
-  Proven track record of project leadership, strong technical and analytical skills,
-  and proficiency in programming languages such as C, C++, and VBA. Utilises skills
-  in data communications, system administration, and document management to deliver
-  high-quality solutions. Experienced in GxP and SOX compliance, with a strong background
-  in designing, developing, and testing client/server applications.
+  Philadelphia, Pennsylvania Systems Analyst with over 25 years of experience in software
+  development, systems analysis, and project leadership. Holds an M.S. in Computer
+  Science with a focus on Data Communications. Skilled in SDLC, CSV, GxP, and SOX
+  compliance, with expertise in programming languages such as C, C++, VBA, and Assembly.
+  Proven ability to deliver strong technical and analytical skills, with a strong
+  background in document management, data communications, and system administration.
 - >-
   Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in software
   development, systems analysis, and project leadership. Holds an M.S. in Computer
-  Science with a specialisation in Data Communications. Skilled in SDLC, CSV, GxP,
-  and SOX compliance, with expertise in programming languages such as C, C++, VBA,
-  and Assembly. Proven ability to deliver high-quality solutions, having supported
-  multiple departments and applications, including document management, timekeeper,
-  and business process apps. Possesses strong technical, analytical, and problem-solving
-  skills, with a strong background in system administration, data communications,
-  and network administration.
+  Science with a focus on Data Communications. Skilled in Software Development Lifecycle
+  (SDLC), Computer Systems Validation (CSV), and GxP/SOX compliance, with expertise
+  in Documentum DCM and D2, MS Access, VBA, C, C++, and HTML. Proven ability to apply
+  strong analytical and problem-solving skills to deliver high-quality solutions,
+  with a strong background in data communications, system administration, and project
+  management.
 - >-
   Philadelphia, Pennsylvania Systems Analyst with over 30 years of experience in software
   development, systems analysis, and project leadership. Holds an M.S. in Computer
-  Science, with expertise in Software Development Lifecycle (SDLC) and Computer Systems
-  Validation (CSV). Proven track record of delivering technical solutions, including
-  GxP-compliant document management applications and SOX-compliant payroll systems.
-  Skilled in programming languages such as C, C++, and VBA, with experience in data
-  communications, system administration, and network architecture.
+  Science with a focus on Data Communications. Skilled in SDLC, CSV, GxP, and SOX
+  compliance, with expertise in programming languages such as C, C++, VBA, and Assembly.
+  Proven ability to deliver high-quality solutions, having supported multiple departments
+  across the enterprise, including document management, timekeeper, and business process
+  applications. Utilises strong technical, analytical, and problem-solving skills
+  to drive project success and provide effective issue resolution.
 evaluations:
 - name: word_count
   values:
@@ -37,11 +35,11 @@ evaluations:
   standard_deviation: 0.0
 - name: equivalence
   values:
-  - 0.7
   - 0.8
-  - 0.7
-  average: 0.7333333333333333
-  standard_deviation: 0.05773502691896263
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
 - name: coherence
   values:
   - 0.9
@@ -51,22 +49,22 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 0.8584592342376709
-  - 0.5322978496551514
-  - 0.4334409236907959
-  average: 0.6080660025278727
-  standard_deviation: 0.22240897198030934
+  - 0.6450231075286865
+  - 0.4221019744873047
+  - 0.4679570198059082
+  average: 0.5116940339406332
+  standard_deviation: 0.11772065533787693
 - name: token_count
   values:
-  - 973
-  - 984
-  - 959
-  average: 972
-  standard_deviation: 12.529964086141668
+  - 954
+  - 974
+  - 978
+  average: 968.6666666666666
+  standard_deviation: 12.858201014657274
 - name: cost
   values:
-  - 0.001020677
-  - 0.001032216
-  - 0.0010059910000000001
-  average: 0.001019628
-  standard_deviation: 1.3143932326362578e-05
+  - 0.0010007459999999998
+  - 0.001021726
+  - 0.001025922
+  average: 0.0010161313333333334
+  standard_deviation: 1.3488252864375582e-05

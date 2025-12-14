@@ -10,9 +10,8 @@ import uvicorn
 
 from tinyeval.chat import main as chat_main
 from tinyeval.runner import run_all
-from tinyeval.schemas import set_evals_dir
+from tinyeval.schemas import evals_dir
 from tinyeval.server import is_in_container, poll_and_open_browser
-import tinyeval.schemas as schemas
 from tinyeval.setup_logger import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command()
 def ui(
-    evals_dir: str = typer.Argument(
+    base_dir: str = typer.Argument(
         "evals-consultant", help="Base directory for evals"
     ),
     port: int = typer.Option(8000, help="Port to run the server on"),
@@ -30,8 +29,8 @@ def ui(
 ) -> None:
     """Run the web UI for evaluations."""
     setup_logging()
-    set_evals_dir(evals_dir)
-    os.environ["EVALS_DIR"] = evals_dir
+    evals_dir.set_base(base_dir)
+    os.environ["EVALS_DIR"] = base_dir
 
     if not is_in_container():
         poller_thread = threading.Thread(
@@ -46,7 +45,7 @@ def ui(
         host="0.0.0.0",
         port=port,
         reload=reload,
-        reload_dirs=[evals_dir],
+        reload_dirs=[base_dir],
         log_config=None,
     )
 
@@ -54,23 +53,23 @@ def ui(
 @app.command()
 def run(
     ctx: typer.Context,
-    evals_dir: str = typer.Argument(
+    base_dir: str = typer.Argument(
         None, help="Base directory for evals (e.g., evals-consultant, evals-engineer)"
     ),
 ) -> None:
     """Run all LLM evaluations in a directory."""
-    if not evals_dir:
+    if not base_dir:
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
     setup_logging()
-    set_evals_dir(evals_dir)
+    evals_dir.set_base(base_dir)
 
-    logger.info(f"Running all configs in `./{schemas.RUNS_DIR}/*.yaml`")
-    file_paths = list(schemas.RUNS_DIR.glob("*.yaml"))
+    logger.info(f"Running all configs in `./{evals_dir.runs}/*.yaml`")
+    file_paths = list(evals_dir.runs.glob("*.yaml"))
 
     if not file_paths:
-        logger.warning(f"No config files found in {schemas.RUNS_DIR}")
+        logger.warning(f"No config files found in {evals_dir.runs}")
         return
 
     asyncio.run(run_all(file_paths))
