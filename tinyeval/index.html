@@ -253,37 +253,7 @@
                           label.form-check-label(:for="'evaluator-' + evaluator")
                             | {{ evaluator }}
 
-                    hr
-
-                    h3.mt-3 Results
-
-                    .mt-4
-                    template(v-if="runResult && runResult.length")
-                      .table-responsive
-                        table.table.table-striped
-                          thead
-                            tr
-                              th Metric
-                              th Value
-                          tbody
-                            tr(v-for="(row, index) in runResult" :key="index")
-                              td {{ row.name }}
-                              td
-                                | {{ parseFloat(row.average).toFixed(1) }}
-                                | ± {{ parseFloat(row.standardDeviation).toFixed(1) }}
-                    template(v-else)
-                      .alert.alert-info(role="alert")
-                        | No results found. Click "evaluate" to run this configuration.
-
-                    .form-group(v-if="sampleOutput")
-                      h5.mt-3 Sample Model Response
-                      textarea.form-control(rows="8" v-model="sampleOutput" readonly)
-
-                //// Run tab - right column
-                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
-                  .px-3.pt-4
-
-                    .d-flex.flex-row.align-items-end
+                    .d-flex.flex-row.align-items-end.mt-4
                       h5 Prompt:
                       .ms-2.form-group
                         select.form-select(v-model="runConfig.promptRef" @change="e => choosePromptOfRun(e.target.value)")
@@ -326,6 +296,34 @@
                         placeholder="expected"
                         readonly
                       )
+
+                //// Run tab - right column
+                .d-flex.flex-column.scrollable-column.border-end.flex-grow-1
+                  .px-3.pt-4
+
+                    h3 Results
+
+                    .mt-4
+                    template(v-if="runResult && runResult.length")
+                      .table-responsive
+                        table.table.table-striped
+                          thead
+                            tr
+                              th Metric
+                              th Value
+                          tbody
+                            tr(v-for="(row, index) in runResult" :key="index")
+                              td {{ row.name }}
+                              td
+                                | {{ parseFloat(row.average).toFixed(1) }}
+                                | ± {{ parseFloat(row.standardDeviation).toFixed(1) }}
+                    template(v-else)
+                      .alert.alert-info(role="alert")
+                        | No results found. Click "evaluate" to run this configuration.
+
+                    .form-group(v-if="sampleOutput")
+                      h5.mt-3 Sample Model Response
+                      textarea.form-control(rows="8" v-model="sampleOutput" readonly)
 
                     .pb-5
                     .pb-5
