@@ -43,11 +43,23 @@ echo "OPENAI_API_KEY=your-api-key-here" > .env
 
 **AWS Bedrock**
 
-Configure AWS credentials:
+For local development, the easiest approach is to set up an AWS profile via `~/.aws/config` and then specify it with `AWS_PROFILE`:
+
 ```bash
-aws configure
-# or set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION
+aws configure --profile your-profile-name
+# or manually edit ~/.aws/config
+
+echo "AWS_PROFILE=your-profile-name" >> .env
 ```
+
+Alternatively, you can set credentials directly:
+```bash
+echo "AWS_ACCESS_KEY_ID=your-access-key" >> .env
+echo "AWS_SECRET_ACCESS_KEY=your-secret-key" >> .env
+echo "AWS_DEFAULT_REGION=us-east-1" >> .env
+```
+
+Note: AWS profiles are recommended for local dev since key rotation is handled automatically.
 
 **Groq**
 
@@ -156,15 +168,15 @@ EOF
 
 **Run configuration fields:**
 
-| Field | Description |
-|-------|-------------|
-| `query_ref` | Name of the query file (without `.yaml`) |
-| `prompt_ref` | Name of the prompt file (without `.txt`) |
-| `service` | LLM provider: `openai`, `bedrock`, `ollama`, or `groq` |
-| `model` | Model name (e.g., `gpt-4o`, `llama3.2`) |
-| `repeat` | Number of times to run the evaluation |
-| `temperature` | Sampling temperature (0.0 = deterministic) |
-| `evaluators` | List of evaluators to run |
+| Field         | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| `query_ref`   | Name of the query file (without `.yaml`)                     |
+| `prompt_ref`  | Name of the prompt file (without `.txt`)                     |
+| `service`     | LLM provider: `openai`, `bedrock`, `ollama`, or `groq`       |
+| `model`       | Model name (e.g., `gpt-4o`, `llama3.2`)                      |
+| `repeat`      | Number of times to run the evaluation                        |
+| `temperature` | Sampling temperature (0.0 = deterministic)                   |
+| `evaluators`  | List of evaluators to run                                    |
 
 ### Step 5: Run the Evaluation
 
@@ -219,11 +231,11 @@ In the Web UI, use the **Graph** tab to visualize and compare results across dif
 
 Evaluators score responses on a 0.0-1.0 scale:
 
-| Evaluator | Description | How it Works |
-|-----------|-------------|--------------|
-| `coherence` | Logical flow and organization | Uses the LLM to score structure, clarity, and consistency |
-| `equivalence` | Semantic similarity to expected output | Uses the LLM to compare meaning with the `output` in the query |
-| `word_count` | Response length validation | Algorithmic check (no LLM call) |
+| Evaluator      | Description                       | How it Works                               |
+|----------------|-----------------------------------|-------------------------------------------|
+| `coherence`    | Logical flow and clarity          | LLM scores structure and consistency       |
+| `equivalence`  | Semantic similarity to expected   | LLM compares meaning with query output     |
+| `word_count`   | Response length validation        | Algorithmic check (no LLM call)            |
 
 ### Word Count Configuration
 
@@ -326,12 +338,12 @@ uv run tinyeval ui my-evals
 
 ### Tabs
 
-| Tab | Purpose |
-|-----|---------|
-| **Runs** | Create, edit, and execute run configurations |
-| **Queries** | Define and edit test cases (input/output pairs) |
-| **Prompts** | Write and manage system prompts |
-| **Graph** | Visualize evaluation results and compare runs |
+| Tab         | Purpose                                              |
+|-------------|------------------------------------------------------|
+| **Runs**    | Create, edit, and execute run configurations         |
+| **Queries** | Define and edit test cases (input/output pairs)      |
+| **Prompts** | Write and manage system prompts                      |
+| **Graph**   | Visualize evaluation results and compare runs        |
 
 ### Workflow
 
@@ -394,12 +406,12 @@ uv run tinyeval chat groq
 
 Default models configured in `tinyeval/config.json`:
 
-| Service | Default Model |
-|---------|---------------|
-| openai | gpt-4o |
-| bedrock | amazon.nova-pro-v1:0 |
-| ollama | llama3.2 |
-| groq | llama-3.3-70b-versatile |
+| Service  | Default Model               |
+|----------|----------------------------|
+| openai   | gpt-4o                     |
+| bedrock  | amazon.nova-pro-v1:0       |
+| ollama   | llama3.2                   |
+| groq     | llama-3.3-70b-versatile    |
 
 ---
 
