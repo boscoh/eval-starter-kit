@@ -1,4 +1,4 @@
-"""Typer CLI for tinyeval."""
+"""Typer CLI for starteval."""
 
 import asyncio
 import logging
@@ -10,11 +10,11 @@ from pathlib import Path
 import typer
 import uvicorn
 
-from tinyeval.chat import main as chat_main
-from tinyeval.runner import run_all
-from tinyeval.schemas import evals_dir
-from tinyeval.server import is_in_container, poll_and_open_browser
-from tinyeval.setup_logger import setup_logging
+from starteval.chat import main as chat_main
+from starteval.runner import run_all
+from starteval.schemas import evals_dir
+from starteval.server import is_in_container, poll_and_open_browser
+from starteval.setup_logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +23,18 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command()
 def ui(
+    ctx: typer.Context,
     base_dir: str = typer.Argument(
-        "evals-consultant", help="Base directory for evals"
+        None, help="Base directory for evals"
     ),
     port: int = typer.Option(8000, help="Port to run the server on"),
     reload: bool = typer.Option(False, help="Enable auto-reload"),
 ) -> None:
     """Run the web UI for evaluations."""
+    if not base_dir:
+        typer.echo(ctx.get_help())
+        raise typer.Exit()
+    
     setup_logging()
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
@@ -43,7 +48,7 @@ def ui(
         logger.info("Running in container, skipping browser auto-open")
 
     uvicorn.run(
-        "tinyeval.server:app",
+        "starteval.server:app",
         host="0.0.0.0",
         port=port,
         reload=reload,
@@ -88,7 +93,7 @@ def demo(
     setup_logging()
     
     demo_dir = Path(base_dir)
-    sample_evals_path = Path(__file__).parent.parent / "sample-evals"
+    sample_evals_path = Path(__file__).parent / "sample-evals"
     
     if demo_dir.exists():
         logger.info(f"Using existing {base_dir}")
@@ -111,7 +116,7 @@ def demo(
         logger.info("Running in container, skipping browser auto-open")
     
     uvicorn.run(
-        "tinyeval.server:app",
+        "starteval.server:app",
         host="0.0.0.0",
         port=port,
         reload=False,

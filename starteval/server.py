@@ -445,7 +445,7 @@ def main():
         logger.info("Running in container, skipping browser auto-open")
 
     uvicorn.run(
-        "tinyeval.server:app",
+        "starteval.server:app",
         host="0.0.0.0",
         port=args.port,
         reload=args.reload,

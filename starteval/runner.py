@@ -4,10 +4,10 @@ from statistics import mean, stdev
 
 from path import Path
 
-from tinyeval.chat_client import get_chat_client
-from tinyeval.evaluator import EvaluationRunner
-from tinyeval.schemas import RunConfig, RunResult, evals_dir
-from tinyeval.yaml_utils import save_yaml
+from starteval.chat_client import get_chat_client
+from starteval.evaluator import EvaluationRunner
+from starteval.schemas import RunConfig, RunResult, evals_dir
+from starteval.yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
 

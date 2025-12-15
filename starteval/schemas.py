@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 from path import Path
 from pydantic import BaseModel, Field
 
-from tinyeval.yaml_utils import load_yaml, save_yaml
+from starteval.yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 

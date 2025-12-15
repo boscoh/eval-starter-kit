@@ -9,7 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from tinyeval.chat_client import get_chat_client
+from starteval.chat_client import get_chat_client
 
 load_dotenv()
 
