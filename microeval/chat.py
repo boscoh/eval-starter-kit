@@ -4,19 +4,12 @@ Interactive chat loop with LLM providers.
 """
 
 import asyncio
-import json
-from pathlib import Path
 
 from dotenv import load_dotenv
 
-from starteval.chat_client import get_chat_client
+from microeval.chat_client import get_chat_client
 
 load_dotenv()
-
-config_path = Path(__file__).parent / "config.json"
-with open(config_path) as f:
-    config = json.load(f)
-    chat_models = config["chat_models"]
 
 
 async def setup_async_exception_handler():
@@ -32,8 +25,8 @@ async def setup_async_exception_handler():
 
 
 async def amain(service):
-    await setup_async_exception_handler()
-    async with get_chat_client(service, model=chat_models[service]) as client:
+     await setup_async_exception_handler()
+     async with get_chat_client(service) as client:
         print(f"Chat loop with {service}-{client.model}")
         conversation_history = []
         while True:

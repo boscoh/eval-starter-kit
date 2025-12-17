@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "starteval"
-version = "0.1.0"
+name = "microeval"
+version = "0.1.1"
 description = "Minimal evaluation framework for LLM testing with local and cloud providers"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 package-mode = true
-urls = {Homepage = "https://github.com/boscoh/starteval", Repository = "https://github.com/boscoh/starteval"}
+urls = {Homepage = "https://github.com/boscoh/microeval", Repository = "https://github.com/boscoh/microeval"}
 dependencies = [
     "openai>=1.0.0",
     "httpx>=0.28.1",
@@ -39,5 +39,5 @@ dependencies = [
 ]
 
 [project.scripts]
-starteval = "starteval.cli:main"
+microeval = "microeval.cli:main"
 

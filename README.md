@@ -1,4 +1,4 @@
-# starteval
+# microeval
 
 A lightweight evaluation framework for LLM testing. Supports local models (Ollama) and cloud providers (OpenAI, AWS Bedrock, Groq). Run evaluations via CLI or web UI, compare models and prompts, and track results.
 
@@ -8,8 +8,8 @@ A lightweight evaluation framework for LLM testing. Supports local models (Ollam
 
 Clone the repository:
 ```bash
-git clone https://github.com/boscoh/starteval
-cd starteval
+git clone https://github.com/boscoh/microeval
+cd microeval
 ```
 
 Install uv if not already installed:
@@ -72,7 +72,7 @@ echo "GROQ_API_KEY=your-api-key-here" > .env
 
 Try the sample evaluation:
 ```bash
-uv run starteval ui sample-evals
+uv run microeval ui sample-evals
 ```
 
 Open http://localhost:8000 to see the web UI.
@@ -182,14 +182,14 @@ EOF
 
 **Option A: Web UI**
 ```bash
-uv run starteval ui my-evals
+uv run microeval ui my-evals
 ```
 
 Navigate to http://localhost:8000, go to the **Runs** tab, and click the run button.
 
 **Option B: CLI**
 ```bash
-uv run starteval run my-evals
+uv run microeval run my-evals
 ```
 
 This runs all configurations in `my-evals/runs/`.
@@ -249,7 +249,7 @@ target_words: 100  # Target word count (scores based on distance)
 
 ### Creating Custom Evaluators
 
-1. Create a class in `starteval/evaluator.py`:
+1. Create a class in `microeval/evaluator.py`:
 
 ```python
 class MyCustomEvaluator:
@@ -306,7 +306,7 @@ my-evals/runs/
 
 Run all:
 ```bash
-uv run starteval run my-evals
+uv run evalstarter run my-evals
 ```
 
 Compare results in the Graph view.
@@ -333,7 +333,7 @@ my-evals/runs/
 
 Start the UI:
 ```bash
-uv run starteval ui my-evals
+uv run evalstarter ui my-evals
 ```
 
 ### Tabs
@@ -358,17 +358,17 @@ uv run starteval ui my-evals
 ## CLI Commands
 
 ```bash
-uv run starteval ui [EVALS_DIR]       # Start web UI (default: evals-consultant)
-uv run starteval run EVALS_DIR        # Run all evaluations in directory
-uv run starteval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
-uv run starteval demo                 # Create sample-evals and run if not exists
+uv run microeval ui [EVALS_DIR]       # Start web UI (default: evals-consultant)
+uv run microeval run EVALS_DIR        # Run all evaluations in directory
+uv run microeval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
+uv run microeval demo                 # Create sample-evals and run if not exists
 ```
 
 ### Demo
 
 Create sample evaluations and launch the UI:
 ```bash
-uv run starteval demo
+uv run microeval demo
 # Creates sample-evals directory and opens the web UI at http://localhost:8000
 ```
 
@@ -378,10 +378,10 @@ The demo includes evaluations for all supported services (OpenAI, Bedrock, Ollam
 
 Test LLM providers directly:
 ```bash
-uv run starteval chat openai
-uv run starteval chat ollama
-uv run starteval chat bedrock
-uv run starteval chat groq
+uv run microeval chat openai
+uv run microeval chat ollama
+uv run microeval chat bedrock
+uv run microeval chat groq
 ```
 
 ---
@@ -393,7 +393,7 @@ uv run starteval chat groq
 ├── README.md
 ├── pyproject.toml
 ├── .env                             # API keys (create from .env.example)
-├── starteval/                        # Main package
+├── microeval/                        # Main package
 │   ├── cli.py                       # CLI entry point (ui, run, chat)
 │   ├── server.py                    # Web server and API
 │   ├── runner.py                    # Evaluation runner
@@ -415,7 +415,7 @@ uv run starteval chat groq
 
 ## Services and Models
 
-Default models configured in `starteval/config.json`:
+Default models configured in `microeval/config.json`:
 
 | Service  | Default Model              |
 |----------|----------------------------|

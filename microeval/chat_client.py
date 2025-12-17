@@ -14,7 +14,8 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import aioboto3
 import boto3
@@ -29,6 +30,31 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1)
+def load_config() -> Dict[str, Any]:
+    """
+    Load and cache the config.json file from the microeval package directory.
+
+    Returns:
+        Dict[str, Any]: Configuration dictionary containing model mappings
+            with structure:
+            {
+                'chat_models': {...},
+                'embed_models': {...}
+            }
+
+    Raises:
+        FileNotFoundError: If config.json is not found
+        json.JSONDecodeError: If config.json is malformed
+    """
+    config_path = Path(__file__).parent / "config.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"config.json not found at {config_path}")
+
+    with open(config_path, "r") as f:
+        return json.load(f)
+
+
 def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     """
     Gets a chat client that satisfies IChatClient interface.
@@ -36,9 +62,17 @@ def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
     Args:
         client_type: "openai", "ollama", "bedrock", or "groq"
         **kwargs: Additional keyword arguments specific to the chat client type:
-            - model: str
+            - model: str (optional, defaults from config.json if not provided)
     """
     client_type = client_type.lower()
+
+    # Use config default model if not provided
+    if "model" not in kwargs:
+        config = load_config()
+        default_model = config.get("chat_models", {}).get(client_type)
+        if default_model:
+            kwargs["model"] = default_model
+
     if client_type == "openai":
         return OpenAIChatClient(**kwargs)
     if client_type == "ollama":

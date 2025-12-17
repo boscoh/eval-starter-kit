@@ -4,10 +4,10 @@ from statistics import mean, stdev
 
 from path import Path
 
-from starteval.chat_client import get_chat_client
-from starteval.evaluator import EvaluationRunner
-from starteval.schemas import RunConfig, RunResult, evals_dir
-from starteval.yaml_utils import save_yaml
+from microeval.chat_client import get_chat_client
+from microeval.evaluator import EvaluationRunner
+from microeval.schemas import RunConfig, RunResult, evals_dir
+from microeval.yaml_utils import save_yaml
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-"""Typer CLI for starteval."""
+"""Typer CLI for microeval."""
 
 import asyncio
 import logging
@@ -10,13 +10,16 @@ from pathlib import Path
 import typer
 import uvicorn
 
-from starteval.chat import main as chat_main
-from starteval.runner import run_all
-from starteval.schemas import evals_dir
-from starteval.server import is_in_container, poll_and_open_browser
-from starteval.setup_logger import setup_logging
+from microeval.chat import main as chat_main
+from microeval.chat_client import load_config
+from microeval.runner import run_all
+from microeval.schemas import evals_dir
+from microeval.server import is_in_container, poll_and_open_browser
+from microeval.setup_logger import setup_logging
 
 logger = logging.getLogger(__name__)
+
+setup_logging()
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -35,7 +38,6 @@ def ui(
         typer.echo(ctx.get_help())
         raise typer.Exit()
     
-    setup_logging()
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
 
@@ -48,7 +50,7 @@ def ui(
         logger.info("Running in container, skipping browser auto-open")
 
     uvicorn.run(
-        "starteval.server:app",
+        "microeval.server:app",
         host="0.0.0.0",
         port=port,
         reload=reload,
@@ -69,7 +71,6 @@ def run(
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
-    setup_logging()
     evals_dir.set_base(base_dir)
 
     logger.info(f"Running all configs in `./{evals_dir.runs}/*.yaml`")
@@ -90,8 +91,6 @@ def demo(
     port: int = typer.Option(8000, help="Port to run the server on"),
 ) -> None:
     """Create sample evaluations and launch UI."""
-    setup_logging()
-    
     demo_dir = Path(base_dir)
     sample_evals_path = Path(__file__).parent / "sample-evals"
     
@@ -116,7 +115,7 @@ def demo(
         logger.info("Running in container, skipping browser auto-open")
     
     uvicorn.run(
-        "starteval.server:app",
+        "microeval.server:app",
         host="0.0.0.0",
         port=port,
         reload=False,
@@ -129,15 +128,16 @@ def demo(
 def chat(
     ctx: typer.Context,
     service: str = typer.Argument(
-        None, help="LLM service to use (openai, bedrock, ollama, groq)"
+        None, help="LLM service to use"
     ),
 ) -> None:
     """Interactive chat loop with LLM providers."""
     if not service:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
+        config = load_config()
+        services = ", ".join(config["chat_models"].keys())
+        typer.echo(f"Error: service is required. Available: {services}")
+        raise typer.Exit(1)
 
-    setup_logging()
     chat_main(service)
 
 

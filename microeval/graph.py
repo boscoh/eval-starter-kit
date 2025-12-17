@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List
 
-from starteval.yaml_utils import load_yaml
+from microeval.yaml_utils import load_yaml
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import threading
@@ -12,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
+from .chat_client import load_config
 from .evaluator import EvaluationRunner
 from .runner import Runner
 from .schemas import RunConfig, TableType, evals_dir, ext_from_table
@@ -22,10 +22,8 @@ logger = logging.getLogger(__name__)
 
 setup_logging()
 
-config_path = Path(__file__).parent / "config.json"
-with open(config_path) as f:
-    config = json.load(f)
-    chat_models = config["chat_models"]
+config = load_config()
+chat_models = config["chat_models"]
 
 
 async def get_json_from_request(request) -> Dict[str, Any]:
@@ -445,7 +443,7 @@ def main():
         logger.info("Running in container, skipping browser auto-open")
 
     uvicorn.run(
-        "starteval.server:app",
+        "microeval.server:app",
         host="0.0.0.0",
         port=args.port,
         reload=args.reload,

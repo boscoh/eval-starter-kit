@@ -2,14 +2,14 @@
 texts:
 - >-
   The sentence "The quick brown fox jumps over the lazy dog" is famous for containing
+  every letter of the English alphabet. It has been used for centuries to test typewriters,
+  fonts, and keyboards, and was first used in the late 1800s. The phrase remains popular
+  today for testing purposes due to its unique properties.
+- >-
+  The sentence "The quick brown fox jumps over the lazy dog" is famous for containing
   every letter of the English alphabet at least once. It has been used for centuries
   to test typewriters, fonts, and keyboards, and was first used in the late 1800s.
   The phrase remains popular today for testing purposes due to its unique properties.
-- >-
-  The quick brown fox jumps over the lazy dog is a famous sentence that contains every
-  letter of the English alphabet at least once. It has been used for centuries to
-  test typewriters, fonts, and keyboards, and was first used in the late 1800s. The
-  phrase remains popular today for testing purposes due to its unique properties.
 - >-
   The sentence "The quick brown fox jumps over the lazy dog" is famous for containing
   every letter of the English alphabet at least once. It has been used for centuries
@@ -39,22 +39,22 @@ evaluations:
   standard_deviation: 0.0
 - name: elapsed_seconds
   values:
-  - 0.38916516304016113
-  - 0.22220993041992188
-  - 0.2112407684326172
-  average: 0.2742052872975667
-  standard_deviation: 0.09970912897894801
+  - 0.24189114570617676
+  - 0.16444087028503418
+  - 0.15924692153930664
+  average: 0.18852631251017252
+  standard_deviation: 0.046288209540025715
 - name: token_count
   values:
+  - 226
   - 229
-  - 227
   - 229
-  average: 228.33333333333334
-  standard_deviation: 1.1547005383792515
+  average: 228
+  standard_deviation: 1.7320508075688772
 - name: cost
   values:
+  - 0.00023707400000000001
   - 0.00024022100000000002
-  - 0.000238123
   - 0.00024022100000000002
-  average: 0.00023952166666666667
-  standard_deviation: 1.2112808647598461e-06
+  average: 0.000239172
+  standard_deviation: 1.8169212971397536e-06

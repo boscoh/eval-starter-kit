@@ -3,7 +3,7 @@ import re
 import textwrap
 from typing import Any, Dict
 
-from starteval.schemas import RunConfig
+from microeval.schemas import RunConfig
 
 logger = logging.getLogger(__name__)
 
