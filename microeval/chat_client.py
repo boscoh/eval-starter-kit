@@ -7,6 +7,7 @@ Simple chat client abstraction for LLM providers.
 - No langchain, litellm etc., just vendor-provided Python packages
 """
 
+import copy
 import json
 import logging
 import os
@@ -29,30 +30,29 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+config = {
+  "chat_models": {
+    "bedrock": "amazon.nova-pro-v1:0",
+    "openai": "gpt-4o",
+    "ollama": "llama3.2",
+    "groq": "llama-3.3-70b-versatile"
+  },
+  "embed_models": {
+    "openai": "text-embedding-3-small",
+    "ollama": "nomic-embed-text",
+    "bedrock": "amazon.titan-embed-text-v2:0"
+  }
+}
 
-@lru_cache(maxsize=1)
+
 def load_config() -> Dict[str, Any]:
     """
-    Load and cache the config.json file from the microeval package directory.
+    Return a copy of the config dictionary.
 
     Returns:
-        Dict[str, Any]: Configuration dictionary containing model mappings
-            with structure:
-            {
-                'chat_models': {...},
-                'embed_models': {...}
-            }
-
-    Raises:
-        FileNotFoundError: If config.json is not found
-        json.JSONDecodeError: If config.json is malformed
+        Dict[str, Any]: Configuration dictionary
     """
-    config_path = Path(__file__).parent / "config.json"
-    if not config_path.exists():
-        raise FileNotFoundError(f"config.json not found at {config_path}")
-
-    with open(config_path, "r") as f:
-        return json.load(f)
+    return copy.deepcopy(config)
 
 
 def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
