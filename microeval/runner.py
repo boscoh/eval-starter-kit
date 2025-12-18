@@ -112,7 +112,7 @@ async def run_all(file_paths):
 def main():
     import argparse
 
-    from .setup_logger import setup_logging
+    from microeval.setup_logger import setup_logging
 
     setup_logging()
 

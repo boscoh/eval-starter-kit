@@ -11,12 +11,12 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
-from .chat_client import load_config
-from .evaluator import EvaluationRunner
-from .runner import Runner
-from .schemas import RunConfig, TableType, evals_dir, ext_from_table
-from .setup_logger import setup_logging
-from .yaml_utils import load_yaml, save_yaml
+from microeval.chat_client import load_config
+from microeval.evaluator import EvaluationRunner
+from microeval.runner import Runner
+from microeval.schemas import RunConfig, TableType, evals_dir, ext_from_table
+from microeval.setup_logger import setup_logging
+from microeval.yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def serve_index():
 def get_graph_data():
     """Dynamically generates graph data from current results directory"""
     try:
-        from .graph import extract_evaluation_data, generate_plotly_graph
+        from microeval.graph import extract_evaluation_data, generate_plotly_graph
 
         logger.info(
             f"Generating dynamic graph data from {evals_dir.results}"

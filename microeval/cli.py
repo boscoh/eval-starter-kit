@@ -1,4 +1,4 @@
-"""Typer CLI for microeval."""
+"""CLI for microeval LLM evaluation framework."""
 
 import asyncio
 import logging
@@ -7,7 +7,7 @@ import shutil
 import threading
 from pathlib import Path
 
-import typer
+import cyclopts
 import uvicorn
 
 from microeval.chat import main as chat_main
@@ -21,23 +21,30 @@ logger = logging.getLogger(__name__)
 
 setup_logging()
 
-app = typer.Typer(no_args_is_help=True)
+app = cyclopts.App(help_format="markdown")
 
 
-@app.command()
+@app.default
+def help_command():
+    """Show help information."""
+    print(__doc__)
+    print()
+    app.help_print([])
+
+
+@app.command
 def ui(
-    ctx: typer.Context,
-    base_dir: str = typer.Argument(
-        None, help="Base directory for evals"
-    ),
-    port: int = typer.Option(8000, help="Port to run the server on"),
-    reload: bool = typer.Option(False, help="Enable auto-reload"),
-) -> None:
-    """Run the web UI for evaluations."""
-    if not base_dir:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
+    base_dir: str,
+    port: int = 8000,
+    reload: bool = False,
+):
+    """Run the web UI for evaluations.
     
+    Args:
+        base_dir: Base directory for evals
+        port: Port to run the server on
+        reload: Enable auto-reload
+    """
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
 
@@ -59,18 +66,15 @@ def ui(
     )
 
 
-@app.command()
+@app.command
 def run(
-    ctx: typer.Context,
-    base_dir: str = typer.Argument(
-        None, help="Base directory for evals (e.g., evals-consultant, evals-engineer)"
-    ),
-) -> None:
-    """Run all LLM evaluations in a directory."""
-    if not base_dir:
-        typer.echo(ctx.get_help())
-        raise typer.Exit()
-
+    base_dir: str,
+):
+    """Run all LLM evaluations in a directory.
+    
+    Args:
+        base_dir: Base directory for evals (e.g., evals-consultant, evals-engineer)
+    """
     evals_dir.set_base(base_dir)
 
     logger.info(f"Running all configs in `./{evals_dir.runs}/*.yaml`")
@@ -83,14 +87,17 @@ def run(
     asyncio.run(run_all(file_paths))
 
 
-@app.command()
+@app.command
 def demo(
-    base_dir: str = typer.Argument(
-        "sample-evals", help="Directory for demo evals"
-    ),
-    port: int = typer.Option(8000, help="Port to run the server on"),
-) -> None:
-    """Create sample evaluations and launch UI."""
+    base_dir: str = "sample-evals",
+    port: int = 8000,
+):
+    """Create sample evaluations and launch UI.
+    
+    Args:
+        base_dir: Directory for demo evals
+        port: Port to run the server on
+    """
     demo_dir = Path(base_dir)
     sample_evals_path = Path(__file__).parent / "sample-evals"
     
@@ -99,7 +106,7 @@ def demo(
     else:
         if not sample_evals_path.exists():
             logger.error(f"sample-evals template not found at {sample_evals_path}")
-            raise typer.Exit(1)
+            raise SystemExit(1)
         logger.info(f"Creating {base_dir} from template")
         shutil.copytree(sample_evals_path, demo_dir)
     
@@ -124,24 +131,26 @@ def demo(
     )
 
 
-@app.command()
+@app.command
 def chat(
-    ctx: typer.Context,
-    service: str = typer.Argument(
-        None, help="LLM service to use"
-    ),
-) -> None:
-    """Interactive chat loop with LLM providers."""
-    if not service:
-        config = load_config()
-        services = ", ".join(config["chat_models"].keys())
-        typer.echo(f"Error: service is required. Available: {services}")
-        raise typer.Exit(1)
+    service: str,
+):
+    """Interactive chat loop with LLM providers.
+    
+    Args:
+        service: LLM service to use
+    """
+    config = load_config()
+    available_services = config.get("chat_models", {}).keys()
+    
+    if service not in available_services:
+        services = ", ".join(available_services)
+        raise ValueError(f"Unknown service '{service}'. Available: {services}")
 
     chat_main(service)
 
 
-def main() -> None:
+def main():
     """Main entry point for the CLI."""
     app()
 
