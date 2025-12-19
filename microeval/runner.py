@@ -28,10 +28,9 @@ class Runner:
             results_path = evals_dir.results / results_filename
             if results_path.exists():
                 results_path.remove()
-                logger.info(f"Removed existing results file: {results_path}")
+                logger.info(f"Removed existing results file '{results_path}'")
 
             await self._chat_client.connect()
-            logger.info(f"Connected to chat client: {self._chat_client}")
 
             fields = self._config.evaluators + [
                 "elapsed_seconds",
@@ -92,7 +91,7 @@ class Runner:
             eval_results = {"texts": response_texts, "evaluations": evaluations}
             save_yaml(eval_results, results_path)
 
-            logger.info(f"Results saved to: {results_path}")
+            logger.info(f"Results saved to '{results_path}'")
         except Exception as e:
             logger.error(f"Error during run: {e}")
             raise
@@ -102,7 +101,6 @@ class Runner:
 
 async def run_all(file_paths):
     for run_config in file_paths:
-        logger.info(f"Running job: {run_config}")
         try:
             await Runner(run_config).run()
         except Exception as e:

@@ -36,7 +36,7 @@ ollama serve
 uv run microeval demo
 ```
 
-This creates a `sample-evals` directory with example evaluations and opens the web UI at http://localhost:8000.
+This creates a `summary-evals` directory with example evaluations and opens the web UI at http://localhost:8000.
 
 ---
 
@@ -271,7 +271,7 @@ my-evals/runs/
 ## CLI Commands
 
 ```bash
-uv run microeval demo                 # Create sample-evals and launch UI
+uv run microeval demo                 # Create summary-evals and launch UI
 uv run microeval ui [EVALS_DIR]       # Start web UI
 uv run microeval run EVALS_DIR        # Run all evaluations in directory
 uv run microeval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
@@ -306,7 +306,7 @@ uv run microeval chat groq
 │   ├── index.html                   # Web UI
 │   ├── graph.py                     # Metrics visualization
 │   └── yaml_utils.py                # YAML helpers
-└── sample-evals/                    # Example evaluation project
+└── summary-evals/                    # Example evaluation project
     ├── prompts/
     ├── queries/
     ├── runs/

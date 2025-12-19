@@ -1,7 +1,7 @@
 ---
 file_path: evals-engineer/runs/engineer-openai-gpt-4o.yaml
 query_ref: engineer
-prompt_ref: candidate-summary
+prompt_ref: candidate-skills
 service: openai
 model: gpt-4o
 repeat: 3

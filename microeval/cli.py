@@ -77,7 +77,7 @@ def run(
     """
     evals_dir.set_base(base_dir)
 
-    logger.info(f"Running all configs in `./{evals_dir.runs}/*.yaml`")
+    logger.info(f"Running all configs in './{evals_dir.runs}/*.yaml'")
     file_paths = list(evals_dir.runs.glob("*.yaml"))
 
     if not file_paths:
@@ -87,28 +87,19 @@ def run(
     asyncio.run(run_all(file_paths))
 
 
-@app.command(sort_key=2)
-def demo(
-    base_dir: str = "sample-evals",
-    port: int = 8000,
-):
-    """Create sample evaluations and launch UI.
-    
-    Args:
-        base_dir: Directory for demo evals
-        port: Port to run the server on
-    """
+def _run_demo(template_name: str, base_dir: str, port: int):
+    """Helper to run demo with a specific template."""
     demo_dir = Path(base_dir)
-    sample_evals_path = Path(__file__).parent / "sample-evals"
+    template_path = Path(__file__).parent / template_name
     
     if demo_dir.exists():
         logger.info(f"Using existing {base_dir}")
     else:
-        if not sample_evals_path.exists():
-            logger.error(f"sample-evals template not found at {sample_evals_path}")
+        if not template_path.exists():
+            logger.error(f"{template_name} template not found at {template_path}")
             raise SystemExit(1)
         logger.info(f"Creating {base_dir} from template")
-        shutil.copytree(sample_evals_path, demo_dir)
+        shutil.copytree(template_path, demo_dir)
     
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
@@ -131,7 +122,25 @@ def demo(
     )
 
 
+@app.command(sort_key=2)
+def demo1(
+    base_dir: str = "summary-evals",
+    port: int = 8000,
+):
+    """Demo with summary evaluations."""
+    _run_demo("summary-evals", base_dir, port)
+
+
 @app.command(sort_key=3)
+def demo2(
+    base_dir: str = "json-evals",
+    port: int = 8000,
+):
+    """Demo with JSON evaluations."""
+    _run_demo("json-evals", base_dir, port)
+
+
+@app.command(sort_key=4)
 def chat(
     service: LLMService | None = None,
 ):
