@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 from path import Path
 from pydantic import BaseModel, Field
 
-from microeval.chat_client import ChatService
+from microeval.chat_client import LLMService
 from microeval.yaml_utils import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class RunConfig(BaseModel):
     prompt: str = ""
     input: str = ""
     output: str = ""
-    service: ChatService
+    service: LLMService
     model: str = ""
     repeat: int = 1
     temperature: float = 0.0

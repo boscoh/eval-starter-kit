@@ -11,7 +11,7 @@ import cyclopts
 import uvicorn
 
 from microeval.chat import main as chat_main
-from microeval.chat_client import ChatService
+from microeval.chat_client import LLMService
 from microeval.runner import run_all
 from microeval.schemas import evals_dir
 from microeval.server import is_in_container, poll_and_open_browser
@@ -32,7 +32,7 @@ def help_command():
     app.help_print([])
 
 
-@app.command
+@app.command(sort_key=0)
 def ui(
     base_dir: str,
     port: int = 8000,
@@ -66,7 +66,7 @@ def ui(
     )
 
 
-@app.command
+@app.command(sort_key=1)
 def run(
     base_dir: str,
 ):
@@ -87,7 +87,7 @@ def run(
     asyncio.run(run_all(file_paths))
 
 
-@app.command
+@app.command(sort_key=2)
 def demo(
     base_dir: str = "sample-evals",
     port: int = 8000,
@@ -131,9 +131,9 @@ def demo(
     )
 
 
-@app.command
+@app.command(sort_key=3)
 def chat(
-    service: ChatService | None = None,
+    service: LLMService | None = None,
 ):
     """Interactive chat loop with LLM providers."""
     if service is None:

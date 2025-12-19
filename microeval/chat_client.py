@@ -25,11 +25,11 @@ import openai
 from botocore.exceptions import ClientError, ProfileNotFound
 from dotenv import load_dotenv
 
-ChatService = Literal["openai", "ollama", "bedrock", "groq"]
-
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+LLMService = Literal["openai", "ollama", "bedrock", "groq"]
 
 config = {
   "chat_models": {
@@ -56,7 +56,7 @@ def load_config() -> Dict[str, Any]:
     return copy.deepcopy(config)
 
 
-def get_chat_client(client_type: ChatService, **kwargs) -> "IChatClient":
+def get_chat_client(client_type: LLMService, **kwargs) -> "IChatClient":
     """
     Gets a chat client that satisfies IChatClient interface.
 
