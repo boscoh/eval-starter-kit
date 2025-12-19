@@ -11,7 +11,7 @@ import cyclopts
 import uvicorn
 
 from microeval.chat import main as chat_main
-from microeval.chat_client import load_config
+from microeval.chat_client import ChatService
 from microeval.runner import run_all
 from microeval.schemas import evals_dir
 from microeval.server import is_in_container, poll_and_open_browser
@@ -133,20 +133,12 @@ def demo(
 
 @app.command
 def chat(
-    service: str,
+    service: ChatService | None = None,
 ):
-    """Interactive chat loop with LLM providers.
-    
-    Args:
-        service: LLM service to use
-    """
-    config = load_config()
-    available_services = config.get("chat_models", {}).keys()
-    
-    if service not in available_services:
-        services = ", ".join(available_services)
-        raise ValueError(f"Unknown service '{service}'. Available: {services}")
-
+    """Interactive chat loop with LLM providers."""
+    if service is None:
+        app.help_print(["chat"])
+        return
     chat_main(service)
 
 

@@ -15,8 +15,7 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from functools import lru_cache
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import aioboto3
 import boto3
@@ -25,6 +24,8 @@ import ollama
 import openai
 from botocore.exceptions import ClientError, ProfileNotFound
 from dotenv import load_dotenv
+
+ChatService = Literal["openai", "ollama", "bedrock", "groq"]
 
 load_dotenv()
 
@@ -55,7 +56,7 @@ def load_config() -> Dict[str, Any]:
     return copy.deepcopy(config)
 
 
-def get_chat_client(client_type: str, **kwargs) -> "IChatClient":
+def get_chat_client(client_type: ChatService, **kwargs) -> "IChatClient":
     """
     Gets a chat client that satisfies IChatClient interface.
 

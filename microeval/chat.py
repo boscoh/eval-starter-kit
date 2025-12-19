@@ -7,7 +7,7 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from microeval.chat_client import get_chat_client
+from microeval.chat_client import ChatService, get_chat_client
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ async def setup_async_exception_handler():
     loop.set_exception_handler(silence_event_loop_closed)
 
 
-async def amain(service):
+async def amain(service: ChatService):
      await setup_async_exception_handler()
      async with get_chat_client(service) as client:
         print(f"Chat loop with {service}-{client.model}")
@@ -42,7 +42,7 @@ async def amain(service):
             conversation_history.append({"role": "assistant", "content": response_text})
 
 
-def main(service: str = "openai"):
+def main(service: ChatService = "openai"):
     try:
         asyncio.run(amain(service))
     except KeyboardInterrupt:
