@@ -4,88 +4,45 @@ A lightweight evaluation framework for LLM testing. Supports local models (Ollam
 
 ## Quick Start
 
-### 1. Install
+### 1. Configure API Keys
 
-Clone the repository:
+Create a `.env` file with your API keys:
+
 ```bash
-git clone https://github.com/boscoh/microeval
-cd microeval
+# OpenAI
+OPENAI_API_KEY=your-api-key-here
+
+# Groq
+GROQ_API_KEY=your-api-key-here
+
+# AWS Bedrock (option 1: use a profile)
+AWS_PROFILE=your-profile-name
+
+# AWS Bedrock (option 2: use credentials directly)
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_DEFAULT_REGION=us-east-1
 ```
 
-Install uv if not already installed:
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Install dependencies:
-```bash
-uv sync
-```
-
-### 2. Configure AI Service
-
-**Ollama (Local Models)**
-
-[Ollama](https://ollama.ai/) installed and running:
+For local models, install [Ollama](https://ollama.ai/) and run:
 ```bash
 ollama pull llama3.2
 ollama serve
 ```
 
-Models: llama3.2, llama3.1, qwen2.5, mistral, mixtral, etc.
-
-**OpenAI**
-
-Set `OPENAI_API_KEY`:
-```bash
-echo "OPENAI_API_KEY=your-api-key-here" > .env
-```
-
-**AWS Bedrock**
-
-For local development, the easiest approach is to set up an AWS profile via `~/.aws/config` and then specify it with `AWS_PROFILE`:
+### 2. Run the Demo
 
 ```bash
-aws configure --profile your-profile-name
-# or manually edit ~/.aws/config
-
-echo "AWS_PROFILE=your-profile-name" >> .env
+uv run microeval demo
 ```
 
-Alternatively, you can set credentials directly:
-```bash
-echo "AWS_ACCESS_KEY_ID=your-access-key" >> .env
-echo "AWS_SECRET_ACCESS_KEY=your-secret-key" >> .env
-echo "AWS_DEFAULT_REGION=us-east-1" >> .env
-```
-
-Note: AWS profiles are recommended for local dev since key rotation is handled automatically.
-
-**Groq**
-
-Set `GROQ_API_KEY`:
-```bash
-echo "GROQ_API_KEY=your-api-key-here" > .env
-```
-
-### 3. Run Your First Evaluation
-
-Try the sample evaluation:
-```bash
-uv run microeval ui sample-evals
-```
-
-Open http://localhost:8000 to see the web UI.
+This creates a `sample-evals` directory with example evaluations and opens the web UI at http://localhost:8000.
 
 ---
 
 ## Tutorial: Building Your First Evaluation
 
-This tutorial walks you through creating an evaluation from scratch. We'll build a text summarization evaluator.
-
 ### Step 1: Create Your Evaluation Directory
-
-Each evaluation project lives in its own directory with four subdirectories:
 
 ```bash
 mkdir -p my-evals/{prompts,queries,runs,results}
@@ -102,10 +59,9 @@ my-evals/
 
 ### Step 2: Write a System Prompt
 
-Create a prompt file that tells the LLM how to behave:
+Create `my-evals/prompts/summarizer.txt`:
 
-```bash
-cat > my-evals/prompts/summarizer.txt << 'EOF'
+```
 You are a helpful assistant that summarizes text concisely.
 
 ## Instructions
@@ -115,17 +71,15 @@ You are a helpful assistant that summarizes text concisely.
 
 ## Output Format
 Return only the summary, no preamble or explanation.
-EOF
 ```
 
-Prompts are `.txt` files in the `prompts/` directory. The filename (without extension) becomes the `prompt_ref`.
+The filename (without extension) becomes the `prompt_ref`.
 
 ### Step 3: Create a Query (Test Case)
 
-Create a query file with input/output pairs for testing:
+Create `my-evals/queries/pangram.yaml`:
 
-```bash
-cat > my-evals/queries/pangram.yaml << 'EOF'
+```yaml
 ---
 input: >-
   The quick brown fox jumps over the lazy dog. This sentence is famous
@@ -137,10 +91,8 @@ output: >-
   The sentence "The quick brown fox jumps over the lazy dog" is a pangram
   containing every letter of the alphabet. It has been used since the late
   1800s to test typewriters, fonts, and keyboards.
-EOF
 ```
 
-**Query structure:**
 - `input` - The text sent to the LLM (user message)
 - `output` - The expected/ideal response (used by evaluators like `equivalence`)
 
@@ -148,10 +100,9 @@ The filename (without extension) becomes the `query_ref`.
 
 ### Step 4: Create a Run Configuration
 
-Create a run configuration that ties everything together:
+Create `my-evals/runs/summarize-gpt4o.yaml`:
 
-```bash
-cat > my-evals/runs/summarize-gpt4o.yaml << 'EOF'
+```yaml
 ---
 query_ref: pangram
 prompt_ref: summarizer
@@ -163,10 +114,7 @@ evaluators:
 - word_count
 - coherence
 - equivalence
-EOF
 ```
-
-**Run configuration fields:**
 
 | Field         | Description                                                  |
 |---------------|--------------------------------------------------------------|
@@ -180,19 +128,17 @@ EOF
 
 ### Step 5: Run the Evaluation
 
-**Option A: Web UI**
+**Web UI:**
 ```bash
 uv run microeval ui my-evals
 ```
 
 Navigate to http://localhost:8000, go to the **Runs** tab, and click the run button.
 
-**Option B: CLI**
+**CLI:**
 ```bash
 uv run microeval run my-evals
 ```
-
-This runs all configurations in `my-evals/runs/`.
 
 ### Step 6: View Results
 
@@ -219,11 +165,7 @@ evaluations:
   standard_deviation: 0.03
 ```
 
-**Result structure:**
-- `texts` - All generated responses from each run
-- `evaluations` - Scores from each evaluator with statistics
-
-In the Web UI, use the **Graph** tab to visualize and compare results across different runs.
+Use the **Graph** tab in the Web UI to visualize and compare results across different runs.
 
 ---
 
@@ -242,9 +184,9 @@ Evaluators score responses on a 0.0-1.0 scale:
 Add these optional fields to your run config:
 
 ```yaml
-min_words: 50    # Minimum word count
-max_words: 200   # Maximum word count
-target_words: 100  # Target word count (scores based on distance)
+min_words: 50
+max_words: 200
+target_words: 100
 ```
 
 ### Creating Custom Evaluators
@@ -257,8 +199,7 @@ class MyCustomEvaluator:
         self.run_config = run_config
 
     async def evaluate(self, response_text: str) -> Dict[str, Any]:
-        # Your evaluation logic here
-        score = 1.0  # Calculate your score (0.0 to 1.0)
+        score = 1.0
         return {
             "score": score,
             "text": "Evaluation details",
@@ -273,11 +214,11 @@ self.evaluators = {
     "coherence": CoherenceEvaluator(chat_client, run_config),
     "equivalence": EquivalenceEvaluator(chat_client, run_config),
     "word_count": WordCountEvaluator(run_config),
-    "mycustom": MyCustomEvaluator(run_config),  # Add this
+    "mycustom": MyCustomEvaluator(run_config),
 }
 ```
 
-3. Update the static method `EvaluationRunner.evaluators()` to include your evaluator name.
+3. Update `EvaluationRunner.evaluators()` to include your evaluator name.
 
 4. Use in your run config:
 ```yaml
@@ -289,8 +230,6 @@ evaluators:
 ---
 
 ## Comparing Models and Prompts
-
-A key use case is comparing different models or prompts on the same test cases.
 
 ### Compare Multiple Models
 
@@ -306,7 +245,7 @@ my-evals/runs/
 
 Run all:
 ```bash
-uv run evalstarter run my-evals
+uv run microeval run my-evals
 ```
 
 Compare results in the Graph view.
@@ -317,9 +256,9 @@ Create different prompts and run configs:
 
 ```
 my-evals/prompts/
-├── summarizer-basic.txt      # Simple instructions
-├── summarizer-detailed.txt   # Detailed step-by-step
-└── summarizer-expert.txt     # Expert persona
+├── summarizer-basic.txt
+├── summarizer-detailed.txt
+└── summarizer-expert.txt
 
 my-evals/runs/
 ├── test-basic.yaml           # prompt_ref: summarizer-basic
@@ -329,50 +268,14 @@ my-evals/runs/
 
 ---
 
-## Web UI Guide
-
-Start the UI:
-```bash
-uv run evalstarter ui my-evals
-```
-
-### Tabs
-
-| Tab         | Purpose                                              |
-|-------------|------------------------------------------------------|
-| **Runs**    | Create, edit, and execute run configurations         |
-| **Queries** | Define and edit test cases (input/output pairs)      |
-| **Prompts** | Write and manage system prompts                      |
-| **Graph**   | Visualize evaluation results and compare runs        |
-
-### Workflow
-
-1. **Prompts** → Write your system prompt
-2. **Queries** → Define your test case
-3. **Runs** → Configure which model, prompt, and query to use
-4. **Runs** → Click the run button to execute
-5. **Graph** → View and compare results
-
----
-
 ## CLI Commands
 
 ```bash
-uv run microeval ui [EVALS_DIR]       # Start web UI (default: evals-consultant)
+uv run microeval demo                 # Create sample-evals and launch UI
+uv run microeval ui [EVALS_DIR]       # Start web UI
 uv run microeval run EVALS_DIR        # Run all evaluations in directory
 uv run microeval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
-uv run microeval demo                 # Create sample-evals and run if not exists
 ```
-
-### Demo
-
-Create sample evaluations and launch the UI:
-```bash
-uv run microeval demo
-# Creates sample-evals directory and opens the web UI at http://localhost:8000
-```
-
-The demo includes evaluations for all supported services (OpenAI, Bedrock, Ollama, Groq) using the same prompt and test case for easy comparison.
 
 ### Interactive Chat
 
@@ -390,11 +293,9 @@ uv run microeval chat groq
 
 ```
 .
-├── README.md
-├── pyproject.toml
-├── .env                             # API keys (create from .env.example)
-├── microeval/                        # Main package
-│   ├── cli.py                       # CLI entry point (ui, run, chat)
+├── .env                             # API keys
+├── microeval/
+│   ├── cli.py                       # CLI entry point
 │   ├── server.py                    # Web server and API
 │   ├── runner.py                    # Evaluation runner
 │   ├── evaluator.py                 # Evaluation logic
@@ -405,12 +306,11 @@ uv run microeval chat groq
 │   ├── index.html                   # Web UI
 │   ├── graph.py                     # Metrics visualization
 │   └── yaml_utils.py                # YAML helpers
-├── sample-evals/                    # Example evaluation project
-│   ├── prompts/
-│   ├── queries/
-│   ├── runs/
-│   └── results/
-└── uv.lock
+└── sample-evals/                    # Example evaluation project
+    ├── prompts/
+    ├── queries/
+    ├── runs/
+    └── results/
 ```
 
 ## Services and Models
@@ -426,7 +326,7 @@ Default models configured in `microeval/config.json`:
 
 ---
 
-## Tips and Best Practices
+## Tips
 
 ### Prompt Engineering
 - Start with simple prompts and iterate
