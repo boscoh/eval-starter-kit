@@ -1,0 +1,127 @@
+---
+texts:
+- >-
+  [
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "English",
+    "Content Management",
+    "Documentation",
+    "Middle School Math",
+    "High School Math",
+    "College Math",
+    "Presentation",
+    "Analysis",
+    "Grading and Evaluation",
+    "Problem Solving",
+    "ESL Students",
+    "Technology Integration",
+    "Classroom Monitoring",
+    "Student Assistance",
+    "Data Analysis",
+    "Forecasting",
+    "Inventory",
+    "Quantitative Analysis",
+    "Leadership",
+    "Operations Management",
+    "Procurement",
+    "Project Management",
+    "Optimization",
+    "C Programming",
+    "C++ Programming",
+    "MS Office Suite",
+    "Google Docs",
+    "SQL"
+  ]
+- >-
+  [
+    "Data Analysis",
+    "Forecasting",
+    "Operations Management",
+    "Project Management",
+    "Quantitative Analysis",
+    "Supply Chain Management",
+    "Business Forecasting",
+    "Total Quality Systems",
+    "Optimization Techniques",
+    "Inventory Control",
+    "Demand Forecasting",
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "English",
+    "Content Management",
+    "Documentation",
+    "Middle School Math",
+    "High School Math",
+    "College Math",
+    "Presentation",
+    "Analysis",
+    "Grading and Evaluation",
+    "Problem Solving",
+    "ESL Students",
+    "Technology Integration",
+    "Classroom Monitoring",
+    "Student Assistance",
+    "Account Management",
+    "Customer Care and Satisfaction",
+    "Data Analysis",
+    "Inventory",
+    "Leadership",
+    "Procurement",
+    "Project Management",
+    "C Programming",
+    "C++ Programming",
+    "MS Office Suite"
+  ]
+- >-
+  [
+    "Data Analysis",
+    "Documentation",
+    "Inventory Control",
+    "Leadership",
+    "Mathematics",
+    "Operations Management",
+    "Optimization Techniques",
+    "Presentation",
+    "Quantitative Analysis",
+    "SQL"
+  ]
+evaluations:
+- name: equivalence
+  values:
+  - 0.2
+  - 0.2
+  - 0.4
+  average: 0.26666666666666666
+  standard_deviation: 0.11547005383792516
+- name: coherence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 18.69064497947693
+  - 22.14221215248108
+  - 10.81189227104187
+  average: 17.214916467666626
+  standard_deviation: 5.807526851798581
+- name: token_count
+  values:
+  - 1368
+  - 1389
+  - 1330
+  average: 1362.3333333333333
+  standard_deviation: 29.905406423142512
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

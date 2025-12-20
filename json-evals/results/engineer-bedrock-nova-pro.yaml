@@ -1,0 +1,149 @@
+---
+texts:
+- >-
+  ```json
+
+  [
+    "Data Analysis",
+    "Forecasting",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Leadership",
+    "Operations Management",
+    "Procurement",
+    "Project Management",
+    "Optimization",
+    "Account Management",
+    "Customer Care and Satisfaction",
+    "SQL",
+    "C",
+    "C++",
+    "MS Office Suite",
+    "Google Docs",
+    "Mathematics Tutoring",
+    "Algebra",
+    "Geometry",
+    "English",
+    "Content Management",
+    "Documentation",
+    "Middle School & High School Math",
+    "College Math",
+    "Presentation",
+    "Analysis",
+    "Grading and Evaluation",
+    "Problem Solving",
+    "ESL Students",
+    "Technology Integration",
+    "Classroom Monitoring",
+    "Student Assistance"
+  ]
+
+  ```
+- >-
+  ```json
+
+  [
+    "Data Analysis",
+    "Forecasting",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Leadership",
+    "Operations Management",
+    "Project Management",
+    "Optimization",
+    "Account Management",
+    "Customer Care",
+    "SQL",
+    "C",
+    "C++",
+    "MS Office Suite",
+    "Google Docs",
+    "Tutoring",
+    "Teaching",
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "English",
+    "Content Management",
+    "Documentation",
+    "Middle School Math",
+    "High School Math",
+    "College Math",
+    "Presentation",
+    "Analysis",
+    "Grading and Evaluation",
+    "Problem Solving",
+    "ESL Students",
+    "Technology Integration",
+    "Classroom Monitoring",
+    "Student Assistance"
+  ]
+
+  ```
+- >-
+  ```json
+
+  [
+    "People Management",
+    "Leadership",
+    "Documentation",
+    "Multi-tasking",
+    "Innovation",
+    "Creativity",
+    "Problem Solving",
+    "Lesson Planning",
+    "Grading",
+    "Presentation",
+    "Training",
+    "SQL",
+    "Data Analysis",
+    "Forecasting",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Operations Management",
+    "Procurement",
+    "Project Management",
+    "Optimization",
+    "C",
+    "C++",
+    "MS Office Suite",
+    "Google Docs"
+  ]
+
+  ```
+evaluations:
+- name: equivalence
+  values:
+  - 0.5
+  - 0.5
+  - 0.5
+  average: 0.5
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 3.7209410667419434
+  - 1.6351728439331055
+  - 1.0601410865783691
+  average: 2.138751665751139
+  standard_deviation: 1.400056375988963
+- name: token_count
+  values:
+  - 2027
+  - 2031
+  - 1978
+  average: 2012
+  standard_deviation: 29.512709126747414
+- name: cost
+  values:
+  - 0.00616208
+  - 0.00617424
+  - 0.00601312
+  average: 0.0061164800000000005
+  standard_deviation: 8.97186357453121e-05

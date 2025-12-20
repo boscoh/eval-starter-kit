@@ -1,0 +1,137 @@
+---
+texts:
+- >-
+  [
+    "SQL",
+    "Microsoft PowerPoint",
+    "Google Docs",
+    "MS Office Suite",
+    "C",
+    "C++",
+    "Data Analysis",
+    "Quantitative Analysis",
+    "Operations Management",
+    "Project Management",
+    "Business Forecasting",
+    "Supply Chain Management",
+    "Total Quality Systems",
+    "Leadership",
+    "Problem Solving",
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "Optimization Techniques",
+    "Inventory Control",
+    "Demand Forecasting",
+    "Account Management",
+    "Customer Care",
+    "Procurement",
+    "Content Management",
+    "Documentation",
+    "Presentation",
+    "Grading and Evaluation",
+    "Classroom Monitoring",
+    "Technology Integration",
+    "English as a Second Language (ESL) Instruction"
+  ]
+- >-
+  [
+    "SQL",
+    "Google Docs",
+    "MS Office Suite",
+    "C",
+    "C++",
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "Data Analysis",
+    "Operations Management",
+    "Project Management",
+    "Leadership",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Optimization Techniques",
+    "Supply Chain Management",
+    "Business Forecasting",
+    "Total Quality Systems",
+    "Presentation",
+    "Problem Solving",
+    "Content Management",
+    "Documentation",
+    "Classroom Management",
+    "Technology Integration",
+    "Account Management",
+    "Customer Care",
+    "Procurement",
+    "English as a Second Language (ESL) Instruction"
+  ]
+- >-
+  [
+    "SQL",
+    "Microsoft PowerPoint",
+    "Google Docs",
+    "MS Office Suite",
+    "C",
+    "C++",
+    "Mathematics",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "Data Analysis",
+    "Operations Management",
+    "Project Management",
+    "Business Forecasting",
+    "Supply Chain Management",
+    "Leadership",
+    "Account Management",
+    "Customer Care",
+    "Inventory Management",
+    "Quantitative Analysis",
+    "Optimization",
+    "Problem Solving",
+    "Presentation",
+    "Grading and Evaluation",
+    "Content Management",
+    "Documentation",
+    "Technology Integration",
+    "Classroom Monitoring",
+    "English as a Second Language (ESL) Support"
+  ]
+evaluations:
+- name: equivalence
+  values:
+  - 0.6
+  - 0.6
+  - 0.6
+  average: 0.6
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.0
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 0.6627600193023682
+  - 0.5333418846130371
+  - 0.5709660053253174
+  average: 0.5890226364135742
+  standard_deviation: 0.0665717270416617
+- name: token_count
+  values:
+  - 2009
+  - 1991
+  - 1991
+  average: 1997
+  standard_deviation: 10.392304845413264
+- name: cost
+  values:
+  - 0.0021074410000000003
+  - 0.0020885590000000002
+  - 0.0020885590000000002
+  average: 0.0020948530000000003
+  standard_deviation: 1.0901527782838522e-05

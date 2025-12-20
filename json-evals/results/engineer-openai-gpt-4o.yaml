@@ -1,0 +1,208 @@
+---
+texts:
+- >-
+  ```json
+
+  [
+    "Mathematics Tutoring",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "SQL Programming",
+    "Data Analysis",
+    "Presentation Design",
+    "Microsoft PowerPoint",
+    "Google Docs",
+    "Operations Management",
+    "Project Management",
+    "Supply Chain Management",
+    "Quantitative Analysis",
+    "Inventory Management",
+    "Optimization Techniques",
+    "Regression Analysis",
+    "Probability",
+    "Hypothesis Testing",
+    "Leadership",
+    "People Management",
+    "Documentation",
+    "Problem Solving",
+    "C Programming",
+    "C++ Programming",
+    "MS Office Suite"
+  ]
+
+  ```
+- >-
+  ```json
+
+  [
+    "People management",
+    "Leadership",
+    "Documentation",
+    "Multi-tasking",
+    "Innovation",
+    "Creativity",
+    "Problem solving",
+    "Creative lesson planning",
+    "Grading",
+    "Presentation",
+    "SQL programming",
+    "Data analysis",
+    "Operations management",
+    "Project management",
+    "Supply chain management",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "Mathematical analysis",
+    "Linear algebra",
+    "Ordinary differential equations",
+    "Theory of probability",
+    "Numerical analysis",
+    "Matrix analysis",
+    "Optimization techniques",
+    "Insurance mathematics",
+    "Estimation",
+    "Hypothesis testing",
+    "Regression analysis",
+    "Correlation",
+    "Quantitative analysis",
+    "Production management",
+    "Control",
+    "Inventory control",
+    "Demand forecasting",
+    "Statistical analysis",
+    "Capacity planning",
+    "Marketing",
+    "Content management",
+    "Quality testing",
+    "Logistics",
+    "KPI reporting",
+    "Order forecasting",
+    "Inventory reconciliation",
+    "Warehouse productivity",
+    "Order fulfillment",
+    "Global shipments",
+    "Standard operating procedures",
+    "Workflow processes",
+    "Customer support",
+    "Account management",
+    "Customer care",
+    "Customer satisfaction",
+    "Forecasting",
+    "Procurement",
+    "C",
+    "C++",
+    "MS Office Suite",
+    "Google Docs"
+  ]
+
+  ```
+- >-
+  ```json
+
+  [
+    "Mathematics Tutoring",
+    "Algebra",
+    "Geometry",
+    "Statistics",
+    "People Management",
+    "Leadership",
+    "Documentation",
+    "Multi-tasking",
+    "Innovation",
+    "Creativity",
+    "Problem Solving",
+    "Creative Lesson Planning",
+    "Grading",
+    "Presentation Design",
+    "Microsoft PowerPoint",
+    "Google Docs",
+    "SQL Programming",
+    "Data Analysis",
+    "Operations Management",
+    "Total Quality Systems",
+    "Project Management",
+    "Supply Chain Management",
+    "Mathematical Analysis",
+    "Linear Algebra",
+    "Mathematical Logic",
+    "Analytic Geometry",
+    "Ordinary Differential Equations",
+    "Probability Theory",
+    "Numerical Analysis",
+    "Statistics",
+    "Matrix Analysis",
+    "Optimization Techniques",
+    "Insurance Mathematics",
+    "Estimation",
+    "Hypothesis Testing",
+    "Regression Analysis",
+    "Correlation",
+    "Quantitative Analysis",
+    "Production Management",
+    "Inventory Control",
+    "Demand Forecasting",
+    "Statistical Analysis",
+    "Capacity Planning",
+    "System Improvements",
+    "Process Improvement",
+    "Marketing",
+    "Content Management",
+    "Quality Testing",
+    "Logistics",
+    "KPI Reporting",
+    "Analytical Tools",
+    "Order Forecasting",
+    "Inventory Reconciliation",
+    "Warehouse Productivity",
+    "Order Fulfillment",
+    "Global Shipments",
+    "Standard Operating Procedures",
+    "Workflow Processes",
+    "Customer Support",
+    "Account Management",
+    "Customer Care",
+    "Procurement",
+    "C",
+    "C++",
+    "MS Office Suite"
+  ]
+
+  ```
+evaluations:
+- name: equivalence
+  values:
+  - 0.7
+  - 0.7
+  - 0.5
+  average: 0.6333333333333333
+  standard_deviation: 0.11547005383792512
+- name: coherence
+  values:
+  - 0.3
+  - 0.3
+  - 0.3
+  average: 0.3
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 2.6299526691436768
+  - 4.968006134033203
+  - 3.6339688301086426
+  average: 3.743975877761841
+  standard_deviation: 1.1729022397755533
+- name: token_count
+  values:
+  - 1937
+  - 2107
+  - 2153
+  average: 2065.6666666666665
+  standard_deviation: 113.77756076368193
+- name: cost
+  values:
+  - 0.018401499999999998
+  - 0.0200165
+  - 0.0204535
+  average: 0.019623833333333333
+  standard_deviation: 0.0010808868272549792

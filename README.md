@@ -30,13 +30,20 @@ ollama pull llama3.2
 ollama serve
 ```
 
-### 2. Run the Demo
+### 2. Run a Demo
 
 ```bash
-uv run microeval demo
+uv run microeval demo1
 ```
 
 This creates a `summary-evals` directory with example evaluations and opens the web UI at http://localhost:8000.
+
+Or try the JSON evaluation demo:
+```bash
+uv run microeval demo2
+```
+
+This creates a `json-evals` directory with structured output evaluations.
 
 ---
 
@@ -271,20 +278,48 @@ my-evals/runs/
 ## CLI Commands
 
 ```bash
-uv run microeval demo                 # Create summary-evals and launch UI
-uv run microeval ui [EVALS_DIR]       # Start web UI
-uv run microeval run EVALS_DIR        # Run all evaluations in directory
-uv run microeval chat SERVICE         # Interactive chat (openai, bedrock, ollama, groq)
+microeval                             # Show help
+microeval ui BASE_DIR                 # Start web UI for evals directory
+microeval run BASE_DIR                # Run all evaluations in directory
+microeval demo1                       # Create summary-evals and launch UI
+microeval demo2                       # Create json-evals and launch UI  
+microeval chat SERVICE                # Interactive chat with LLM provider
 ```
 
-### Interactive Chat
+### ui - Web Interface
+
+```bash
+microeval ui my-evals                 # Start UI on default port 8000
+microeval ui my-evals --port 3000     # Use custom port
+microeval ui my-evals --reload        # Enable auto-reload for development
+```
+
+### run - CLI Evaluation Runner
+
+```bash
+microeval run my-evals                # Run all configs in my-evals/runs/*.yaml
+```
+
+Runs all evaluation configs and saves results to `my-evals/results/`.
+
+### demo1 / demo2 - Quick Start Demos
+
+```bash
+microeval demo1                       # Summary evaluation demo
+microeval demo1 --base-dir custom     # Use custom directory name
+microeval demo1 --port 3000           # Use custom port
+
+microeval demo2                       # JSON/structured output demo
+```
+
+### chat - Interactive Chat
 
 Test LLM providers directly:
 ```bash
-uv run microeval chat openai
-uv run microeval chat ollama
-uv run microeval chat bedrock
-uv run microeval chat groq
+microeval chat openai
+microeval chat ollama
+microeval chat bedrock
+microeval chat groq
 ```
 
 ---
@@ -302,11 +337,12 @@ uv run microeval chat groq
 │   ├── chat_client.py               # LLM provider clients
 │   ├── chat.py                      # Interactive chat
 │   ├── schemas.py                   # Pydantic models
-│   ├── config.json                  # Model configuration
 │   ├── index.html                   # Web UI
 │   ├── graph.py                     # Metrics visualization
-│   └── yaml_utils.py                # YAML helpers
-└── summary-evals/                    # Example evaluation project
+│   ├── yaml_utils.py                # YAML helpers
+│   ├── summary-evals/               # Demo 1: summary evaluations
+│   └── json-evals/                  # Demo 2: JSON/structured output
+└── my-evals/                        # Your evaluation project
     ├── prompts/
     ├── queries/
     ├── runs/
