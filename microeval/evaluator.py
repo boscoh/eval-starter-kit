@@ -20,12 +20,12 @@ def parse_score_text(score_text: str) -> float:
 
 
 class EvaluationRunner:
-    def __init__(self, chat_client, run_config: RunConfig):
-        self.chat_client = chat_client
+    def __init__(self, llm, run_config: RunConfig):
+        self.llm = llm
         self.run_config = run_config
         self.evaluators = {
-            "coherence": CoherenceEvaluator(chat_client, run_config),
-            "equivalence": EquivalenceEvaluator(chat_client, run_config),
+            "coherence": CoherenceEvaluator(llm, run_config),
+            "equivalence": EquivalenceEvaluator(llm, run_config),
             "word_count": WordCountEvaluator(run_config),
         }
 
@@ -75,8 +75,8 @@ class EvaluationRunner:
 
 
 class CoherenceEvaluator:
-    def __init__(self, chat_client, run_config: RunConfig):
-        self.chat_client = chat_client
+    def __init__(self, llm, run_config: RunConfig):
+        self.llm = llm
         self.run_config = run_config
 
     async def evaluate(self, response_text: str) -> Dict[str, Any]:
@@ -131,13 +131,13 @@ class CoherenceEvaluator:
                 {"role": "user", "content": textwrap.dedent(coherence_prompt.strip())},
             ]
 
-            response = await self.chat_client.get_completion(messages)
+            response = await self.llm.get_completion(messages)
 
             # Check if the response contains an error
             if "error" in response.get("metadata", {}):
                 error_msg = response["metadata"]["error"]
-                logger.error(f"Chat client error in coherence evaluation: {error_msg}")
-                raise RuntimeError(f"Chat client error: {error_msg}")
+                logger.error(f"LLM error in coherence evaluation: {error_msg}")
+                raise RuntimeError(f"LLM error: {error_msg}")
 
             result.update(
                 {
@@ -157,8 +157,8 @@ class CoherenceEvaluator:
 
 
 class EquivalenceEvaluator:
-    def __init__(self, chat_client, run_config: RunConfig):
-        self.chat_client = chat_client
+    def __init__(self, llm, run_config: RunConfig):
+        self.llm = llm
         self.run_config = run_config
 
     async def evaluate(self, response_text: str) -> Dict[str, Any]:
@@ -229,15 +229,13 @@ class EquivalenceEvaluator:
                 {"role": "user", "content": prompt},
             ]
 
-            response = await self.chat_client.get_completion(messages)
+            response = await self.llm.get_completion(messages)
 
             # Check if the response contains an error
             if "error" in response.get("metadata", {}):
                 error_msg = response["metadata"]["error"]
-                logger.error(
-                    f"Chat client error in equivalence evaluation: {error_msg}"
-                )
-                raise RuntimeError(f"Chat client error: {error_msg}")
+                logger.error(f"LLM error in equivalence evaluation: {error_msg}")
+                raise RuntimeError(f"LLM error: {error_msg}")
 
             result.update(
                 {

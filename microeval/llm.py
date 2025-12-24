@@ -56,9 +56,9 @@ def load_config() -> Dict[str, Any]:
     return copy.deepcopy(config)
 
 
-def get_chat_client(client_type: LLMService, **kwargs) -> "IChatClient":
+def get_llm_client(client_type: LLMService, **kwargs) -> "SimpleLLMClient":
     """
-    Gets a chat client that satisfies IChatClient interface.
+    Gets a chat client that satisfies SimpleLLMClient interface.
 
     Args:
         client_type: "openai", "ollama", "bedrock", or "groq"
@@ -75,18 +75,18 @@ def get_chat_client(client_type: LLMService, **kwargs) -> "IChatClient":
             kwargs["model"] = default_model
 
     if client_type == "openai":
-        return OpenAIChatClient(**kwargs)
+        return OpenAIClient(**kwargs)
     if client_type == "ollama":
-        return OllamaChatClient(**kwargs)
+        return OllamaClient(**kwargs)
     if client_type == "bedrock":
-        return BedrockChatClient(**kwargs)
+        return BedrockClient(**kwargs)
     if client_type == "groq":
-        return GroqChatClient(**kwargs)
+        return GroqClient(**kwargs)
     raise ValueError(f"Unknown chat client type: {client_type}")
 
 
-class IChatClient(ABC):
-    """Abstract base class for IChatClient, an API for LLM with async interface"""
+class SimpleLLMClient(ABC):
+    """Abstract base class for SimpleLLMClient, an API for LLM with async interface"""
 
     @abstractmethod
     async def get_completion(
@@ -327,7 +327,7 @@ def parse_response_as_json_list(response):
     return None
 
 
-class OllamaChatClient(IChatClient):
+class OllamaClient(SimpleLLMClient):
     def __init__(self, model: str = None):
         """Initialize Ollama chat client.
 
@@ -435,7 +435,7 @@ class OllamaChatClient(IChatClient):
         return 0.0
 
 
-class OpenAIChatClient(IChatClient):
+class OpenAIClient(SimpleLLMClient):
     def __init__(
         self,
         model: str = None,
@@ -632,7 +632,7 @@ class OpenAIChatClient(IChatClient):
         return pricing.get(model_key, 0.0)
 
 
-class GroqChatClient(OpenAIChatClient):
+class GroqClient(OpenAIClient):
     """Groq chat client that inherits from OpenAI client (Groq uses OpenAI-compatible API)."""
 
     async def connect(self):
@@ -785,7 +785,7 @@ def get_aws_config(is_raise_exception: bool = True):
     return aws_config
 
 
-class BedrockChatClient(IChatClient):
+class BedrockClient(SimpleLLMClient):
     def __init__(
         self,
         model: str = None,

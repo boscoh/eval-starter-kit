@@ -11,12 +11,12 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
-from microeval.chat_client import load_config
+from microeval.llm import load_config
 from microeval.evaluator import EvaluationRunner
 from microeval.runner import Runner
 from microeval.schemas import RunConfig, TableType, evals_dir, ext_from_table
-from microeval.setup_logger import setup_logging
-from microeval.yaml_utils import load_yaml, save_yaml
+from microeval.logger import setup_logging
+from microeval.yamlx import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
 

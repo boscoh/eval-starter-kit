@@ -11,17 +11,17 @@ import cyclopts
 import uvicorn
 
 from microeval.chat import main as chat_main
-from microeval.chat_client import LLMService
+from microeval.llm import LLMService
 from microeval.runner import run_all
 from microeval.schemas import evals_dir
 from microeval.server import is_in_container, poll_and_open_browser
-from microeval.setup_logger import setup_logging
+from microeval.logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
 setup_logging()
 
-app = cyclopts.App(help_format="markdown")
+app = cyclopts.App(name="microeval", help_format="markdown")
 
 
 @app.default
@@ -39,11 +39,10 @@ def ui(
     reload: bool = False,
 ):
     """Run the web UI for evaluations.
-    
-    Args:
-        base_dir: Base directory for evals
-        port: Port to run the server on
-        reload: Enable auto-reload
+
+    :param base_dir: Base directory for evals
+    :param port: Port to run the server on
+    :param reload: Enable auto-reload
     """
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
@@ -71,9 +70,8 @@ def run(
     base_dir: str,
 ):
     """Run all LLM evaluations in a directory.
-    
-    Args:
-        base_dir: Base directory for evals (e.g., evals-consultant, evals-engineer)
+
+    :param base_dir: Base directory for evals
     """
     evals_dir.set_base(base_dir)
 
@@ -88,7 +86,12 @@ def run(
 
 
 def _run_demo(template_name: str, base_dir: str, port: int):
-    """Helper to run demo with a specific template."""
+    """Run demo with a specific template.
+
+    :param template_name: Name of the template directory
+    :param base_dir: Base directory for evals
+    :param port: Port to run the server on
+    """
     demo_dir = Path(base_dir)
     template_path = Path(__file__).parent / template_name
     

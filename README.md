@@ -181,7 +181,7 @@ Use the **Graph** tab in the Web UI to visualize and compare results across diff
 Evaluators score responses on a 0.0-1.0 scale:
 
 | Evaluator      | Description                       | How it Works                               |
-|----------------|-----------------------------------|-------------------------------------------|
+|----------------|-----------------------------------|--------------------------------------------|
 | `coherence`    | Logical flow and clarity          | LLM scores structure and consistency       |
 | `equivalence`  | Semantic similarity to expected   | LLM compares meaning with query output     |
 | `word_count`   | Response length validation        | Algorithmic check (no LLM call)            |
@@ -218,8 +218,8 @@ class MyCustomEvaluator:
 2. Register in `EvaluationRunner.__init__`:
 ```python
 self.evaluators = {
-    "coherence": CoherenceEvaluator(chat_client, run_config),
-    "equivalence": EquivalenceEvaluator(chat_client, run_config),
+    "coherence": CoherenceEvaluator(llm, run_config),
+    "equivalence": EquivalenceEvaluator(llm, run_config),
     "word_count": WordCountEvaluator(run_config),
     "mycustom": MyCustomEvaluator(run_config),
 }
@@ -334,12 +334,13 @@ microeval chat groq
 │   ├── server.py                    # Web server and API
 │   ├── runner.py                    # Evaluation runner
 │   ├── evaluator.py                 # Evaluation logic
-│   ├── chat_client.py               # LLM provider clients
+│   ├── llm.py                       # LLM provider clients
 │   ├── chat.py                      # Interactive chat
 │   ├── schemas.py                   # Pydantic models
+│   ├── logger.py                    # Logging setup
 │   ├── index.html                   # Web UI
 │   ├── graph.py                     # Metrics visualization
-│   ├── yaml_utils.py                # YAML helpers
+│   ├── yamlx.py                     # YAML helpers
 │   ├── summary-evals/               # Demo 1: summary evaluations
 │   └── json-evals/                  # Demo 2: JSON/structured output
 └── my-evals/                        # Your evaluation project
@@ -351,7 +352,7 @@ microeval chat groq
 
 ## Services and Models
 
-Default models configured in `microeval/config.json`:
+Default models configured in `microeval/llm.py`:
 
 | Service  | Default Model              |
 |----------|----------------------------|

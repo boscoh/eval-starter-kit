@@ -7,7 +7,7 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from microeval.chat_client import LLMService, get_chat_client
+from microeval.llm import LLMService, get_llm_client
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ async def setup_async_exception_handler():
 
 async def amain(service: LLMService):
      await setup_async_exception_handler()
-     async with get_chat_client(service) as client:
+     async with get_llm_client(service) as client:
         print(f"Chat loop with {service}-{client.model}")
         conversation_history = []
         while True:

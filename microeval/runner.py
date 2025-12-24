@@ -4,10 +4,10 @@ from statistics import mean, stdev
 
 from path import Path
 
-from microeval.chat_client import get_chat_client
+from microeval.llm import get_llm_client
 from microeval.evaluator import EvaluationRunner
 from microeval.schemas import RunConfig, RunResult, evals_dir
-from microeval.yaml_utils import save_yaml
+from microeval.yamlx import save_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 class Runner:
     def __init__(self, file_path: str):
         self._config = RunConfig.read_from_yaml(file_path)
-        self._chat_client = get_chat_client(
+        self._llm = get_llm_client(
             self._config.service, model=self._config.model
         )
-        self._cost_per_token = self._chat_client.get_token_cost()
-        self._evaluation_runner = EvaluationRunner(self._chat_client, self._config)
+        self._cost_per_token = self._llm.get_token_cost()
+        self._evaluation_runner = EvaluationRunner(self._llm, self._config)
 
     async def run(self):
         try:
@@ -30,7 +30,7 @@ class Runner:
                 results_path.remove()
                 logger.info(f"Removed existing results file '{results_path}'")
 
-            await self._chat_client.connect()
+            await self._llm.connect()
 
             fields = self._config.evaluators + [
                 "elapsed_seconds",
@@ -43,7 +43,7 @@ class Runner:
             for i in range(self._config.repeat):
                 logger.info(f">>> Evaluate iteration {i + 1}/{self._config.repeat}")
 
-                response = await self._chat_client.get_completion(
+                response = await self._llm.get_completion(
                     messages=[
                         {"role": "system", "content": self._config.prompt},
                         {"role": "user", "content": self._config.input},
@@ -96,7 +96,7 @@ class Runner:
             logger.error(f"Error during run: {e}")
             raise
         finally:
-            await self._chat_client.close()
+            await self._llm.close()
 
 
 async def run_all(file_paths):
@@ -110,7 +110,7 @@ async def run_all(file_paths):
 def main():
     import argparse
 
-    from microeval.setup_logger import setup_logging
+    from microeval.logger import setup_logging
 
     setup_logging()
 
