@@ -117,7 +117,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run LLM evaluations")
     parser.add_argument(
         "evals_dir",
-        help="Base directory for evals (e.g., evals-consultant, evals-engineer)",
+        help="Base directory for evals (e.g., my-evals)",
     )
     args = parser.parse_args()
 

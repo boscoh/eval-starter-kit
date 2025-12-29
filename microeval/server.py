@@ -1,8 +1,10 @@
+import json
 import logging
 import os
 import threading
 import time
 import webbrowser
+from contextlib import asynccontextmanager
 from typing import Any, Dict
 
 import httpx
@@ -56,15 +58,15 @@ def save_content(content, file_path):
         file_path.write_text(content)
 
 
-app = FastAPI()
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize evals_dir from environment variable on server startup."""
-    base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    base_dir = os.getenv("EVALS_DIR", "evals")
     evals_dir.set_base(base_dir)
     logger.info(f"Server initialized with evals_dir: {base_dir}")
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.middleware("http")
@@ -426,8 +428,8 @@ def main():
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
     parser.add_argument(
         "--evals-dir",
-        default="evals-consultant",
-        help="Base directory for evals (default: evals-consultant)",
+        default="evals",
+        help="Base directory for evals (default: evals)",
     )
     args = parser.parse_args()
 

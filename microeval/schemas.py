@@ -24,7 +24,7 @@ ext_from_table = {
 class EvalsDir:
     def __init__(self, base_dir: str = None):
         if base_dir is None:
-            base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+            base_dir = os.getenv("EVALS_DIR", "evals")
         self._base = Path(base_dir)
 
     @property
@@ -57,7 +57,7 @@ class EvalsDir:
 
     def set_base(self, base_dir: str = None):
         if base_dir is None:
-            base_dir = os.getenv("EVALS_DIR", "evals-consultant")
+            base_dir = os.getenv("EVALS_DIR", "evals")
         self._base = Path(base_dir)
         for d in [self.prompts, self.queries, self.results, self.runs]:
             d.makedirs_p()
@@ -111,8 +111,6 @@ class RunConfig(BaseModel):
         return result
 
     def save(self, file_path: str):
-        save_yaml(self.model_dump(), file_path)
-
         save_config = copy.deepcopy(self.model_dump())
         del save_config["input"]
         del save_config["output"]

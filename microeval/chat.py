@@ -25,21 +25,20 @@ async def setup_async_exception_handler():
 
 
 async def amain(service: LLMService):
-     await setup_async_exception_handler()
-     async with get_llm_client(service) as client:
+    await setup_async_exception_handler()
+    async with get_llm_client(service) as client:
         print(f"Chat loop with {service}-{client.model}")
-        conversation_history = []
+        messages = []
         while True:
             user_input = input("\nYou: ")
             if user_input.lower() in ["quit", "exit"]:
                 print("Goodbye!")
                 break
-            conversation_history.append({"role": "user", "content": user_input})
-            messages = [{"role": "user", "content": user_input}]
+            messages.append({"role": "user", "content": user_input})
             result = await client.get_completion(messages)
             response_text = result.get("text", "")
             print(f"\nResponse: {response_text}")
-            conversation_history.append({"role": "assistant", "content": response_text})
+            messages.append({"role": "assistant", "content": response_text})
 
 
 def main(service: LLMService = "openai"):
