@@ -1,8 +1,9 @@
 """Generate graph data from evaluation results for visualization."""
 
 import logging
-from path import Path
 from typing import Dict, List
+
+from path import Path
 
 from microeval.yamlx import load_yaml
 

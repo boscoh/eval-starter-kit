@@ -23,26 +23,23 @@ import groq
 import ollama
 import openai
 from botocore.exceptions import ClientError, ProfileNotFound
-from dotenv import load_dotenv
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 LLMService = Literal["openai", "ollama", "bedrock", "groq"]
 
 config = {
-  "chat_models": {
-    "bedrock": "amazon.nova-pro-v1:0",
-    "openai": "gpt-4o",
-    "ollama": "llama3.2",
-    "groq": "llama-3.3-70b-versatile"
-  },
-  "embed_models": {
-    "openai": "text-embedding-3-small",
-    "ollama": "nomic-embed-text",
-    "bedrock": "amazon.titan-embed-text-v2:0"
-  }
+    "chat_models": {
+        "bedrock": "amazon.nova-pro-v1:0",
+        "openai": "gpt-4o",
+        "ollama": "llama3.2",
+        "groq": "llama-3.3-70b-versatile",
+    },
+    "embed_models": {
+        "openai": "text-embedding-3-small",
+        "ollama": "nomic-embed-text",
+        "bedrock": "amazon.titan-embed-text-v2:0",
+    },
 }
 
 

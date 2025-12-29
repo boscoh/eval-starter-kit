@@ -16,6 +16,7 @@ class EvaluatorConfig(BaseModel):
     name: str
     params: Dict[str, Any] = Field(default_factory=dict)
 
+
 TableType = Literal["result", "run", "prompt", "query"]
 
 ext_from_table = {

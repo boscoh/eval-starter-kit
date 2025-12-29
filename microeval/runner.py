@@ -4,8 +4,8 @@ from statistics import mean, stdev
 
 from path import Path
 
-from microeval.llm import get_llm_client
 from microeval.evaluator import EvaluationRunner
+from microeval.llm import get_llm_client
 from microeval.schemas import RunConfig, RunResult, evals_dir
 from microeval.yamlx import save_yaml
 
@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 class Runner:
     def __init__(self, file_path: str):
         self._config = RunConfig.read_from_yaml(file_path)
-        self._llm = get_llm_client(
-            self._config.service, model=self._config.model
-        )
+        self._llm = get_llm_client(self._config.service, model=self._config.model)
         self._cost_per_token = self._llm.get_token_cost()
         self._evaluation_runner = EvaluationRunner(self._llm, self._config)
 

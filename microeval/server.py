@@ -12,11 +12,11 @@ from fastapi.responses import HTMLResponse
 from path import Path
 from pydantic import BaseModel
 
-from microeval.llm import load_config
 from microeval.evaluator import get_available_evaluators
+from microeval.llm import load_config
+from microeval.logger import setup_logging
 from microeval.runner import Runner
 from microeval.schemas import RunConfig, TableType, evals_dir, ext_from_table
-from microeval.logger import setup_logging
 from microeval.yamlx import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
@@ -96,9 +96,7 @@ def get_graph_data():
     try:
         from microeval.graph import extract_evaluation_data, generate_plotly_graph
 
-        logger.info(
-            f"Generating dynamic graph data from {evals_dir.results}"
-        )
+        logger.info(f"Generating dynamic graph data from {evals_dir.results}")
 
         results_dir = evals_dir.results
         evaluators_data = extract_evaluation_data(results_dir)

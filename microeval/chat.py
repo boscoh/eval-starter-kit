@@ -5,11 +5,7 @@ Interactive chat loop with LLM providers.
 
 import asyncio
 
-from dotenv import load_dotenv
-
 from microeval.llm import LLMService, get_llm_client
-
-load_dotenv()
 
 
 async def setup_async_exception_handler():

@@ -5,21 +5,24 @@ import logging
 import os
 import shutil
 import threading
-from path import Path
 
 import cyclopts
 import uvicorn
+from dotenv import load_dotenv
+from path import Path
 
 from microeval.chat import main as chat_main
 from microeval.llm import LLMService
+from microeval.logger import setup_logging
 from microeval.runner import run_all
 from microeval.schemas import evals_dir
 from microeval.server import is_in_container, poll_and_open_browser
-from microeval.logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
 setup_logging()
+
+load_dotenv()
 
 app = cyclopts.App(name="microeval", help_format="markdown")
 
@@ -94,7 +97,7 @@ def _run_demo(template_name: str, base_dir: str, port: int):
     """
     demo_dir = Path(base_dir)
     template_path = Path(__file__).parent / template_name
-    
+
     if demo_dir.exists():
         logger.info(f"Using existing {base_dir}")
     else:
@@ -103,10 +106,10 @@ def _run_demo(template_name: str, base_dir: str, port: int):
             raise SystemExit(1)
         logger.info(f"Creating {base_dir} from template")
         shutil.copytree(template_path, demo_dir)
-    
+
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
-    
+
     if not is_in_container():
         poller_thread = threading.Thread(
             target=poll_and_open_browser, args=(port,), daemon=True
@@ -114,7 +117,7 @@ def _run_demo(template_name: str, base_dir: str, port: int):
         poller_thread.start()
     else:
         logger.info("Running in container, skipping browser auto-open")
-    
+
     uvicorn.run(
         "microeval.server:app",
         host="0.0.0.0",
