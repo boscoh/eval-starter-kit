@@ -16,7 +16,7 @@ from microeval.llm import LLMService
 from microeval.logger import setup_logging
 from microeval.runner import run_all
 from microeval.schemas import evals_dir
-from microeval.server import is_in_container, poll_and_open_browser
+from microeval.server import poll_and_open_browser
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,10 @@ def ui(
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
 
-    if not is_in_container():
-        poller_thread = threading.Thread(
-            target=poll_and_open_browser, args=(port,), daemon=True
-        )
-        poller_thread.start()
-    else:
-        logger.info("Running in container, skipping browser auto-open")
+    poller_thread = threading.Thread(
+        target=poll_and_open_browser, args=(port,), daemon=True
+    )
+    poller_thread.start()
 
     uvicorn.run(
         "microeval.server:app",
@@ -110,13 +107,10 @@ def _run_demo(template_name: str, base_dir: str, port: int):
     evals_dir.set_base(base_dir)
     os.environ["EVALS_DIR"] = base_dir
 
-    if not is_in_container():
-        poller_thread = threading.Thread(
-            target=poll_and_open_browser, args=(port,), daemon=True
-        )
-        poller_thread.start()
-    else:
-        logger.info("Running in container, skipping browser auto-open")
+    poller_thread = threading.Thread(
+        target=poll_and_open_browser, args=(port,), daemon=True
+    )
+    poller_thread.start()
 
     uvicorn.run(
         "microeval.server:app",
