@@ -753,7 +753,7 @@ def get_aws_config(is_raise_exception: bool = True):
             return aws_config
 
         sts = session.client("sts")
-        identity = sts.get_caller_identity()
+        _ = sts.get_caller_identity()
 
         if hasattr(credentials, "token"):
             creds = credentials.get_frozen_credentials()
