@@ -87,6 +87,8 @@ class RunConfig(BaseModel):
     evaluators: List[Union[str, EvaluatorConfig, Dict[str, Any]]] = Field(
         default_factory=lambda: ["coherence"]
     )
+    eval_service: Optional[LLMService] = None
+    eval_model: Optional[str] = None
 
     @staticmethod
     def read_from_yaml(file_path: str) -> "RunConfig":

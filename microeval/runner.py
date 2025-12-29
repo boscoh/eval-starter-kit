@@ -12,12 +12,28 @@ from microeval.yamlx import save_yaml
 logger = logging.getLogger(__name__)
 
 
+def get_eval_llm_client(config: RunConfig):
+    """
+    Get LLM client for evaluations.
+    Uses eval_service/eval_model if specified, otherwise falls back to the tested LLM.
+    """
+    if config.eval_service:
+        kwargs = {}
+        if config.eval_model:
+            kwargs["model"] = config.eval_model
+        logger.info(f"Using separate LLM for evaluation: {config.eval_service}")
+        return get_llm_client(config.eval_service, **kwargs)
+
+    return get_llm_client(config.service, model=config.model)
+
+
 class Runner:
     def __init__(self, file_path: str):
         self._config = RunConfig.read_from_yaml(file_path)
         self._llm = get_llm_client(self._config.service, model=self._config.model)
+        self._eval_llm = get_eval_llm_client(self._config)
         self._cost_per_token = self._llm.get_token_cost()
-        self._evaluation_runner = EvaluationRunner(self._llm, self._config)
+        self._evaluation_runner = EvaluationRunner(self._eval_llm, self._config)
 
     async def run(self):
         try:
@@ -29,6 +45,8 @@ class Runner:
                 logger.info(f"Removed existing results file '{results_path}'")
 
             await self._llm.connect()
+            if self._eval_llm is not self._llm:
+                await self._eval_llm.connect()
 
             fields = self._config.evaluators + [
                 "elapsed_seconds",
@@ -95,6 +113,8 @@ class Runner:
             raise
         finally:
             await self._llm.close()
+            if self._eval_llm is not self._llm:
+                await self._eval_llm.close()
 
 
 async def run_all(file_paths):
