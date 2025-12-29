@@ -1,0 +1,63 @@
+---
+texts:
+- >-
+  The "quick brown fox" sentence is a well-known phrase that contains every letter
+  of the English alphabet at least once, making it useful for testing typing and keyboard
+  layouts. It has been in use since the late 1800s and remains a popular tool for
+  testing fonts and keyboards today. The phrase's enduring popularity stems from its
+  simplicity and effectiveness.
+- >-
+  A well-known sentence, "The quick brown fox jumps over the lazy dog," is famous
+  for using every letter of the English alphabet at least once and has been used for
+  centuries to test typing devices. It originated in the late 1800s and remains a
+  popular tool for testing fonts and keyboards today. The phrase's purpose is still
+  relevant for testing purposes.
+- >-
+  A well-known sentence, "The quick brown fox jumps over the lazy dog," contains all
+  English alphabet letters at least once and has been used since the late 1800s to
+  test typewriters, fonts, and keyboards. It remains a popular tool for testing typing
+  and keyboard layouts today. The phrase has stood the test of time due to its unique
+  combination of letters.
+evaluations:
+- name: word_count
+  values:
+  - 1.0
+  - 1.0
+  - 1.0
+  average: 1.0
+  standard_deviation: 0.0
+- name: coherence
+  values:
+  - 0.9
+  - 0.8
+  - 0.9
+  average: 0.8666666666666667
+  standard_deviation: 0.05773502691896256
+- name: equivalence
+  values:
+  - 0.8
+  - 0.8
+  - 0.8
+  average: 0.8
+  standard_deviation: 0.0
+- name: elapsed_seconds
+  values:
+  - 21.32909083366394
+  - 7.024739027023315
+  - 7.417486667633057
+  average: 11.923772176106771
+  standard_deviation: 8.147611733811686
+- name: token_count
+  values:
+  - 155
+  - 157
+  - 157
+  average: 156.33333333333334
+  standard_deviation: 1.1547005383792515
+- name: cost
+  values:
+  - 0.0
+  - 0.0
+  - 0.0
+  average: 0.0
+  standard_deviation: 0.0

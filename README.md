@@ -198,40 +198,50 @@ target_words: 100
 
 ### Creating Custom Evaluators
 
-1. Create a class in `microeval/evaluator.py`:
+1. Create a class in `microeval/evaluator.py` using the `@register_evaluator` decorator:
 
 ```python
-class MyCustomEvaluator:
-    def __init__(self, run_config: RunConfig):
-        self.run_config = run_config
-
+@register_evaluator("mycustom")
+class MyCustomEvaluator(BaseEvaluator):
+    """My custom evaluator with optional parameters."""
+    
     async def evaluate(self, response_text: str) -> Dict[str, Any]:
-        score = 1.0
-        return {
-            "score": score,
-            "text": "Evaluation details",
-            "elapsed_ms": 0,
-            "token_count": 0,
-        }
+        threshold = self.params.get("threshold", 0.5)
+        score = 1.0 if len(response_text) > 100 else 0.5
+        return self._empty_result(score=score, reasoning="Custom evaluation")
 ```
 
-2. Register in `EvaluationRunner.__init__`:
+For LLM-based evaluators, extend `LLMEvaluator` instead:
+
 ```python
-self.evaluators = {
-    "coherence": CoherenceEvaluator(llm, run_config),
-    "equivalence": EquivalenceEvaluator(llm, run_config),
-    "word_count": WordCountEvaluator(run_config),
-    "mycustom": MyCustomEvaluator(run_config),
-}
+@register_evaluator("custom_llm")
+class CustomLLMEvaluator(LLMEvaluator):
+    def build_prompt(self, response_text: str) -> str:
+        return f"""
+            Evaluate the response: {response_text}
+            
+            Respond with JSON: {{"score": <0.0-1.0>, "reasoning": "<explanation>"}}
+        """
 ```
 
-3. Update `EvaluationRunner.evaluators()` to include your evaluator name.
-
-4. Use in your run config:
+2. Use in your run config (simple form):
 ```yaml
 evaluators:
 - coherence
 - mycustom
+```
+
+3. Or with parameters:
+```yaml
+evaluators:
+- coherence
+- name: word_count
+  params:
+    min_words: 100
+    max_words: 500
+- name: mycustom
+  params:
+    threshold: 0.7
 ```
 
 ---

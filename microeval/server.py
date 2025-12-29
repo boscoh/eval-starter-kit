@@ -14,7 +14,7 @@ from path import Path
 from pydantic import BaseModel
 
 from microeval.llm import load_config
-from microeval.evaluator import EvaluationRunner
+from microeval.evaluator import get_available_evaluators
 from microeval.runner import Runner
 from microeval.schemas import RunConfig, TableType, evals_dir, ext_from_table
 from microeval.logger import setup_logging
@@ -153,7 +153,7 @@ def get_defaults():
     return {
         "content": {
             "evals_dir": evals_dir.name,
-            "evaluators": EvaluationRunner.evaluators(),
+            "evaluators": get_available_evaluators(),
             "run_config": {
                 "promptRef": "",
                 "queryRef": "",
@@ -164,7 +164,7 @@ def get_defaults():
                 "model": default_model,
                 "repeat": 1,
                 "temperature": 0.2,
-                "evaluators": ["CoherenceEvaluator"],
+                "evaluators": ["coherence"],
             },
             "services": list(chat_models.keys()),
             "models": {

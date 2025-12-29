@@ -1,7 +1,7 @@
 import copy
 import logging
 import os
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from path import Path
 from pydantic import BaseModel, Field
@@ -10,6 +10,11 @@ from microeval.llm import LLMService
 from microeval.yamlx import load_yaml, save_yaml
 
 logger = logging.getLogger(__name__)
+
+
+class EvaluatorConfig(BaseModel):
+    name: str
+    params: Dict[str, Any] = Field(default_factory=dict)
 
 TableType = Literal["result", "run", "prompt", "query"]
 
@@ -78,7 +83,9 @@ class RunConfig(BaseModel):
     model: str = ""
     repeat: int = 1
     temperature: float = 0.0
-    evaluators: List[str] = Field(default_factory=lambda: ["CoherenceEvaluator"])
+    evaluators: List[Union[str, EvaluatorConfig, Dict[str, Any]]] = Field(
+        default_factory=lambda: ["coherence"]
+    )
 
     @staticmethod
     def read_from_yaml(file_path: str) -> "RunConfig":
