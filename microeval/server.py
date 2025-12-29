@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 import time
 import webbrowser
 from contextlib import asynccontextmanager
@@ -414,43 +413,3 @@ def poll_and_open_browser(
         time.sleep(interval_seconds)
 
     logger.warning(f"Server did not respond within {timeout_seconds} seconds")
-
-
-def main():
-    import argparse
-
-    import uvicorn
-
-    parser = argparse.ArgumentParser(description="Run FastAPI server")
-    parser.add_argument(
-        "--port", type=int, default=8000, help="Port to run the server on"
-    )
-    parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
-    parser.add_argument(
-        "--evals-dir",
-        default="evals",
-        help="Base directory for evals (default: evals)",
-    )
-    args = parser.parse_args()
-
-    evals_dir.set_base(args.evals_dir)
-
-    if not is_in_container():
-        poller_thread = threading.Thread(
-            target=poll_and_open_browser, args=(args.port,), daemon=True
-        )
-        poller_thread.start()
-    else:
-        logger.info("Running in container, skipping browser auto-open")
-
-    uvicorn.run(
-        "microeval.server:app",
-        host="0.0.0.0",
-        port=args.port,
-        reload=args.reload,
-        log_config=None,
-    )
-
-
-if __name__ == "__main__":
-    main()
